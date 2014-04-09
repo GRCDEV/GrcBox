@@ -8,6 +8,7 @@ import org.restlet.Restlet;
 import org.restlet.Server;
 import org.restlet.data.MediaType;
 import org.restlet.data.Protocol;
+import org.restlet.routing.Router;
 
 public class AndroPiServer extends Application {
 
@@ -23,27 +24,23 @@ public class AndroPiServer extends Application {
 	 * @throws Exception 
 	 */
 	public static void main(String[] args) throws Exception {
-		 Server andropiServer = new Server(Protocol.HTTP, 8111);
-		 andropiServer.setNext(new AndroPiServer());
-		 andropiServer.start();
+		Server andropiServer = new Server(Protocol.HTTP, 8111);
+		andropiServer.setNext(new AndroPiServer());
+		andropiServer.start();
 	}
 
 	@Override
 	public Restlet createInboundRoot(){
-		return new Restlet(){
-			@Override
-			public void handle(Request request, Response response) {
-				String entity = "Method : " + request.getMethod()
-						+ "\nResource URI : "
-						+ request.getResourceRef()
-						+ "\nIP address : "
-						+ request.getClientInfo().getAddress()
-						+ "\nAgent name : "
-						+ request.getClientInfo().getAgentName()
-						+ "\nAgent version: "
-						+ request.getClientInfo().getAgentVersion();
-				response.setEntity(entity, MediaType.TEXT_PLAIN);
-			}
-		};
+		Tracer tracer = new Tracer (getContext());
+		
+		Blocker blocker = new Blocker (getContext());
+		blocker.getBlockedAddresses().add("0:0:0:0:0:0:0:1");
+		blocker.setNext(tracer);
+		
+		Router router = new Router(getContext());
+		router.attach("http://localhost:8111/", tracer);
+		router.attach("http://localhost:8111/accounts/", tracer);
+		router.attach("http://localhost:8111/accounts/{accountId}", blocker);
+		return router;
 	}
 }
