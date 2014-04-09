@@ -9,6 +9,7 @@ import org.restlet.Server;
 import org.restlet.data.MediaType;
 import org.restlet.data.Protocol;
 import org.restlet.routing.Router;
+import grc.upv.es.andropi.*;
 
 public class AndroPiServer extends Application {
 
@@ -19,21 +20,12 @@ public class AndroPiServer extends Application {
 		setAuthor("Sergio Martínez Tornell");	
 	}
 
-	/**
-	 * @param args
-	 * @throws Exception 
-	 */
-	public static void main(String[] args) throws Exception {
-		Server andropiServer = new Server(Protocol.HTTP, 8111);
-		andropiServer.setNext(new AndroPiServer());
-		andropiServer.start();
-	}
-
 	@Override
 	public Restlet createInboundRoot(){
 		Router router = new Router(getContext());
-		router.attach("http://localhost:8111/",
-		RootServerResource.class);
+		router.attach("/", RootServerResource.class);
+		router.attach("/accounts/", AccountsServerResource.class);
+		router.attach("/accounts/{accountId}", AccountServerResource.class);
 		return router;
 	}
 }

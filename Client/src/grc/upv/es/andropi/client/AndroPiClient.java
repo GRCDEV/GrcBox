@@ -1,4 +1,6 @@
-package grc.upv.es.andropi.server;
+package grc.upv.es.andropi.client;
+
+import grc.upv.es.andropi.common.RootResource;
 
 import java.io.IOException;
 
@@ -13,9 +15,8 @@ public class AndroPiClient extends ClientResource {
 	 * @throws ResourceException 
 	 */
 	public static void main(String[] args) throws ResourceException, IOException {
-		ClientResource mailRoot =
-				new ClientResource("http://localhost:8111/");
-		mailRoot.get().write(System.out);
+		RootResource mailRoot = ClientResource.create("http://localhost:8111/", RootResource.class);
+		String result = mailRoot.represent();
+		System.out.println(result);
 	}
-
 }
