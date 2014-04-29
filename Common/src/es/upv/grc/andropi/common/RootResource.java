@@ -41,5 +41,5 @@ import org.restlet.resource.Get;
 public interface RootResource {
 
     @Get
-    public AndroPiStatus retrieve();
+    public AndroPiStatus getAndroPiStatus();
 }

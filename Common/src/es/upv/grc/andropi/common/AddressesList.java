@@ -6,18 +6,18 @@ import java.util.List;
 
 
 public class AddressesList{
-	private final List<String> ipAdresses;
+	private final List<byte[]> ipAdresses;
 
     public AddressesList() {
     	this.ipAdresses = new ArrayList<>();
 	}
 	
-	public AddressesList(List<String> ipAdresses) {
+	public AddressesList(List<byte[]> ipAdresses){
 		super();
 		this.ipAdresses = ipAdresses;
 	}
 
-	public List<String> getIpAdresses() {
+	public List<byte[]> getIpAdresses() {
 		return ipAdresses;
 	}
 }

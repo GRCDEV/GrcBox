@@ -31,37 +31,33 @@
  * Restlet is a registered trademark of Restlet
  */
 
-package es.upv.grc.andropi.client;
+package es.upv.grc.andropi.common;
 
-
-
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-
-
-import org.restlet.resource.ClientResource;
-
-import es.upv.grc.andropi.common.*;
+import org.restlet.resource.Delete;
+import org.restlet.resource.Get;
+import org.restlet.resource.Put;
 
 /**
- * AndroPiClient Read Information from the server and print it
+ * Annotated box resource interface
  */
-public class AndroPiClient {
-    public static void main(String[] args) throws Exception {
-        RootResource clientResource = ClientResource.create("http://localhost:8080/", RootResource.class);
-        AndroPiStatus status = clientResource.getAndroPiStatus();
-        for(int i=0; i< status.getInterfaces().size();i++){
-        	System.out.println("Name:"+ status.getInterfaces().get(i).getName()+ " Addresses:");
-        	byte [] ipAddress = status.getInterfaces().get(i).getIpAddress();
-        	if(ipAddress.length == 4){
-        		System.out.println(i+":"+ Inet4Address.getByAddress(ipAddress).toString());	
-        	}
-        	else{
-        		System.out.println(i+":"+ Inet6Address.getByAddress(ipAddress).toString());
-        	}
-        }
-        for(int i=0; i< status.getFlows().size();i++){
-        	System.out.println(status.getFlows().get(i).getId());
-        }
-    }
+public interface AppResource {
+
+	/*
+	 * obtain information about app and its rules.
+	 */
+    @Get
+    public AndroPiAppInfo retrieve();
+    
+    /*
+     * Change name of the app in the database
+     * Return true if the app was modified
+     */
+    @Put
+    public boolean modify(int appId, int secret, String name);
+    
+    /*
+     * Remove an APP and all its rules
+     */
+    @Delete
+    public boolean remove(int appId, int secret);
 }

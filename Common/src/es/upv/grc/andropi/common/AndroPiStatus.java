@@ -7,7 +7,7 @@ import java.util.List;
 public class AndroPiStatus {
 	String name;
 	List<AndroPiInterface> interfaces;
-	List<AndroPiFlow> flows;
+	List<AndroPiRule> rules;
 	
 	public String getName() {
 		return name;
@@ -20,7 +20,7 @@ public class AndroPiStatus {
 	public AndroPiStatus() {
 		super();
 		this.interfaces = new ArrayList<>(); 
-		this.flows = new ArrayList<>();
+		this.rules = new ArrayList<>();
 	}
 
 	public List<AndroPiInterface> getInterfaces() {
@@ -31,19 +31,19 @@ public class AndroPiStatus {
 		this.interfaces = ifList;
 	}
 	
-	public List<AndroPiFlow> getFlows() {
-		return flows;
+	public List<AndroPiRule> getFlows() {
+		return rules;
 	}
 
-	public void setFlows(List<AndroPiFlow> flows) {
-		this.flows = flows;
+	public void setFlows(List<AndroPiRule> flows) {
+		this.rules = flows;
 	}
 
 	public void addInterface(AndroPiInterface iface){
 		interfaces.add(iface);
 	}
 	
-	public void addFlow(AndroPiFlow flow){
-		flows.add(flow);
+	public void addFlow(AndroPiRule flow){
+		rules.add(flow);
 	}
 }

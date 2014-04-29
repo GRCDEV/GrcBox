@@ -13,5 +13,6 @@
 	<classpathentry kind="lib" path="/home/sertinell/git/AndroPi/lib/restlet-jse-2.2.0/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.smile.jar"/>
 	<classpathentry kind="lib" path="/home/sertinell/git/AndroPi/lib/restlet-jse-2.2.0/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.xml.jar"/>
 	<classpathentry kind="lib" path="/home/sertinell/git/AndroPi/lib/restlet-jse-2.2.0/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.yaml.jar"/>
+	<classpathentry kind="lib" path="/home/sertinell/git/AndroPi/lib/sqlite-jdbc-3.7.15-M1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

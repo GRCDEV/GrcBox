@@ -34,39 +34,88 @@
 package es.upv.grc.andropi.server;
 
 
+import java.beans.Statement;
+import java.io.File;
+import java.net.URL;
+import java.sql.*;
+
 import org.restlet.Application;
 import org.restlet.Component;
 import org.restlet.Restlet;
 import org.restlet.data.Protocol;
 import org.restlet.routing.Router;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import es.upv.grc.andropi.server.db.DatabaseManager;
+
 /**
  * Routing to annotated server resources.
  */
 public class AndroPiServerApplication extends Application {
 
-    /**
-     * Launches the application with an HTTP server.
-     * 
-     * @param args
-     *            The arguments.
-     * @throws Exception
-     */
-    public static void main(String[] args) throws Exception {
-        Component mailServer = new Component();
-        mailServer.getServers().add(Protocol.HTTP, 8111);
-        mailServer.getDefaultHost().attach(new AndroPiServerApplication());
-        mailServer.start();
-    }
+	private static final String configFile = "/res/config.json";
+	static AndroPiConfig config;
+	static DatabaseManager rulesDB;
+	protected static DatabaseManager getRulesDb() {
+		return rulesDB;
+	}
 
-    /**
-     * Creates a root Router to dispatch call to server resources.
-     */
-    @Override
-    public Restlet createInboundRoot() {
-        Router router = new Router(getContext());
-        router.attach("/",
-                RootServerResource.class);
-        return router;
-    }
+	protected static AndroPiConfig getConfig() {
+		return config;
+	}
+
+	protected static void setConfig(AndroPiConfig config) {
+		AndroPiServerApplication.config = config;
+	}
+
+	/**
+	 * Launches the application with an HTTP server.
+	 * 
+	 * @param args
+	 *            The arguments.
+	 * @throws Exception
+	 */
+	public static void main(String[] args) throws Exception {
+		//Load Config File
+		URL uri = AndroPiServerApplication.class.getResource(configFile);
+		File file = new File(uri.getPath());
+		ObjectMapper mapper = new ObjectMapper();
+		config = mapper.readValue(file, AndroPiConfig.class);
+
+		//Connect to database and load previously stored rules
+		// load the sqlite-JDBC driver using the current class loader
+		Class.forName("org.sqlite.JDBC");
+
+		// create a database connection
+		rulesDB = new DatabaseManager(config.getDatabase().getUpdateTime());
+		rulesDB.PrepareDb(config.getDatabase().getPath(), config.getDatabase().isFlushAtStartup());
+
+		Component androPiServer = new Component(AndroPiServerApplication.class.getResource("/es/upv/grc/andropi/server/AndroPiComponent.xml").toString());
+		androPiServer.start();
+	}
+
+	public static DatabaseManager getRulesDB() {
+		return rulesDB;
+	}
+
+
+
+
+
+	public static String getConfigfile() {
+		return configFile;
+	}
+	
+
+	/**
+	 * Creates a root Router to dispatch call to server resources.
+	 */
+	@Override
+	public Restlet createInboundRoot() {
+		Router router = new Router(getContext());
+		router.attach("/",
+				RootServerResource.class);
+		return router;
+	}
 }

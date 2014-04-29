@@ -31,37 +31,28 @@
  * Restlet is a registered trademark of Restlet
  */
 
-package es.upv.grc.andropi.client;
+package es.upv.grc.andropi.common;
 
+import java.util.List;
 
-
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-
-
-import org.restlet.resource.ClientResource;
-
-import es.upv.grc.andropi.common.*;
+import org.restlet.resource.Get;
+import org.restlet.resource.Post;
 
 /**
- * AndroPiClient Read Information from the server and print it
+ * Annotated box resource interface
  */
-public class AndroPiClient {
-    public static void main(String[] args) throws Exception {
-        RootResource clientResource = ClientResource.create("http://localhost:8080/", RootResource.class);
-        AndroPiStatus status = clientResource.getAndroPiStatus();
-        for(int i=0; i< status.getInterfaces().size();i++){
-        	System.out.println("Name:"+ status.getInterfaces().get(i).getName()+ " Addresses:");
-        	byte [] ipAddress = status.getInterfaces().get(i).getIpAddress();
-        	if(ipAddress.length == 4){
-        		System.out.println(i+":"+ Inet4Address.getByAddress(ipAddress).toString());	
-        	}
-        	else{
-        		System.out.println(i+":"+ Inet6Address.getByAddress(ipAddress).toString());
-        	}
-        }
-        for(int i=0; i< status.getFlows().size();i++){
-        	System.out.println(status.getFlows().get(i).getId());
-        }
-    }
+public interface RulesResource {
+
+	/*
+	 * return a list of rules associated to an app
+	 */
+    @Get
+    public List<AndroPiRule> getList();
+    
+    /*
+     * Create a new rule associated to this app
+     * retutn rule ID
+     */
+    @Post
+    public int newRule(AndroPiRule rule, int secret);
 }

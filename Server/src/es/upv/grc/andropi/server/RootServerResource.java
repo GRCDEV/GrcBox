@@ -35,17 +35,16 @@ package es.upv.grc.andropi.server;
 
 
 
-import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.util.Date;
 import java.util.Enumeration;
 
 import org.restlet.resource.ServerResource;
 
 import es.upv.grc.andropi.common.AndroPiInterface;
 import es.upv.grc.andropi.common.AndroPiInterface.Type;
-import es.upv.grc.andropi.common.AndroPiFlow;
+import es.upv.grc.andropi.common.AndroPiRule;
 import es.upv.grc.andropi.common.AndroPiStatus;
 import es.upv.grc.andropi.common.RootResource;
 
@@ -55,7 +54,7 @@ import es.upv.grc.andropi.common.RootResource;
 public class RootServerResource extends ServerResource implements RootResource {
 
 	@Override
-    public AndroPiStatus retrieve() {
+    public AndroPiStatus getAndroPiStatus() {
     	AndroPiStatus status = new AndroPiStatus();
         Enumeration<NetworkInterface> interfaces = null;
 		try {
@@ -75,13 +74,8 @@ public class RootServerResource extends ServerResource implements RootResource {
 				e.printStackTrace();
 			}
         }
-        AndroPiFlow flow = null;
-        try {
-			flow = new AndroPiFlow( 0, 21, InetAddress.getLocalHost().toString(), InetAddress.getLocalHost().toString());
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        AndroPiRule flow = null;
+        flow = new AndroPiRule( 1, 10, 0, new Date(0), 10, 15 , 14, 15, -1,-1);
         status.addFlow(flow);
         return status;
     }

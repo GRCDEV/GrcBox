@@ -16,6 +16,8 @@ public class AndroPiInterface {
 	
     private Type type;
 	private String name;
+	private double cost; //Cost per transfered MB
+	
 	private int	index;
 	private int mtu;
 	
@@ -24,10 +26,12 @@ public class AndroPiInterface {
 	private boolean isLoopback;
 	private boolean isUp;
 	private boolean isMulticast;
+	private boolean hasGateway;
 	
-	public AndroPiInterface(String name, int index,
+	
+	public AndroPiInterface(String name, int index, Type type, double cost,
 			int mtu, Enumeration<InetAddress> inetAddresses, boolean isLoopback, boolean isUp,
-			boolean isMulticast) {
+			boolean isMulticast, boolean hasGateway) {
 		super();
 		this.name = name;
 		this.index = index;
@@ -35,17 +39,18 @@ public class AndroPiInterface {
 		this.isLoopback = isLoopback;
 		this.isUp = isUp;
 		this.isMulticast = isMulticast;
-		this.type = Type.WIFIP;
+		this.type = type;
+		this.cost = cost;
 		this.ipAddress = inetAddresses.nextElement().getAddress();
-		List<String> addressesList = new ArrayList<String>();
+		List<byte[]> addressesList = new ArrayList<>();
 		while(inetAddresses.hasMoreElements()){
-			addressesList.add(inetAddresses.nextElement().getHostAddress());
+			addressesList.add(inetAddresses.nextElement().getAddress());
 		}
 		this.addressesList= new AddressesList(addressesList);
 	}
 	
 	public AndroPiInterface(NetworkInterface nIf, Type type) throws SocketException{
-		this(nIf.getName(), nIf.getIndex(), nIf.getMTU(), nIf.getInetAddresses(), nIf.isLoopback(), nIf.isUp(), nIf.supportsMulticast()); 
+		this(nIf.getName(), nIf.getIndex(), type, 0, nIf.getMTU(), nIf.getInetAddresses(), nIf.isLoopback(), nIf.isUp(), nIf.supportsMulticast(), true); 
 	}
 	
 	public AndroPiInterface(){
@@ -63,6 +68,14 @@ public class AndroPiInterface {
 	public void setName(String name) {
 		this.name = name;
 	}
+	public double getCost() {
+		return cost;
+	}
+
+	public void setCost(double cost) {
+		this.cost = cost;
+	}
+
 	public int getIndex() {
 		return index;
 	}
@@ -109,5 +122,13 @@ public class AndroPiInterface {
 	}
 	public void setMulticast(boolean isMulticast) {
 		this.isMulticast = isMulticast;
+	}
+
+	public boolean isHasGateway() {
+		return hasGateway;
+	}
+
+	public void setHasGateway(boolean hasGateway) {
+		this.hasGateway = hasGateway;
 	}
 }
