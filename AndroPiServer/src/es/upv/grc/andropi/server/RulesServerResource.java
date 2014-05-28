@@ -10,7 +10,6 @@ import org.restlet.resource.ServerResource;
 
 import es.upv.grc.andropi.common.AndroPiApp;
 import es.upv.grc.andropi.common.AndroPiRule;
-import es.upv.grc.andropi.common.AndroPiRule.Protocol;
 import es.upv.grc.andropi.common.RulesResource;
 
 /**

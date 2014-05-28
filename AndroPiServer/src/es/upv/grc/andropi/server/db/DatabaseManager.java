@@ -1,7 +1,6 @@
 package es.upv.grc.andropi.server.db;
 
 import java.io.File;
-import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -9,17 +8,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
 import java.util.List;
-
-import org.restlet.resource.ResourceException;
 
 import es.upv.grc.andropi.common.AndroPiApp;
 import es.upv.grc.andropi.common.AndroPiAppInfo;
 import es.upv.grc.andropi.common.AndroPiRule;
 import es.upv.grc.andropi.common.AndroPiRule.Protocol;
-import es.upv.grc.andropi.common.AppsResource.IdSecret;
 
 public class DatabaseManager {
 	private long updateTime;

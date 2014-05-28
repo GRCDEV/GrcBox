@@ -4,8 +4,6 @@
 package es.upv.grc.andropi.server;
 
 import java.util.List;
-import java.util.logging.Logger;
-
 import org.restlet.resource.ServerResource;
 import org.restlet.security.MapVerifier;
 

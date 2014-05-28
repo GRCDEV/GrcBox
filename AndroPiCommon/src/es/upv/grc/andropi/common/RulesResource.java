@@ -33,7 +33,6 @@
 
 package es.upv.grc.andropi.common;
 
-import java.util.Date;
 import java.util.List;
 
 import org.restlet.resource.Get;
