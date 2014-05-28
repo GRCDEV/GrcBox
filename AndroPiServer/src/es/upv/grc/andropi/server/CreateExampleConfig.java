@@ -46,13 +46,10 @@ public class CreateExampleConfig {
 			mapper.writeValue(file, config);
 			System.out.println(mapper.writeValueAsString(config));
 		} catch (JsonGenerationException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (JsonMappingException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		

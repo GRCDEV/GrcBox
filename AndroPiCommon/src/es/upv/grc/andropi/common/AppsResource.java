@@ -47,6 +47,14 @@ public interface AppsResource {
 		int appId;
 		int secret;
 		
+		public IdSecret(){
+			
+		}
+		
+		public IdSecret(int id, int secret2) {
+			this.appId = id;
+			this.secret = secret2;
+		}
 		public int getAppId() {
 			return appId;
 		}

@@ -39,11 +39,28 @@ import java.net.URL;
 
 import org.restlet.Application;
 import org.restlet.Component;
+import org.restlet.Context;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.Restlet;
+import org.restlet.Server;
+import org.restlet.data.ChallengeScheme;
+import org.restlet.data.MediaType;
+import org.restlet.data.Method;
+import org.restlet.data.Parameter;
+import org.restlet.data.Protocol;
+import org.restlet.resource.ServerResource;
+import org.restlet.routing.Filter;
 import org.restlet.routing.Router;
+import org.restlet.security.ChallengeAuthenticator;
+import org.restlet.security.MapVerifier;
+import org.restlet.security.MethodAuthorizer;
+import org.restlet.util.Series;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import es.upv.grc.andropi.common.AppsResource;
+import es.upv.grc.andropi.common.RootResource;
 import es.upv.grc.andropi.server.db.DatabaseManager;
 
 /**
@@ -54,11 +71,16 @@ public class AndroPiServerApplication extends Application {
 	private static final String configFile = "/res/config.json";
 	static AndroPiConfig config;
 	static DatabaseManager rulesDB;
+	static MapVerifier verifier = new MapVerifier();
 	
-	protected static DatabaseManager getRulesDb() {
-		return rulesDB;
+	public AndroPiServerApplication(){
+		setName("RESTful Mail Server");
+		setDescription("Example for 'Restlet in Action' book");
+		setOwner("Restlet SAS");
+		setAuthor("The Restlet Team");
 	}
 
+	
 	protected static AndroPiConfig getConfig() {
 		return config;
 	}
@@ -88,32 +110,90 @@ public class AndroPiServerApplication extends Application {
 		// create a database connection
 		rulesDB = new DatabaseManager(config.getDatabase().getUpdateTime());
 		rulesDB.PrepareDb(config.getDatabase().getPath(), config.getDatabase().isFlushAtStartup());
-
-		Component androPiServer = new Component(AndroPiServerApplication.class.getResource("/es/upv/grc/andropi/server/AndroPiComponent.xml").toString());
-		androPiServer.start();
+		
+		Component androPiComponent = new Component();
+		Server server = androPiComponent.getServers().add(Protocol.HTTP, 8080);
+        Series<Parameter> parameters = server.getContext().getParameters();
+        parameters.add("keystorePath",
+                "src/res/serverKey.jks");
+        parameters.add("keystorePassword", "password");
+        parameters.add("keystoreType", "JKS");
+        parameters.add("keyPassword", "password");
+		androPiComponent.getDefaultHost().attach(new AndroPiServerApplication());
+        androPiComponent.start();
 	}
+
+	public class Tracer extends Filter {
+		public Tracer (Context context) {
+			super(context);
+		}
+
+		/* (non-Javadoc)
+		 * @see org.restlet.routing.Filter#beforeHandle(org.restlet.Request, org.restlet.Response)
+		 */
+		@Override
+		protected int beforeHandle(Request request, Response response) {
+			System.out.println(
+					"Method: " + request.getMethod()
+					+ "\nUser ID:" + request.getClientInfo().getUser()
+					+ "\nResource URI : " + request.getResourceRef()
+					+ "\nIP address: " + request.getClientInfo().getAddress()
+					+ "\nAgent name: " + request.getClientInfo().getAgentName()
+					+ "\nAgent version: " + request.getClientInfo().getAgentVersion()
+					);
+			return super.beforeHandle(request, response);
+		}
+	}
+
+	
+	@Override
+	public Restlet createInboundRoot(){
+		Router router = new Router(getContext());
+		router.attach("/", RootServerResource.class);
+		router.attach("/apps", AppsServerResource.class);
+		router.attach("/ifaces", IfacesServerResource.class);
+		router.attach("/ifaces/{ifaceId}", IfaceServerResource.class);
+		router.attach("/apps/{appId}", authenticated(AppServerResource.class));
+		router.attach("/apps/{appId}/rules", authenticated(RulesServerResource.class));
+		router.attach("/apps/{appId}/rules/{ruleId}", authenticated(RuleServerResource.class));
+		
+		return router;
+	}
+
+    /**
+     * Wraps a resource with a Tracer, then wraps that with a ChallengeAuthenticator.
+     */
+    private Restlet authenticated(Class<? extends ServerResource> targetClass) {
+        Tracer tracer = new Tracer(getContext());
+        tracer.setNext(targetClass);
+ 
+        ChallengeAuthenticator authenticator = new ChallengeAuthenticator(
+                getContext(), ChallengeScheme.HTTP_BASIC, "AndroPi");
+        authenticator.setVerifier(verifier);
+        authenticator.setOptional(true);
+        MethodAuthorizer authorizer = new MethodAuthorizer();
+        authorizer.getAnonymousMethods().add(Method.GET);
+        authorizer.getAuthenticatedMethods().add(Method.GET);
+        authorizer.getAuthenticatedMethods().add(Method.POST);
+        authorizer.getAuthenticatedMethods().add(Method.PUT);
+        authorizer.getAuthenticatedMethods().add(Method.DELETE);
+        authorizer.setNext(tracer);
+        
+        authenticator.setNext(authorizer);
+        
+        return authenticator;
+    }
 
 	public static DatabaseManager getRulesDB() {
 		return rulesDB;
 	}
 
-
-
+	public static MapVerifier getVerifier() {
+		return verifier;
+	}
 
 
 	public static String getConfigfile() {
 		return configFile;
-	}
-	
-
-	/**
-	 * Creates a root Router to dispatch call to server resources.
-	 */
-	@Override
-	public Restlet createInboundRoot() {
-		Router router = new Router(getContext());
-		router.attach("/",
-				RootServerResource.class);
-		return router;
 	}
 }

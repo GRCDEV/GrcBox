@@ -53,11 +53,11 @@ public interface AppResource {
      * Return true if the app was modified
      */
     @Put
-    public boolean modify(int appId, int secret, String name);
+    public boolean modify(int appId, String name);
     
     /*
      * Remove an APP and all its rules
      */
     @Delete
-    public boolean remove(int appId, int secret);
+    public void rm();
 }

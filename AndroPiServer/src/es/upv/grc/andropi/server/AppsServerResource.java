@@ -4,6 +4,10 @@
 package es.upv.grc.andropi.server;
 
 import java.util.List;
+import java.util.logging.Logger;
+
+import org.restlet.resource.ServerResource;
+import org.restlet.security.MapVerifier;
 
 import es.upv.grc.andropi.common.AndroPiApp;
 import es.upv.grc.andropi.common.AppsResource;
@@ -12,15 +16,14 @@ import es.upv.grc.andropi.common.AppsResource;
  * @author sertinell
  *
  */
-public class AppsServerResource implements AppsResource {
+public class AppsServerResource extends ServerResource implements AppsResource {
 
 	/* (non-Javadoc)
 	 * @see es.upv.grc.andropi.common.AppsResource#getList()
 	 */
 	@Override
 	public List<AndroPiApp> getList() {
-		// TODO Auto-generated method stub
-		return null;
+		return AndroPiServerApplication.getRulesDB().getApps();
 	}
 
 	/* (non-Javadoc)
@@ -28,8 +31,14 @@ public class AppsServerResource implements AppsResource {
 	 */
 	@Override
 	public IdSecret newApp(String name) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+		int secret = (name+System.currentTimeMillis()).hashCode();
+		int id = AndroPiServerApplication.getRulesDB().newApp(name, secret);
+		MapVerifier verifier = AndroPiServerApplication.getVerifier();
+		verifier.getLocalSecrets().put(Integer.toString(id), Integer.toString(secret).toCharArray());
+		System.out.println("Adding a new application to DB:"+Integer.toString(id)+" " +  Integer.toString(secret)
+				+ "There are " + verifier.getLocalSecrets().size() +" pairs registered.");
 
+		IdSecret idSecret = new IdSecret(id, secret);
+		return idSecret;
+	}
 }

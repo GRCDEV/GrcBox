@@ -10,6 +10,19 @@
 	</server>
 
 	<defaultHost>
-		<attachDefault targetClass="es.upv.grc.andropi.server.AndroPiServerApplication"/>
+		<attach uriPattern="/"
+        	targetClass="es.upv.grc.andropi.server.RootServerResource"/>
+		<attach uriPattern="/apps"
+        	targetClass="es.upv.grc.andropi.server.AppsServerResource"/>
+		<attach uriPattern="/apps/{appId}" 
+        	targetClass="es.upv.grc.andropi.server.AppServerResource"/>
+		<attach uriPattern="/apps/{appId}/rules" 
+        	targetClass="es.upv.grc.andropi.server.RulesServerResource"/>
+		<attach uriPattern="/apps/{appId}/rules/{ruleId}" 
+        	targetClass="es.upv.grc.andropi.server.RuleServerResource"/>
+		<attach uriPattern="/ifaces" 
+        	targetClass="es.upv.grc.andropi.server.IfacesServerResource"/>
+		<attach uriPattern="/ifaces/ifaceId" 
+        	targetClass="es.upv.grc.andropi.server.IfaceServerResource"/>
 	</defaultHost>
 </component>

@@ -50,11 +50,11 @@ public interface RuleResource {
      * Modify rule
      */
     @Put
-    public boolean modify(AndroPiRule rule, int secret);
+    public boolean modify(AndroPiRule rule);
     
     /*
      * Remove rule
      */
     @Delete
-    public boolean remove(int secret);
+    public void remove();
 }

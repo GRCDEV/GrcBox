@@ -37,7 +37,6 @@ package es.upv.grc.andropi.server;
 
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.Date;
 import java.util.Enumeration;
 
 import org.restlet.resource.ServerResource;
@@ -45,6 +44,7 @@ import org.restlet.resource.ServerResource;
 import es.upv.grc.andropi.common.AndroPiInterface;
 import es.upv.grc.andropi.common.AndroPiInterface.Type;
 import es.upv.grc.andropi.common.AndroPiRule;
+import es.upv.grc.andropi.common.AndroPiRule.Protocol;
 import es.upv.grc.andropi.common.AndroPiStatus;
 import es.upv.grc.andropi.common.RootResource;
 
@@ -60,7 +60,6 @@ public class RootServerResource extends ServerResource implements RootResource {
 		try {
 			interfaces = NetworkInterface.getNetworkInterfaces();
 		} catch (SocketException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
         while(interfaces.hasMoreElements()){
@@ -70,12 +69,11 @@ public class RootServerResource extends ServerResource implements RootResource {
         			status.addInterface(new AndroPiInterface(iface, Type.WIFISTA));
         		}
 			} catch (SocketException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
         }
         AndroPiRule flow = null;
-        flow = new AndroPiRule( 1, 10, 0, System.currentTimeMillis(), 10, 15 , 14, 15, -1,-1);
+        flow = new AndroPiRule(12, Protocol.TCP, false, 10, 0, System.currentTimeMillis(), 22, 22, 11, 11, 11, 10);
         status.addFlow(flow);
         return status;
     }

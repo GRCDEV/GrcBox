@@ -1,47 +1,50 @@
 package es.upv.grc.andropi.common;
 
-import java.util.Date;
-
 public class AndroPiRule {
 	public enum Protocol{
-		TCP, UDP
+		TCP, UDP;
+
+		public static Protocol fromInt(int n){
+			return Protocol.values()[n];
+		}
+		
+		public static int toInt(Protocol proto){
+			return proto.ordinal();
+		}
 	}
-	private static int maxId = 0;
-	private int id;
-	private int appid;
-	private int ifIndex;
+	/*
+	 * Common parameters
+	 */
+	private int id; //Unique Id of this rule
+	Protocol proto;	//Protocol
+	private boolean incomming;
+	private int appid;	//AppId of the owner app
+	private int ifIndex; // Outgoing or incomming interface
 	private long expireDate;
 	private int srcPort;
 	private int dstPort;
 	private int srcAddr;
 	private int dstAddr;
+	/*
+	 * Parameters needed for incomming rules
+	 */
 	private int dstFwdPort;
 	private int dstFwdAddr;
-	
-	public AndroPiRule(int id, int appid, int ifIdex, long expire, int srcPort,
-			int dstPort, int srcAddr, int dstAddr, int dstFwdPort,
-			int dstFwdAddr) {
+
+	/*
+	 * Common constructor used for incomming or outgoing flows.
+	 * If incomming is false dstFwdPort and dstFwdAddr must be -1 and will be ignored.
+	 */
+	public AndroPiRule(int id, Protocol proto, boolean incomming, int appid,
+			int ifIndex, long expireDate, int srcPort, int dstPort,
+			int srcAddr, int dstAddr, int dstFwdPort, int dstFwdAddr) {
 		super();
 		this.id = id;
-		this.ifIndex = ifIdex;
+		this.proto = proto;
+		this.incomming = incomming;
 		this.appid = appid;
-		this.expireDate = expire;
-		this.srcPort = srcPort;
-		this.dstPort = dstPort;
-		this.srcAddr = srcAddr;
-		this.dstAddr = dstAddr;
-		this.dstFwdPort = dstFwdPort;
-		this.dstFwdAddr = dstFwdAddr;
-	}
-	
-	public AndroPiRule(int appid, int ifIdex, long expire, int srcPort,
-			int dstPort, int srcAddr, int dstAddr, int dstFwdPort,
-			int dstFwdAddr) {
-		super();
-		this.id = maxId++;
-		this.appid = appid;
-		this.ifIndex = ifIdex;
-		this.expireDate = expire;
+		this.ifIndex = ifIndex;
+		this.expireDate = expireDate;
 		this.srcPort = srcPort;
 		this.dstPort = dstPort;
 		this.srcAddr = srcAddr;
@@ -128,5 +131,21 @@ public class AndroPiRule {
 
 	public int getId() {
 		return id;
+	}
+
+	public Protocol getProto() {
+		return proto;
+	}
+
+	public void setProto(Protocol proto) {
+		this.proto = proto;
+	}
+
+	public boolean isIncomming() {
+		return incomming;
+	}
+
+	public void setIncomming(boolean incomming) {
+		this.incomming = incomming;
 	}
 }

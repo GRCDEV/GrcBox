@@ -13,8 +13,13 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.restlet.resource.ResourceException;
+
 import es.upv.grc.andropi.common.AndroPiApp;
+import es.upv.grc.andropi.common.AndroPiAppInfo;
 import es.upv.grc.andropi.common.AndroPiRule;
+import es.upv.grc.andropi.common.AndroPiRule.Protocol;
+import es.upv.grc.andropi.common.AppsResource.IdSecret;
 
 public class DatabaseManager {
 	private long updateTime;
@@ -28,27 +33,28 @@ public class DatabaseManager {
 	/*
 	 * apps table columns names
 	 */
-	private static String APPID = "appid";
-	private static String SECRET = "secret";
-	private static String LASTKEEPALIVE = "lastKeepAlive";
-	private static String APP_NAME = "name";
+	private static String COL_APPID = "appid";
+	private static String COL_SECRET = "secret";
+	private static String COL_LASTKEEPALIVE = "lastKeepAlive";
+	private static String COL_APP_NAME = "name";
 
 	/*
 	 * in/out Rules columns names
 	 */
-	private static String ID = "id";
-	private static String EXPIRE ="expire";
-	private static String IFINDEX = "ifIndex";
-	private static String DSTPORT = "dstPort";
-	private static String SRCPORT = "srcPort";
-	private static String DSTADDR = "dstAddr";
-	private static String SRCADDR = "srcAddr";
+	private static String COL_ID = "id";
+	private static String COL_EXPIRE ="expire";
+	private static String COL_PROTO = "proto";
+	private static String COL_IFINDEX = "ifIndex";
+	private static String COL_DSTPORT = "dstPort";
+	private static String COL_SRCPORT = "srcPort";
+	private static String COL_DSTADDR = "dstAddr";
+	private static String COL_SRCADDR = "srcAddr";
 
 	/*
 	 * In rules columns names 
 	 */
-	private static String DSTFWDPORT = "dstFwdAddr";
-	private static String DSTFWDADDR = "srcFwdAddr";
+	private static String COL_DSTFWDPORT = "dstFwdAddr";
+	private static String COL_DSTFWDADDR = "srcFwdAddr";
 
 	Connection dbConnection;
 	boolean connected;
@@ -82,7 +88,7 @@ public class DatabaseManager {
 			}
 			return true;
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			System.out.println("Error Preparing the DB");
 			e.printStackTrace();
 			return false;
 		}
@@ -108,34 +114,35 @@ public class DatabaseManager {
 			while(rs.next()){
 				AndroPiRule rule = null;
 				if(inRules){
-					int appid = rs.getInt(APPID);
-					int id = rs.getInt(ID);
-					long expire = rs.getLong(EXPIRE);
-					int ifIndex = rs.getInt(IFINDEX);
-					int dstPort = rs.getInt(DSTPORT);
-					int srcPort = rs.getInt(SRCPORT);
-					int dstAddr = rs.getInt(DSTADDR);
-					int srcAddr = rs.getInt(SRCADDR);
-					int dstFwdPort = rs.getInt(DSTFWDPORT);
-					int dstFwdAddr = rs.getInt(DSTFWDADDR);
-					rule = new AndroPiRule(id, appid, ifIndex, expire, srcPort, dstPort, srcAddr, dstAddr, dstFwdPort, dstFwdAddr);
-				}
+					int appid = rs.getInt(COL_APPID);
+					int id = rs.getInt(COL_ID);
+					long expire = rs.getLong(COL_EXPIRE);
+					int ifIndex = rs.getInt(COL_IFINDEX);
+					int proto = rs.getInt(COL_PROTO);
+					int dstPort = rs.getInt(COL_DSTPORT);
+					int srcPort = rs.getInt(COL_SRCPORT);
+					int dstAddr = rs.getInt(COL_DSTADDR);
+					int srcAddr = rs.getInt(COL_SRCADDR);
+					int dstFwdPort = rs.getInt(COL_DSTFWDPORT);
+					int dstFwdAddr = rs.getInt(COL_DSTFWDADDR);
+					rule = new AndroPiRule(id, Protocol.fromInt(proto), true, appid, ifIndex, expire, srcPort, dstPort, srcAddr, dstAddr, dstFwdPort, dstFwdAddr);
+							}
 				else{
-					int appid = rs.getInt(APPID);
-					int id = rs.getInt(ID);
-					long expire = rs.getLong(EXPIRE);
-					int ifIndex = rs.getInt(IFINDEX);
-					int dstPort = rs.getInt(DSTPORT);
-					int srcPort = rs.getInt(SRCPORT);
-					int dstAddr = rs.getInt(DSTADDR);
-					int srcAddr = rs.getInt(SRCADDR);
-					rule = new AndroPiRule(id, appid, ifIndex, expire, srcPort, dstPort, srcAddr, dstAddr, -1, -1);
+					int appid = rs.getInt(COL_APPID);
+					int id = rs.getInt(COL_ID);
+					long expire = rs.getLong(COL_EXPIRE);
+					int ifIndex = rs.getInt(COL_IFINDEX);
+					int proto = rs.getInt(COL_PROTO);
+					int dstPort = rs.getInt(COL_DSTPORT);
+					int srcPort = rs.getInt(COL_SRCPORT);
+					int dstAddr = rs.getInt(COL_DSTADDR);
+					int srcAddr = rs.getInt(COL_SRCADDR);
+					rule = new AndroPiRule(id, Protocol.fromInt(proto), true, appid, ifIndex, expire, srcPort, dstPort, srcAddr, dstAddr, -1, -1);
 				}
 
 				list.add(rule);
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return list;
@@ -148,15 +155,14 @@ public class DatabaseManager {
 		List<AndroPiApp> list = new ArrayList<>();
 		try {
 			while(rs.next()){
-				int appId = rs.getInt(APPID);
-				int secret = rs.getInt(SECRET);
-				String name = rs.getString(APP_NAME);
-				long lastKeepAlive = rs.getInt(LASTKEEPALIVE);
+				int appId = rs.getInt(COL_APPID);
+				int secret = rs.getInt(COL_SECRET);
+				String name = rs.getString(COL_APP_NAME);
+				long lastKeepAlive = rs.getInt(COL_LASTKEEPALIVE);
 				AndroPiApp app = new AndroPiApp(appId, secret, name, lastKeepAlive);
 				list.add(app);
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return list;
@@ -182,20 +188,25 @@ public class DatabaseManager {
 	/*
 	 * Remove an App and all its rules from system and DB
 	 */
-	private void purgeApp(AndroPiApp app) {
-		List<AndroPiRule> rules = getRulesByApp(app.getAppId());
+	public boolean purgeApp(AndroPiApp app) {
+		 return purgeApp(app.getAppId());
+	}
+	
+	public boolean purgeApp(int appId) {
+		List<AndroPiRule> rules = getRulesByApp(appId);
 		for (AndroPiRule androPiRule : rules) {
 			rmRule(androPiRule);
 		}
-		
 		try {
 			Statement statement = dbConnection.createStatement();
-			statement.executeUpdate("DROP FROM "+TABLE_APPS +" WHERE "+ APPID + "==" + app.getAppId());
+			statement.executeUpdate("DELETE FROM "+TABLE_APPS +" WHERE "+ COL_APPID + "==" + appId);
 			statement.close();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			
 			e.printStackTrace();
+			return false;
 		}
+		return true;		
 	}
 	
 	/*
@@ -206,12 +217,12 @@ public class DatabaseManager {
 		List<AndroPiRule> rules=new ArrayList<>();
 		try {
 			statement = dbConnection.createStatement();
-			ResultSet rs = statement.executeQuery("SELECT * FROM "+TABLE_IN_RULES+ " WHERE "+APPID +" == " + appId);
+			ResultSet rs = statement.executeQuery("SELECT * FROM "+TABLE_IN_RULES+ " WHERE "+COL_APPID +" == " + appId);
 			rules.addAll(resultToRules(rs, true));
-			rs = statement.executeQuery("SELECT * FROM "+TABLE_OUT_RULES+ " WHERE "+APPID +" == " + appId);
+			rs = statement.executeQuery("SELECT * FROM "+TABLE_OUT_RULES+ " WHERE "+COL_APPID +" == " + appId);
 			rules.addAll(resultToRules(rs, false));
+			statement.close();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return rules;
@@ -225,18 +236,17 @@ public class DatabaseManager {
 		List<Integer> rules=new ArrayList<>();
 		try {
 			statement = dbConnection.createStatement();
-			ResultSet rs = statement.executeQuery("SELECT " + ID + " FROM " +TABLE_IN_RULES+ " WHERE "+APPID +" == " + appId);
+			ResultSet rs = statement.executeQuery("SELECT " + COL_ID + " FROM " +TABLE_IN_RULES+ " WHERE "+COL_APPID +" == " + appId);
 			while(rs.next()){
-				rules.add(rs.getInt(ID));
+				rules.add(rs.getInt(COL_ID));
 			}
-			rs = statement.executeQuery("SELECT * FROM "+TABLE_OUT_RULES+ " WHERE "+APPID +" == " + appId);
+			rs = statement.executeQuery("SELECT * FROM "+TABLE_OUT_RULES+ " WHERE "+COL_APPID +" == " + appId);
 			while(rs.next()){
-				rules.add(rs.getInt(ID));
+				rules.add(rs.getInt(COL_ID));
 			}
 			rs.close();
 			statement.close();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -250,8 +260,24 @@ public class DatabaseManager {
 	 *   Call addRuleToSystem
 	 *   Add rule to DB
 	 */
-	public void addRule(AndroPiRule rule){
-
+	public AndroPiRule addRule(AndroPiRule rule){
+		/*
+		 * A Nat rule
+		 */
+		if(rule.isIncomming()){
+			
+		}
+		/*
+		 * An outgoing rule
+		 */
+		else{
+			
+		}
+			
+		if(!addRuleToSystem(rule)){
+			rule = null;
+		}
+		return rule;
 	}
 
 	public boolean addRuleToSystem(AndroPiRule rule){
@@ -269,22 +295,44 @@ public class DatabaseManager {
 	 * Remove rule from system.	
 	 */
 	public void rmRule(AndroPiRule rule){
-		rmRuleFromSystem(rule);
 		rmRuleId(rule.getId());
 	}
 	
 	public void rmRuleId(int id){
+		rmRuleFromSystem(getRuleFromId(id));
 		try {
 			Statement statement = dbConnection.createStatement();
-			statement.executeUpdate("DROP FROM "+TABLE_IN_RULES +" WHERE "+ APPID + "==" + id);
-			statement.executeUpdate("DROP FROM "+TABLE_OUT_RULES +" WHERE "+ APPID + "==" + id);
+			statement.executeUpdate("DELETE FROM "+TABLE_IN_RULES +" WHERE "+ COL_ID + "==" + id);
+			statement.executeUpdate("DELETE FROM "+TABLE_OUT_RULES +" WHERE "+ COL_ID + "==" + id);
 			statement.close();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	
+	public AndroPiRule getRuleFromId(int id) {
+		try{
+			Statement st = dbConnection.createStatement();
+			ResultSet rs = st.executeQuery("SELECT * FROM " + TABLE_IN_RULES + " WHERE "+ COL_ID +"=="+id);
+			List<AndroPiRule> list = resultToRules(rs, true);
+			if(list == null){
+				rs = st.executeQuery("SELECT * FROM " + TABLE_IN_RULES + " WHERE "+ COL_ID +"=="+id);
+				list = resultToRules(rs, true);
+			}
+			
+			if(list == null){
+				return null;
+			}
+			else{
+				return list.get(0);
+			}
+		}
+		catch (SQLException e){
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	public boolean rmRuleFromSystem(AndroPiRule rule){
 		System.out.println("A rule has been removed:");
 		System.out.println("AppId:"+rule.getAppid());
@@ -292,18 +340,9 @@ public class DatabaseManager {
 		System.out.println("SrcAddr:"+rule.getSrcAddr());
 		System.out.println("DstPort:"+rule.getDstPort());
 		System.out.println("DstAddr:"+rule.getDstAddr());
-		rmRuleIdFromSystem(rule.getId());
 		return true;	
 	}
 	
-	
-	/*
-	 * Creates the command line from the entry in the database
-	 */
-	public boolean rmRuleIdFromSystem(int rule){
-		System.out.println("A rule has been removed:" + rule);
-		return true;	
-	}
 	
 	/*
 	 * Flushes all rules from db and system
@@ -312,11 +351,11 @@ public class DatabaseManager {
 		flushRulesFromSystem();
 		try {
 			Statement statement = dbConnection.createStatement();
-			statement.executeUpdate("DROP FROM"+TABLE_IN_RULES);
-			statement.executeUpdate("DROP FROM"+TABLE_OUT_RULES);
+			statement.executeUpdate("DELETE FROM "+TABLE_APPS);
+			statement.executeUpdate("DELETE FROM "+TABLE_IN_RULES);
+			statement.executeUpdate("DELETE FROM "+TABLE_OUT_RULES);
 			statement.close();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -334,15 +373,14 @@ public class DatabaseManager {
 		List<AndroPiRule> rules = new ArrayList<>();
 		try {
 			Statement statement = dbConnection.createStatement();
-			ResultSet rs = statement.executeQuery("SELECT * FROM "+TABLE_IN_RULES+ " WHERE "+EXPIRE +" < " + now);
+			ResultSet rs = statement.executeQuery("SELECT * FROM "+TABLE_IN_RULES+ " WHERE "+COL_EXPIRE +" < " + now);
 			List<AndroPiRule> inRules = resultToRules(rs, true);
-			rs = statement.executeQuery("SELECT * FROM "+TABLE_OUT_RULES+ " WHERE "+EXPIRE +" < " + now);
+			rs = statement.executeQuery("SELECT * FROM "+TABLE_OUT_RULES+ " WHERE "+COL_EXPIRE +" < " + now);
 			List<AndroPiRule> outRules = resultToRules(rs, false);
 			rules.addAll(inRules);
 			rules.addAll(outRules);
 			statement.close();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return rules;
@@ -369,7 +407,6 @@ public class DatabaseManager {
 			rs.close();
 			statement.close();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return rules;		
@@ -387,7 +424,6 @@ public class DatabaseManager {
 			rs.close();
 			statement.close();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return rules;		
@@ -405,7 +441,6 @@ public class DatabaseManager {
 			rs.close();
 			statement.close();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return apps;		
@@ -436,32 +471,31 @@ public class DatabaseManager {
 				statement.executeUpdate("DROP TABLE IF EXISTS "+TABLE_APPS);
 				statement.executeUpdate("DROP TABLE IF EXISTS "+TABLE_IN_RULES);
 				statement.executeUpdate("DROP TABLE IF EXISTS "+TABLE_OUT_RULES);
-				statement.executeUpdate("CREATE TABLE apps(" +
-						" "+ APPID + " integer PRIMARY KEY, " +
-						" "+ APP_NAME +" text," +
-						" " +SECRET+" integer,"+
-						" " + LASTKEEPALIVE +" datetime)");
-				statement.executeUpdate("CREATE TABLE inRules(" +
-						" " + APPID + "appid integer," +
-						" " + ID + "integer PRIMARY KEY,"+
-						" " + EXPIRE + " datetime," +
-						" " + IFINDEX + " integer," +
-						" " + DSTPORT + " integer," +
-						" " + SRCPORT + " integer," +
-						" " + SRCADDR + " integer," +
-						" " + DSTADDR + " integer," +
-						" " + DSTFWDPORT + " integer," +
-						" " + DSTFWDADDR + " integer" +
+				statement.executeUpdate("CREATE TABLE "+ TABLE_APPS +"(" +
+						" "+ COL_APP_NAME +" text," +
+						" " +COL_SECRET+" integer,"+
+						" " + COL_LASTKEEPALIVE +" datetime)");
+				statement.executeUpdate("CREATE TABLE " +TABLE_IN_RULES + "(" +
+						" " + COL_APPID + "appid integer," +
+						" " + COL_EXPIRE + " datetime," +
+						" " + COL_PROTO + "integer" +
+						" " + COL_IFINDEX + " integer," +
+						" " + COL_DSTPORT + " integer," +
+						" " + COL_SRCPORT + " integer," +
+						" " + COL_SRCADDR + " integer," +
+						" " + COL_DSTADDR + " integer," +
+						" " + COL_DSTFWDPORT + " integer," +
+						" " + COL_DSTFWDADDR + " integer" +
 						")");
-				statement.executeUpdate("CREATE TABLE outRules(" +
-						" " + APPID + "appid integer," +
-						" " + ID + "integer PRIMARY KEY,"+
-						" " + EXPIRE + " datetime," +
-						" " + IFINDEX + " integer," +
-						" " + DSTPORT + " integer," +
-						" " + SRCPORT + " integer," +
-						" " + SRCADDR + " integer," +
-						" " + DSTADDR + " integer" +
+				statement.executeUpdate("CREATE TABLE " + TABLE_OUT_RULES + "(" +
+						" " + COL_APPID + "appid integer," +
+						" " + COL_EXPIRE + " datetime," +
+						" " + COL_PROTO + "integer" +
+						" " + COL_IFINDEX + " integer," +
+						" " + COL_DSTPORT + " integer," +
+						" " + COL_SRCPORT + " integer," +
+						" " + COL_SRCADDR + " integer," +
+						" " + COL_DSTADDR + " integer" +
 						")");
 				statement.close();
 			}catch(SQLException e){
@@ -470,7 +504,6 @@ public class DatabaseManager {
 				System.exit(1);
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return false;
 		}
@@ -494,4 +527,76 @@ public class DatabaseManager {
 		rs.close();
 		return exists == 3;
 	}
+
+	public AndroPiAppInfo getAppInfo(int appId) {
+		AndroPiAppInfo info;
+		AndroPiApp app = getApp(appId);
+		if(app != null){
+			info = new AndroPiAppInfo(app.getAppId(), app.getName());
+		}
+		else{
+			info = null;
+		}
+		return info;
+	}
+
+	public AndroPiApp getApp(int appId) {
+		AndroPiApp app = null;
+		Statement st;
+		List<AndroPiApp> apps = null;
+		try {
+			st = dbConnection.createStatement();
+			ResultSet rs = st.executeQuery("SELECT * FROM "+ TABLE_APPS +" WHERE "+ COL_APPID + " == " + appId);
+			apps  = resultToApps(rs);
+			st.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		if(apps.size() == 1){
+			app = apps.get(0);
+		}
+		return app;
+	}
+
+	public void modifyApp(int appId, String name){
+		Statement st;
+		try {
+			st = dbConnection.createStatement();
+			st.executeUpdate("UPDATE "+ TABLE_APPS +" SET " + COL_APP_NAME + "=" + name + " WHERE " + COL_APPID + " == " + appId);
+			st.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/*
+	 * create a new app, return its id
+	 */
+	public int newApp(String name, int secret) {
+		Statement st;
+		int appId;
+		try{
+			st=dbConnection.createStatement();
+			String query = "INSERT INTO " + TABLE_APPS + " (" 
+					+ COL_APP_NAME +","
+					+ COL_SECRET+","
+					+ COL_LASTKEEPALIVE+ ")" 
+					+ " VALUES (\'"
+					+ name + "\',\'"
+					+ secret + "\', \'"
+					+ System.currentTimeMillis()+"\')";
+			st.executeUpdate(query);
+			ResultSet rs = st.executeQuery("SELECT " + COL_APPID + " FROM "+ TABLE_APPS + " WHERE " + COL_SECRET + " == \'" + secret + "\'");
+			appId = rs.getInt(COL_APPID);
+			st.close();
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			appId = -1;
+		}
+		return appId;
+	}
+
+
 }

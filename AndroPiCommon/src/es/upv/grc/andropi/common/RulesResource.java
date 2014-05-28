@@ -55,12 +55,5 @@ public interface RulesResource {
      * return rule ID
      */
     @Post
-    public AndroPiRule newInRule(int ifIndex, int srcPort, int dstPort, int srcAddr, int dstAddr, int dstFwdPort, int dstFwdAddr , int secret);
-    
-    /*
-     * Create a new rule associated to this app
-     * return rule ID
-     */
-    @Post
-    public AndroPiRule newOutRule(int ifIndex, int srcPort, int dstPort, int srcAddr, int dstAddr, int secret);
+    public AndroPiRule newRule(AndroPiRule rule);
 }
