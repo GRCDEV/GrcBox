@@ -9,7 +9,7 @@ public class InterfaceManager{
 
 	private static boolean isNetworkManagerWorking;
 
-	private static LinkedList<NetworkInterface> interfaces;
+	private static LinkedList<NetworkInterface> interfaces = null;
 
 	private static final String NetworkManagerRunning = "running";
 	
