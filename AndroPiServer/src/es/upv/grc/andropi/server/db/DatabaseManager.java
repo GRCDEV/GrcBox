@@ -206,7 +206,7 @@ public class DatabaseManager {
 	/*
 	 * Returns all the rules associated to an app
 	 */
-	private List<AndroPiRule> getRulesByApp(int appId) {
+	public List<AndroPiRule> getRulesByApp(int appId) {
 		Statement statement;
 		List<AndroPiRule> rules=new ArrayList<>();
 		try {
@@ -592,5 +592,27 @@ public class DatabaseManager {
 		return appId;
 	}
 
-
+	public AndroPiRule getRuleById(int ruleId) {
+		AndroPiRule rule = null;
+		Statement st;
+		List<AndroPiRule> rules = null;
+		try {
+			st = dbConnection.createStatement();
+			ResultSet rs = st.executeQuery("SELECT * FROM "+ TABLE_IN_RULES +" WHERE "+ COL_ID + " == " + ruleId);
+			rules  = resultToRules(rs, true);
+			
+			if(rules == null){
+				rs = st.executeQuery("SELECT * FROM "+ TABLE_OUT_RULES +" WHERE "+ COL_ID + " == " + ruleId);
+				rules  = resultToRules(rs, false);
+			}
+			st.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		if(rules.size() == 1){
+			rule = rules.get(0);
+		}
+		return rule;
+	}
 }

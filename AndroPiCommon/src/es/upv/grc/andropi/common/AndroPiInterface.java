@@ -22,11 +22,12 @@ public class AndroPiInterface {
 	private int mtu;
 	
 	byte[] ipAddress;
+	byte[] gatewayIp;
 	AddressesList addressesList;
 	private boolean isLoopback;
 	private boolean isUp;
 	private boolean isMulticast;
-	private boolean hasGateway;
+	private boolean hasInternet;
 	
 	
 	public AndroPiInterface(String name, int index, Type type, double cost,
@@ -125,10 +126,10 @@ public class AndroPiInterface {
 	}
 
 	public boolean isHasGateway() {
-		return hasGateway;
+		return hasInternet;
 	}
 
 	public void setHasGateway(boolean hasGateway) {
-		this.hasGateway = hasGateway;
+		this.hasInternet = hasGateway;
 	}
 }

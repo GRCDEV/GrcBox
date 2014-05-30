@@ -45,13 +45,7 @@ public interface RuleResource {
 	 */
     @Get
     public AndroPiRule retrieve();
-    
-    /*
-     * Modify rule
-     */
-    @Put
-    public boolean modify(AndroPiRule rule);
-    
+
     /*
      * Remove rule
      */
