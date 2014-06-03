@@ -5,16 +5,14 @@ public class AndroPiApp {
 	private int secret;
 	private String name;
 	private long lastKeepAlive;
-	
-	
+		
 	
 	public AndroPiApp() {
 	}
 	
-	public AndroPiApp(int appId, int secret, String name, long lastKeepAlive) {
+	public AndroPiApp(int appId, String name, long lastKeepAlive) {
 		super();
 		this.appId = appId;
-		this.secret = secret;
 		this.name = name;
 		this.lastKeepAlive = lastKeepAlive;
 	}

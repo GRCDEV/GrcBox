@@ -5,8 +5,6 @@ package es.upv.grc.andropi.server;
 
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.ServerResource;
-import org.restlet.security.MapVerifier;
-import org.restlet.security.Verifier;
 
 import es.upv.grc.andropi.common.AndroPiApp;
 import es.upv.grc.andropi.common.AndroPiAppInfo;
@@ -25,7 +23,7 @@ public class AppServerResource  extends ServerResource implements AppResource{
 	 */
 	@Override
 	public AndroPiAppInfo retrieve() {
-		AndroPiAppInfo info = AndroPiServerApplication.getRulesDB().getAppInfo(appId);
+		AndroPiAppInfo info = AndroPiServerApplication.getDb().getAppInfo(appId);
 		return info;
 	}
 
@@ -33,9 +31,8 @@ public class AppServerResource  extends ServerResource implements AppResource{
 	 * @see es.upv.grc.andropi.common.AppResource#modify(int, int, java.lang.String)
 	 */
 	@Override
-	public boolean modify(int appId, String name) {
-		AndroPiServerApplication.getRulesDB().modifyApp(appId, name);
-		return true;
+	public void keepAlive() {
+		AndroPiServerApplication.getDb().keepAliveApp(appId);
 	}
 
 	/* (non-Javadoc)
@@ -43,14 +40,14 @@ public class AppServerResource  extends ServerResource implements AppResource{
 	 */
 	@Override
 	public void rm() {
-		AndroPiServerApplication.getRulesDB().purgeApp(appId);
+		AndroPiServerApplication.getDb().rmApp(appId);
 		AndroPiServerApplication.getVerifier().getLocalSecrets().remove(appId);
 	}
 
 	@Override
 	protected void doInit() throws ResourceException {
 		appId = Integer.parseInt(getAttribute("appId"));
-		AndroPiApp app= AndroPiServerApplication.getRulesDB().getApp(appId);
+		AndroPiApp app= AndroPiServerApplication.getDb().getApp(appId);
 		if(app == null){
 			throw new ResourceException(404);
 		}

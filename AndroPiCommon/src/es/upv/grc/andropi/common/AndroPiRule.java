@@ -19,31 +19,31 @@ public class AndroPiRule {
 	Protocol proto;	//Protocol
 	private boolean incomming;
 	private int appid;	//AppId of the owner app
-	private int ifIndex; // Outgoing or incomming interface
+	private String ifName; // Outgoing or incomming interface
 	private long expireDate;
 	private int srcPort;
 	private int dstPort;
-	private int srcAddr;
-	private int dstAddr;
+	private byte[] srcAddr;
+	private byte[] dstAddr;
 	/*
 	 * Parameters needed for incomming rules
 	 */
 	private int dstFwdPort;
-	private int dstFwdAddr;
+	private byte[] dstFwdAddr;
 
 	/*
 	 * Common constructor used for incomming or outgoing flows.
 	 * If incomming is false dstFwdPort and dstFwdAddr must be -1 and will be ignored.
 	 */
 	public AndroPiRule(int id, Protocol proto, boolean incomming, int appid,
-			int ifIndex, long expireDate, int srcPort, int dstPort,
-			int srcAddr, int dstAddr, int dstFwdPort, int dstFwdAddr) {
+			String ifName, long expireDate, int srcPort, int dstPort,
+			byte[] srcAddr,byte[] dstAddr, int dstFwdPort, byte[] dstFwdAddr) {
 		super();
 		this.id = id;
 		this.proto = proto;
 		this.incomming = incomming;
 		this.appid = appid;
-		this.ifIndex = ifIndex;
+		this.ifName = ifName;
 		this.expireDate = expireDate;
 		this.srcPort = srcPort;
 		this.dstPort = dstPort;
@@ -65,12 +65,12 @@ public class AndroPiRule {
 		this.appid = appid;
 	}
 
-	public int getIfIndex() {
-		return ifIndex;
+	public String getIfName() {
+		return ifName;
 	}
 
-	public void setIfIndex(int ifIndex) {
-		this.ifIndex = ifIndex;
+	public void setIfName(String ifName) {
+		this.ifName = ifName;
 	}
 
 	public long getExpire() {
@@ -97,19 +97,19 @@ public class AndroPiRule {
 		this.dstPort = dstPort;
 	}
 
-	public int getSrcAddr() {
+	public byte[] getSrcAddr() {
 		return srcAddr;
 	}
 
-	public void setSrcAddr(int srcAddr) {
+	public void setSrcAddr(byte[] srcAddr) {
 		this.srcAddr = srcAddr;
 	}
 
-	public int getDstAddr() {
+	public byte[] getDstAddr() {
 		return dstAddr;
 	}
 
-	public void setDstAddr(int dstAddr) {
+	public void setDstAddr(byte[] dstAddr) {
 		this.dstAddr = dstAddr;
 	}
 
@@ -121,16 +121,20 @@ public class AndroPiRule {
 		this.dstFwdPort = dstFwdPort;
 	}
 
-	public int getDstFwdAddr() {
+	public byte[] getDstFwdAddr() {
 		return dstFwdAddr;
 	}
 
-	public void setDstFwdAddr(int dstFwdAddr) {
+	public void setDstFwdAddr(byte[] dstFwdAddr) {
 		this.dstFwdAddr = dstFwdAddr;
 	}
 
 	public int getId() {
 		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
 	}
 
 	public Protocol getProto() {

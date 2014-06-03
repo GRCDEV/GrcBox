@@ -35,8 +35,10 @@ package es.upv.grc.andropi.server;
 
 
 
+import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
 
 import org.restlet.resource.ServerResource;
@@ -73,7 +75,11 @@ public class RootServerResource extends ServerResource implements RootResource {
 			}
         }
         AndroPiRule flow = null;
-        flow = new AndroPiRule(12, Protocol.TCP, false, 10, 0, System.currentTimeMillis(), 22, 22, 11, 11, 11, 10);
+        try {
+			flow = new AndroPiRule(12, Protocol.TCP, false, 10, "wlan0", System.currentTimeMillis(), 22, 22, InetAddress.getByName("0.0.0.0").getAddress(), InetAddress.getByName("0.0.0.0").getAddress(), 11, InetAddress.getByName("0.0.0.0").getAddress());
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
         status.addFlow(flow);
         return status;
     }

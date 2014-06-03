@@ -33,6 +33,7 @@
 
 package es.upv.grc.andropi.client;
 
+import java.net.InetAddress;
 import java.util.List;
 
 import org.restlet.Client;
@@ -73,7 +74,7 @@ public class AndroPiClient {
     	parameters.add("truststoreType", "JKS");
     	clientResource.setNext(client);
         AppsResource appsResource = clientResource.getChild("/apps", AppsResource.class);
-        AppResource appResource;
+        AppResource appResource = null;
         AndroPiAppInfo myInfo;
         for(int i = 0; i < 10; i++){
         	try {
@@ -101,12 +102,13 @@ public class AndroPiClient {
 
         	System.out.println("I was registered with name "+myInfo.getName()+ " and Id "+ myInfo.getAppId());
         }
-
     	ChallengeResponse authentication = new ChallengeResponse(
     			ChallengeScheme.HTTP_BASIC, Integer.toString(myIdSecret.getAppId()), Integer.toString(myIdSecret.getSecret()).toCharArray());
     	clientResource.setChallengeResponse(authentication);
 
     	appResource = clientResource.getChild("/apps/"+myIdSecret.getAppId(), AppResource.class);
+        appResource.keepAlive();
+        
     	myInfo = appResource.retrieve();
         /*
          * Create a new resource for rules of this App 
@@ -123,7 +125,7 @@ public class AndroPiClient {
     	AndroPiRule rule = null;
     	for(int i = 0; i < 4; i++){
     		int port = 20+i;
-    		rule = new AndroPiRule(-1, AndroPiRule.Protocol.TCP, true, 12, 0, System.currentTimeMillis()+200, 1648, port, 11, 1, -1, -1);
+    		rule = new AndroPiRule(-1, AndroPiRule.Protocol.TCP, true, 12, "wlan0", System.currentTimeMillis()+200, 1648, port, InetAddress.getByName("0.0.0.0").getAddress(), InetAddress.getByName("0.0.0.0").getAddress(), 1, InetAddress.getByName("0.0.0.0").getAddress());
     		try{
     			/*
     			 * Create a new rule

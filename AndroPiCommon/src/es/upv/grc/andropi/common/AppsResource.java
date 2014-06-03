@@ -46,20 +46,26 @@ public interface AppsResource {
 	public class IdSecret{
 		int appId;
 		int secret;
+		long updatePeriod;
 		
 		public IdSecret(){
 			
 		}
 		
-		public IdSecret(int id, int secret2) {
+		public IdSecret(int id, int secret2, long updatePeriod) {
 			this.appId = id;
 			this.secret = secret2;
+			this.updatePeriod = updatePeriod;
 		}
 		public int getAppId() {
 			return appId;
 		}
 		public int getSecret() {
 			return secret;
+		}
+
+		public long getUpdatePeriod() {
+			return updatePeriod;
 		}
 	}
 	

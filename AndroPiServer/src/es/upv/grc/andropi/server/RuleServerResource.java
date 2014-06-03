@@ -8,7 +8,6 @@ import org.restlet.resource.ServerResource;
 
 import es.upv.grc.andropi.common.AndroPiRule;
 import es.upv.grc.andropi.common.RuleResource;
-import es.upv.grc.andropi.server.db.DatabaseManager;
 
 /**
  * @author sertinell
@@ -18,13 +17,13 @@ public class RuleServerResource extends ServerResource implements RuleResource {
 
 	private int appId;
 	private int ruleId;
-	private DatabaseManager db;
+	private RulesDB db;
 	/* (non-Javadoc)
 	 * @see es.upv.grc.andropi.common.RuleResource#retrieve()
 	 */
 	@Override
 	public AndroPiRule retrieve() {
-		AndroPiRule rule = db.getRuleById(ruleId);
+		AndroPiRule rule = db.getRule(appId, ruleId);
 		return rule;
 	}
 
@@ -33,15 +32,16 @@ public class RuleServerResource extends ServerResource implements RuleResource {
 	 */
 	@Override
 	public void remove() {
-		db.rmRuleId(ruleId);
+		db.rmRule(appId, ruleId);
 	}
 
 	@Override
 	protected void doInit() throws ResourceException {
 		appId = Integer.parseInt(getAttribute("appId"));
 		ruleId = Integer.parseInt(getAttribute("ruleId"));
-		db = AndroPiServerApplication.getRulesDB();
-		AndroPiRule rule = AndroPiServerApplication.getRulesDB().getRuleFromId(ruleId);
+		db = AndroPiServerApplication.getDb();
+		db.keepAliveApp(appId);
+		AndroPiRule rule = AndroPiServerApplication.getDb().getRule(appId, ruleId);
 		if(rule == null){
 			throw new ResourceException(404);
 		}

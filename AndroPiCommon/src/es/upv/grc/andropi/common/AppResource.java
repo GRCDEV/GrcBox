@@ -35,6 +35,7 @@ package es.upv.grc.andropi.common;
 
 import org.restlet.resource.Delete;
 import org.restlet.resource.Get;
+import org.restlet.resource.Post;
 import org.restlet.resource.Put;
 
 /**
@@ -49,11 +50,10 @@ public interface AppResource {
     public AndroPiAppInfo retrieve();
     
     /*
-     * Change name of the app in the database
-     * Return true if the app was modified
+     * Keep alive App
      */
-    @Put
-    public boolean modify(int appId, String name);
+    @Post
+    public void keepAlive();
     
     /*
      * Remove an APP and all its rules

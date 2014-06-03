@@ -36,6 +36,11 @@ package es.upv.grc.andropi.server;
 
 import java.io.File;
 import java.net.URL;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.restlet.Application;
 import org.restlet.Component;
@@ -58,7 +63,9 @@ import org.restlet.util.Series;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import es.upv.grc.andropi.server.db.DatabaseManager;
+import es.upv.grc.andropi.common.AndroPiApp;
+import es.upv.grc.andropi.common.AndroPiRule;
+
 
 /**
  * Routing to annotated server resources.
@@ -67,8 +74,35 @@ public class AndroPiServerApplication extends Application {
 
 	private static final String configFile = "/res/config.json";
 	static AndroPiConfig config;
-	static DatabaseManager rulesDB;
 	static MapVerifier verifier = new MapVerifier();
+	static RulesDB db;
+	
+	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+	
+	final static Runnable dbMonitor = new Runnable() {
+		@Override
+		public void run() {
+			long timeout = config.getDatabase().getUpdateTime();
+			long now = System.currentTimeMillis();
+			List<AndroPiApp> appList = db.getApps();
+			for (AndroPiApp androPiApp : appList) {
+				long diff = now - androPiApp.getLastKeepAlive();
+				if(diff > timeout ){
+					System.out.println(diff);
+					db.rmApp(androPiApp.getAppId());
+					AndroPiServerApplication.getVerifier().getLocalSecrets().remove(androPiApp.getAppId());
+				}
+				else{
+					List<AndroPiRule> rules = db.getRulesByApp(androPiApp.getAppId());
+					for (AndroPiRule rule : rules) {
+						if(rule.getExpire() < now){
+							db.rmRule(androPiApp.getAppId(), rule.getId());
+						}
+					}
+				}
+			}
+		}
+	};
 	
 	public AndroPiServerApplication(){
 		setName("RESTful Mail Server");
@@ -100,13 +134,8 @@ public class AndroPiServerApplication extends Application {
 		ObjectMapper mapper = new ObjectMapper();
 		config = mapper.readValue(file, AndroPiConfig.class);
 
-		//Connect to database and load previously stored rules
-		// load the sqlite-JDBC driver using the current class loader
-		Class.forName("org.sqlite.JDBC");
-
-		// create a database connection
-		rulesDB = new DatabaseManager(config.getDatabase().getUpdateTime());
-		rulesDB.PrepareDb(config.getDatabase().getPath(), config.getDatabase().isFlushAtStartup());
+		db = new RulesDB();
+		final ScheduledFuture<?> monitoHandle = scheduler.scheduleAtFixedRate(dbMonitor, config.getDatabase().getUpdateTime(), config.getDatabase().getUpdateTime(), TimeUnit.MILLISECONDS);
 		
 		Component androPiComponent = new Component();
 		Server server = androPiComponent.getServers().add(Protocol.HTTP, 8080);
@@ -181,10 +210,6 @@ public class AndroPiServerApplication extends Application {
         return authenticator;
     }
 
-	public static DatabaseManager getRulesDB() {
-		return rulesDB;
-	}
-
 	public static MapVerifier getVerifier() {
 		return verifier;
 	}
@@ -192,5 +217,10 @@ public class AndroPiServerApplication extends Application {
 
 	public static String getConfigfile() {
 		return configFile;
+	}
+
+
+	public static RulesDB getDb() {
+		return db;
 	}
 }
