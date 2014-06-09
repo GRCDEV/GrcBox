@@ -125,7 +125,8 @@ public class AndroPiClient {
     	AndroPiRule rule = null;
     	for(int i = 0; i < 4; i++){
     		int port = 20+i;
-    		rule = new AndroPiRule(-1, AndroPiRule.Protocol.TCP, true, 12, "wlan0", System.currentTimeMillis()+200, 1648, port, InetAddress.getByName("0.0.0.0").getAddress(), InetAddress.getByName("0.0.0.0").getAddress(), 1, InetAddress.getByName("0.0.0.0").getAddress());
+    		rule = new AndroPiRuleIn(-1, AndroPiRule.Protocol.TCP, 12, "wlan0", System.currentTimeMillis()+200, 1648, port, null, null, port, "192.168.5.147");
+    		
     		try{
     			/*
     			 * Create a new rule

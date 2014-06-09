@@ -3,7 +3,7 @@
 	<name>AndroPiServer</name>
 	<comment></comment>
 	<projects>
-		<project>Common</project>
+		<project>AndroPiCommon</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

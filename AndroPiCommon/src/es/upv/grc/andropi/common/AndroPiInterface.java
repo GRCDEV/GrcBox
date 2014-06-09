@@ -21,9 +21,8 @@ public class AndroPiInterface {
 	private int	index;
 	private int mtu;
 	
-	byte[] ipAddress;
-	byte[] gatewayIp;
-	AddressesList addressesList;
+	private String ipAddress;
+	private String gatewayIp;
 	private boolean isLoopback;
 	private boolean isUp;
 	private boolean isMulticast;
@@ -31,7 +30,7 @@ public class AndroPiInterface {
 	
 	
 	public AndroPiInterface(String name, int index, Type type, double cost,
-			int mtu, Enumeration<InetAddress> inetAddresses, boolean isLoopback, boolean isUp,
+			int mtu, String ipAddress, boolean isLoopback, boolean isUp,
 			boolean isMulticast, boolean hasGateway) {
 		super();
 		this.name = name;
@@ -42,16 +41,7 @@ public class AndroPiInterface {
 		this.isMulticast = isMulticast;
 		this.type = type;
 		this.cost = cost;
-		this.ipAddress = inetAddresses.nextElement().getAddress();
-		List<byte[]> addressesList = new ArrayList<>();
-		while(inetAddresses.hasMoreElements()){
-			addressesList.add(inetAddresses.nextElement().getAddress());
-		}
-		this.addressesList= new AddressesList(addressesList);
-	}
-	
-	public AndroPiInterface(NetworkInterface nIf, Type type) throws SocketException{
-		this(nIf.getName(), nIf.getIndex(), type, 0, nIf.getMTU(), nIf.getInetAddresses(), nIf.isLoopback(), nIf.isUp(), nIf.supportsMulticast(), true); 
+		this.ipAddress = ipAddress;
 	}
 	
 	public AndroPiInterface(){
@@ -90,20 +80,16 @@ public class AndroPiInterface {
 		this.mtu = mtu;
 	}
 	
-	public byte[] getIpAddress() {
+	public String getIpAddress() {
 		return ipAddress;
 	}
 
-	public void setIpAddress( byte[] ipAddress){
+	public void setIpAddress( String ipAddress){
 		this.ipAddress = ipAddress;
 	}
-	
-	public AddressesList getAdressesList() {
-		return addressesList;
-	}
 
-	public void setAdressesList(AddressesList adressesList) {
-		this.addressesList = adressesList;
+	public String getGatewayIp() {
+		return gatewayIp;
 	}
 
 	public boolean isLoopback() {
@@ -125,11 +111,11 @@ public class AndroPiInterface {
 		this.isMulticast = isMulticast;
 	}
 
-	public boolean isHasGateway() {
+	public boolean isHasInternet() {
 		return hasInternet;
 	}
 
-	public void setHasGateway(boolean hasGateway) {
-		this.hasInternet = hasGateway;
+	public void setHasinternet(boolean hasInternet) {
+		this.hasInternet = hasInternet;
 	}
 }

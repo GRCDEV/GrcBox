@@ -5,6 +5,8 @@ import java.util.*;
 import es.upv.grc.andropi.common.AndroPiApp;
 import es.upv.grc.andropi.common.AndroPiAppInfo;
 import es.upv.grc.andropi.common.AndroPiRule;
+import es.upv.grc.andropi.common.AndroPiRuleIn;
+import es.upv.grc.andropi.common.AndroPiRuleOut;
 
 public class RulesDB {
 	private static Integer _appId = 0;
@@ -110,22 +112,29 @@ public class RulesDB {
 		/*
 		 * TODO Dummy method
 		 */
-		System.out.println("A new rule has been added to System:"
-				+ "App Id:" + rule.getAppid()
-				+ "rule Id:" + rule.getId()
-				+ "Incomming:" + rule.isIncomming()
-				+ "SrcPort:" + rule.getSrcPort());
+		String ruleStr;
+		if(rule.isIncomming()){
+			ruleStr = new AndroPiRuleIn(rule).createIptablesRule();
+		}
+		else{
+			ruleStr = new AndroPiRuleOut(rule).createIptablesRule(5);
+		}
+		
+		System.out.println("A new rule is going to be excuted \n" + ruleStr);
 	}
 	
 	private void rmRuleFromSystem(AndroPiRule rule){
 		/*
 		 * TODO Dummy method
 		 */
-		System.out.println("A rule has been removed from System:"
-				+ "App Id:" + rule.getAppid()
-				+ "rule Id:" + rule.getId()
-				+ "Incomming:" + rule.isIncomming()
-				+ "SrcPort:" + rule.getSrcPort());
+		String ruleStr;
+		if(rule.isIncomming()){
+			ruleStr = new AndroPiRuleIn(rule).deleteIptablesRule();
+		}
+		else{
+			ruleStr = new AndroPiRuleOut(rule).deleteIptablesRule();
+		}
+		System.out.println("A rule has been removed from System:\n"+ ruleStr);
 	}
 
 	public AndroPiAppInfo getAppInfo(int appId) {

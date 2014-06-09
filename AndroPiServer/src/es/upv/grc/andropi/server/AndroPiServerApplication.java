@@ -35,7 +35,9 @@ package es.upv.grc.andropi.server;
 
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -64,6 +66,7 @@ import org.restlet.util.Series;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import es.upv.grc.andropi.common.AndroPiApp;
+import es.upv.grc.andropi.common.AndroPiInterface;
 import es.upv.grc.andropi.common.AndroPiRule;
 
 
@@ -74,6 +77,7 @@ public class AndroPiServerApplication extends Application {
 
 	private static final String configFile = "/res/config.json";
 	static AndroPiConfig config;
+	static LinkedList<AndroPiInterface> ifaces = new LinkedList<>();
 	static MapVerifier verifier = new MapVerifier();
 	static RulesDB db;
 	
@@ -135,7 +139,7 @@ public class AndroPiServerApplication extends Application {
 		config = mapper.readValue(file, AndroPiConfig.class);
 
 		db = new RulesDB();
-		final ScheduledFuture<?> monitoHandle = scheduler.scheduleAtFixedRate(dbMonitor, config.getDatabase().getUpdateTime(), config.getDatabase().getUpdateTime(), TimeUnit.MILLISECONDS);
+		final ScheduledFuture<?> monitorHandle = scheduler.scheduleAtFixedRate(dbMonitor, config.getDatabase().getUpdateTime(), config.getDatabase().getUpdateTime(), TimeUnit.MILLISECONDS);
 		
 		Component androPiComponent = new Component();
 		Server server = androPiComponent.getServers().add(Protocol.HTTP, 8080);
@@ -219,8 +223,36 @@ public class AndroPiServerApplication extends Application {
 		return configFile;
 	}
 
-
 	public static RulesDB getDb() {
 		return db;
+	}
+	
+	private void createIfaceTable(AndroPiInterface iface){
+		String iprule = "ip rule add fwmark " + iface.getIndex() + " table " + iface.getIndex();
+		try {
+			Runtime.getRuntime().exec(iprule);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private void updateDefaultRoute(AndroPiInterface iface){
+		
+		String delRoute = "ip route del table "+iface.getIndex() + " default ";
+		try {
+			Runtime.getRuntime().exec(delRoute);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		String iproute = "ip route add table "+ iface.getIndex() + "default dev " + iface.getName() + " via " + iface.getGatewayIp();
+		try {
+			Runtime.getRuntime().exec(iproute);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }

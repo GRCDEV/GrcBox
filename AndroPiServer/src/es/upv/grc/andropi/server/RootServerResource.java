@@ -54,32 +54,16 @@ import es.upv.grc.andropi.common.RootResource;
  * Mail server resource implementing the {@link MailResource} interface.
  */
 public class RootServerResource extends ServerResource implements RootResource {
-
+	/*
+	 * TODO
+	 * @see es.upv.grc.andropi.common.RootResource#getAndroPiStatus()
+	 */
 	@Override
     public AndroPiStatus getAndroPiStatus() {
     	AndroPiStatus status = new AndroPiStatus();
-        Enumeration<NetworkInterface> interfaces = null;
-		try {
-			interfaces = NetworkInterface.getNetworkInterfaces();
-		} catch (SocketException e) {
-			e.printStackTrace();
-		}
-        while(interfaces.hasMoreElements()){
-        	try {
-        		NetworkInterface iface = interfaces.nextElement();
-        		if(!iface.isLoopback()){
-        			status.addInterface(new AndroPiInterface(iface, Type.WIFISTA));
-        		}
-			} catch (SocketException e) {
-				e.printStackTrace();
-			}
-        }
+        status.addInterface(new AndroPiInterface("wlan1", 0, Type.WIFISTA, 15, 1500, "192.168.5.147", false, true, true, true));
         AndroPiRule flow = null;
-        try {
-			flow = new AndroPiRule(12, Protocol.TCP, false, 10, "wlan0", System.currentTimeMillis(), 22, 22, InetAddress.getByName("0.0.0.0").getAddress(), InetAddress.getByName("0.0.0.0").getAddress(), 11, InetAddress.getByName("0.0.0.0").getAddress());
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
+        flow = new AndroPiRule(12, Protocol.TCP, false, 10, "wlan0", System.currentTimeMillis(), 22, 22, "0.0.0.0", "0.0.0.0", 11, "0.0.0.0");
         status.addFlow(flow);
         return status;
     }
