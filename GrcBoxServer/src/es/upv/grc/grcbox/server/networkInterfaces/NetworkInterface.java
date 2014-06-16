@@ -1,11 +1,9 @@
-package es.upv.grc.grcbox.server.networkManager;
+package es.upv.grc.grcbox.server.networkInterfaces;
 
-import es.upv.grc.grcbox.server.networkManager.Enumerators.InterfaceState;
-import es.upv.grc.grcbox.server.networkManager.Enumerators.InterfaceType;
 
-/*
- * New class for managing networks interfaces
- */
+import es.upv.grc.grcbox.server.networkInterfaces.Enumerators.InterfaceState;
+import es.upv.grc.grcbox.server.networkInterfaces.Enumerators.InterfaceType;
+
 public class NetworkInterface {
 	
 	private String name;

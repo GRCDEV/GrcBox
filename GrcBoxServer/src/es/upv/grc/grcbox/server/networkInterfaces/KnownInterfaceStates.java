@@ -1,4 +1,4 @@
-package es.upv.grc.grcbox.server.networkManager;
+package es.upv.grc.grcbox.server.networkInterfaces;
 
 public class KnownInterfaceStates {
 	
