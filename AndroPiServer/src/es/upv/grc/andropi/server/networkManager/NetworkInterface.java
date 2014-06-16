@@ -3,6 +3,9 @@ package es.upv.grc.andropi.server.networkManager;
 import es.upv.grc.andropi.server.networkManager.Enumerators.InterfaceState;
 import es.upv.grc.andropi.server.networkManager.Enumerators.InterfaceType;
 
+/*
+ * New class for managing networks interfaces
+ */
 public class NetworkInterface {
 	
 	private String name;
