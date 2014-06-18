@@ -7,32 +7,16 @@ package es.upv.grc.grcbox.server.networkInterfaces;
  * @author (your name) 
  * @version (a version number or a date)
  */
-public class MainTester extends NetworkInterfaceManager
+public class MainTester
 {
-    private static NetworkInterfaceManager nim;
-    public void getUpdates(String interfaceNames[])
-    {
-        if(interfaceNames != null)
-        {
-            System.out.println("NEW UPDATE RECEIVED");
-            for(int i = 0; i < interfaceNames.length; i++)
-            {
-                System.out.println(interfaceNames[i] + nim.getType(interfaceNames[i])
-                                + nim.getState(interfaceNames[i]) + nim.getIpAddress(interfaceNames[i])
-                                + nim.getGatewayIp(interfaceNames[i]));
-            }
-            System.out.println();
-        }
-    }
-    
     public static void main(String args[]) throws InterruptedException
     {
-        nim = new MainTester();
-        nim.registerForUpdates(nim);
-        nim.start();
+        NetworkInterfaceManager nim = new NetworkInterfaceManager();
+        NMListener nml = new NMListener();
+        nml.start(nim);
         Thread.sleep(60000);
         nim.interrupt();
         System.out.println("End");
     }
-    
 }
+

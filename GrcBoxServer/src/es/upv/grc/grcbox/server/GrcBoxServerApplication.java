@@ -68,6 +68,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import es.upv.grc.grcbox.common.GrcBoxApp;
 import es.upv.grc.grcbox.common.GrcBoxInterface;
 import es.upv.grc.grcbox.common.GrcBoxRule;
+import es.upv.grc.grcbox.server.networkInterfaces.NetworkInterfaceManager;
 
 
 /**
@@ -76,10 +77,11 @@ import es.upv.grc.grcbox.common.GrcBoxRule;
 public class GrcBoxServerApplication extends Application {
 
 	private static final String configFile = "/res/config.json";
-	static GrcBoxConfig config;
-	static LinkedList<GrcBoxInterface> ifaces = new LinkedList<>();
-	static MapVerifier verifier = new MapVerifier();
-	static RulesDB db;
+	private static GrcBoxConfig config;
+	private static LinkedList<GrcBoxInterface> ifaces = new LinkedList<>();
+	private static MapVerifier verifier = new MapVerifier();
+	private static RulesDB db;
+	private static NetworkInterfaceManager nim = null;
 	
 	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	
@@ -140,6 +142,10 @@ public class GrcBoxServerApplication extends Application {
 
 		db = new RulesDB();
 		final ScheduledFuture<?> monitorHandle = scheduler.scheduleAtFixedRate(dbMonitor, config.getDatabase().getUpdateTime(), config.getDatabase().getUpdateTime(), TimeUnit.MILLISECONDS);
+		
+		nim = new NetworkInterfaceManager();
+		nim.registerForUpdates(new IfaceMonitor(nim));
+		
 		
 		Component androPiComponent = new Component();
 		Server server = androPiComponent.getServers().add(Protocol.HTTP, 8080);
@@ -231,25 +237,6 @@ public class GrcBoxServerApplication extends Application {
 		String iprule = "ip rule add fwmark " + iface.getIndex() + " table " + iface.getIndex();
 		try {
 			Runtime.getRuntime().exec(iprule);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	
-	private void updateDefaultRoute(GrcBoxInterface iface){
-		
-		String delRoute = "ip route del table "+iface.getIndex() + " default ";
-		try {
-			Runtime.getRuntime().exec(delRoute);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		String iproute = "ip route add table "+ iface.getIndex() + "default dev " + iface.getName() + " via " + iface.getGatewayIp();
-		try {
-			Runtime.getRuntime().exec(iproute);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
