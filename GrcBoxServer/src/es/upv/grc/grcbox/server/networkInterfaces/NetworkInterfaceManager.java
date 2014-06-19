@@ -13,7 +13,7 @@ import es.upv.grc.grcbox.server.networkInterfaces.NetworkManagerNotRunning;
  * Abstract class NetworkInterfaceManager - write a description of the class here
  * 
  * @author Subhadeep Patra
- * @version 0.0.5 using Threads
+ * @version 0.0.6 using Threads
  */
 
 
@@ -23,12 +23,13 @@ import es.upv.grc.grcbox.server.networkInterfaces.NetworkManagerNotRunning;
  */
 public class NetworkInterfaceManager extends Thread
 {
+    private static NetworkInterfaceManager manager = null;
 
-	private static boolean isNetworkManagerWorking = false;
+	private static boolean isNetworkManagerWorking;
 
-	private static LinkedList<NetworkInterface> interfaces = null;
+	private static LinkedList<NetworkInterface> interfaces;
 
-	private static LinkedList<NetworkManagerListener> registeredClasses = null;
+	private static LinkedList<NetworkManagerListener> registeredClasses;
 
 	private static final String NetworkManagerRunning = "running";
 
@@ -40,7 +41,23 @@ public class NetworkInterfaceManager extends Thread
 
 	private static final int UPDATE_INTERVAL = 10000;
 
-
+	private NetworkInterfaceManager()
+	{
+	    isNetworkManagerWorking = false;
+	    interfaces = null;
+	    registeredClasses = null;
+	}
+	
+	public static NetworkInterfaceManager getObject()
+	{
+	    if(manager == null || manager.getState() == Thread.State.TERMINATED)
+	    {
+	        manager = new NetworkInterfaceManager();
+	    }
+	    return manager;
+	}
+	
+	
 	/**
 	 * Method to restart the network manager of the system
 	 * 
