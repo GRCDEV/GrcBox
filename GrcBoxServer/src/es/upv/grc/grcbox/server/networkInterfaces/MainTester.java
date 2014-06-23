@@ -10,11 +10,27 @@ package es.upv.grc.grcbox.server.networkInterfaces;
 public class MainTester implements NetworkManagerListener
 {
     private static NetworkInterfaceManager manager;
-    public void getUpdates(String interfaceNames[])
+    
+    public void getUpdatedDevices(String interfaceNames[])
     {
         if(interfaceNames != null)
         {
-            System.out.println("NEW UPDATE RECEIVED");
+            System.out.println("NEW UPDATE RECEIVED: Device Updated");
+            for(int i = 0; i < interfaceNames.length; i++)
+            {
+                System.out.println(interfaceNames[i] + manager.getType(interfaceNames[i])
+                                + manager.getState(interfaceNames[i]) + manager.getIpAddress(interfaceNames[i])
+                                + manager.getGatewayIp(interfaceNames[i]));
+            }
+            System.out.println();
+        }
+    }
+    
+    public void getRemovedDevices(String interfaceNames[])
+    {
+        if(interfaceNames != null)
+        {
+            System.out.println("NEW UPDATE RECEIVED: Device REMOVED");
             for(int i = 0; i < interfaceNames.length; i++)
             {
                 System.out.println(interfaceNames[i] + manager.getType(interfaceNames[i])

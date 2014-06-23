@@ -25,11 +25,15 @@ public class NetworkInterfaceManager extends Thread
 {
     private static NetworkInterfaceManager manager = null;
 
-	private static boolean isNetworkManagerWorking;
+	private boolean isNetworkManagerWorking;
 
-	private static LinkedList<NetworkInterface> interfaces;
+	private LinkedList<NetworkInterface> interfaces;
 
-	private static LinkedList<NetworkManagerListener> registeredClasses;
+	private LinkedList<NetworkManagerListener> registeredClasses;
+	
+	private LinkedList<NetworkInterface> updatedInterfaces;
+	
+	private LinkedList<NetworkInterface> removedInterfaces;
 
 	private static final String NetworkManagerRunning = "running";
 
@@ -46,6 +50,8 @@ public class NetworkInterfaceManager extends Thread
 	    isNetworkManagerWorking = false;
 	    interfaces = null;
 	    registeredClasses = null;
+	    updatedInterfaces = null;
+	    removedInterfaces = null;
 	}
 	
 	public static NetworkInterfaceManager getObject()
@@ -200,41 +206,67 @@ public class NetworkInterfaceManager extends Thread
 		}
 		return list;
 	}
-
-
-	private boolean compareWithPreviousList(LinkedList<NetworkInterface> list)
+	
+	private LinkedList<NetworkInterface> deepCopy(LinkedList<NetworkInterface> list)
 	{
+	    LinkedList<NetworkInterface> temp = null;
+	    if(list != null)
+	    {
+	        temp = new LinkedList<NetworkInterface>();
+	        for(int i = 0; i < list.size(); i++)
+	        {
+	            NetworkInterface iface = new NetworkInterface();
+	            iface.setInterfaceName(list.get(i).getInterfaceName());
+	            iface.setInterfaceType(list.get(i).getInterfaceType());
+	            iface.setInterfaceState(list.get(i).getInterfaceState());
+	            iface.setIP4AddressAvailable(list.get(i).isIP4AddressAvailable());
+	            iface.setInterfaceIP4(list.get(i).getInterfaceIP4());
+	            iface.setGatewayIP4(list.get(i).getGatewayIP4());
+	            temp.add(iface);
+	        }
+	    }
+	    return temp;
+	}
+
+	private void checkInterfaceChanges(LinkedList<NetworkInterface> list)
+	{
+	    updatedInterfaces = new LinkedList<NetworkInterface>();
+	    removedInterfaces = new LinkedList<NetworkInterface>();
+	    LinkedList<NetworkInterface> temp = deepCopy(list);
 		if(interfaces == null && list != null)
 		{
-			return false;
+		    //the previous list did not have any devices so only updation possible.
+		    updatedInterfaces = list;
 		}
-		else if(interfaces.size() != list.size())
+		else if(interfaces != null && list == null)
 		{
-			return false;
+		    //all of the interfaces has been removed
+		    removedInterfaces = interfaces;
 		}
 		else
 		{
-			for(int i = 0; i < interfaces.size(); i++)
+		    //both the list of interfaces: previous and current has elements	
+		    for(int i = 0; i < interfaces.size(); i++)
 			{
 				String name = interfaces.get(i).getInterfaceName();
-				boolean found = false;
+				boolean deviceFound = false, deviceUpdated = false;
 				//now search for the same interface in the new list
 				for(int j = 0; j < list.size(); j++)
 				{
 					if(list.get(j).getInterfaceName().compareToIgnoreCase(name) == 0)
 					{
-						found = true;
+						deviceFound = true;
 						if(interfaces.get(i).getInterfaceType() != list.get(j).getInterfaceType())
 						{
-							return false;
+							deviceUpdated = true;
 						}
 						else if(interfaces.get(i).getInterfaceState() != list.get(j).getInterfaceState())
 						{
-							return false;
+							deviceUpdated = true;
 						}
 						else if(interfaces.get(i).isIP4AddressAvailable() != list.get(j).isIP4AddressAvailable())
 						{
-							return false;
+							deviceUpdated = true;
 						}
 						else
 						{
@@ -244,15 +276,15 @@ public class NetworkInterfaceManager extends Thread
 							}
 							else if(interfaces.get(i).getInterfaceIP4() == null && list.get(j).getInterfaceIP4() != null)
 							{
-								return false;
+								deviceUpdated = true;
 							}
 							else if(interfaces.get(i).getInterfaceIP4() != null && list.get(j).getInterfaceIP4() == null)
 							{
-								return false;
+								deviceUpdated = true;
 							}
 							else if(interfaces.get(i).getInterfaceIP4().compareToIgnoreCase(list.get(j).getInterfaceIP4()) != 0)
 							{
-								return false;
+								deviceUpdated = true;
 							}
 							else
 							{}
@@ -263,29 +295,42 @@ public class NetworkInterfaceManager extends Thread
 							}
 							else if(interfaces.get(i).getGatewayIP4() == null && list.get(j).getGatewayIP4() != null)
 							{
-								return false;
+								deviceUpdated = true;
 							}
 							else if(interfaces.get(i).getGatewayIP4() != null && list.get(j).getGatewayIP4() == null)
 							{
-								return false;
+								deviceUpdated = true;
 							}
 							else if(interfaces.get(i).getGatewayIP4().compareToIgnoreCase(list.get(j).getGatewayIP4()) != 0)
 							{
-								return false;
+								deviceUpdated = true;
 							}
 							else
 							{}
-						}                        
+						}
+						if(deviceUpdated)
+						{
+						    updatedInterfaces.add(list.get(j));
+						}
+						//removing is necessary as it will help in the end to detect devices that has been recently added
+						list.remove(j);						
 						break; //you dont want it to go on checking
 					}
 				}
-				if(!found)
+				if(!deviceFound)
 				{
-					return false;
+					removedInterfaces.add(interfaces.get(i));
 				}
 			}
-		}
-		return true;
+			if(list.size() > 0)
+			{
+			    for(int i = 0; i < list.size(); i++)
+			    {
+			        updatedInterfaces.add(list.get(i));
+			    }
+			}			
+		}	
+		interfaces = temp;
 	}
 
 	public String[] getListOfNetworkInterfaceNames() throws NetworkManagerNotRunning, UnableToRunShellCommand
@@ -390,28 +435,35 @@ public class NetworkInterfaceManager extends Thread
 			{
 				System.err.println("Class NetworkInterfaceManager: Error while accessing interface information!");
 			}
-			if(!compareWithPreviousList(list))
+			updatedInterfaces = removedInterfaces = null;
+			checkInterfaceChanges(list);			
+			if(updatedInterfaces != null || removedInterfaces != null)
 			{
 				//results of recent scan is different from the previous results
 				//save changes and notify registered classes
-				interfaces = list;
-				String updatedInterfaceNames[] = null;
-				/*
-				 * TODO Inform the listener only about changes, do not return the whole list of interfaces. 
-				 * Only the different ones.
-				 */
-				try{
-					updatedInterfaceNames = getListOfNetworkInterfaceNames();
-				}
-				catch(Exception e)
-				{
-					System.err.println("Class NetworkInterfaceManager: Error while parsing interface names.");
-				}
 				if(registeredClasses != null)
 				{
+				    String deviceNamesUpdated[] = null, deviceNamesRemoved[] = null;
+				    if(updatedInterfaces.size() > 0)
+				    {
+				        deviceNamesUpdated = new String[updatedInterfaces.size()];
+				        for(int i = 0; i < updatedInterfaces.size(); i++)
+				        {
+				            deviceNamesUpdated[i] = updatedInterfaces.get(i).getInterfaceName();
+				        }
+				    }
+				    if(removedInterfaces.size() > 0)
+				    {
+				        deviceNamesRemoved = new String[removedInterfaces.size()];				    
+				        for(int i = 0; i < removedInterfaces.size(); i++)
+				        {
+				            deviceNamesRemoved[i] = removedInterfaces.get(i).getInterfaceName();
+				        }
+				    }
 					for(int i = 0; i < registeredClasses.size(); i++)
 					{
-						registeredClasses.get(i).getUpdates(updatedInterfaceNames);
+						registeredClasses.get(i).getUpdatedDevices(deviceNamesUpdated);
+						registeredClasses.get(i).getRemovedDevices(deviceNamesRemoved);
 					}
 				}
 			}

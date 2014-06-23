@@ -15,5 +15,7 @@ public interface NetworkManagerListener
      * @param  y    a sample parameter for a method
      * @return        the result produced by sampleMethod 
      */
-    public abstract void getUpdates(String interfaceNames[]);
+    public abstract void getUpdatedDevices(String interfaceNames[]);
+    
+    public abstract void getRemovedDevices(String interfaceNames[]);
 }
