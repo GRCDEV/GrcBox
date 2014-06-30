@@ -101,13 +101,20 @@ public class GrcBoxInterface {
     {
         if(type.equalsIgnoreCase(KnownInterfaceTypes.wifi))
         {
-            //here we need to check what type of wifi connection it is
-            this.type = GrcBoxInterface.Type.WIFISTA;            
+            if(WifiModeEvaluator.isAdhoc(getName()))
+            {
+                this.type = GrcBoxInterface.Type.WIFIAH; 
+            }
+            else
+            {
+                this.type = GrcBoxInterface.Type.WIFISTA;            
+            }
         }
         else if(type.equalsIgnoreCase(KnownInterfaceTypes.ethernet))
         {
             this.type = GrcBoxInterface.Type.ETHERNET;
         }
+        //other types as future work
         else
         {
             this.type = GrcBoxInterface.Type.OTHERS;
