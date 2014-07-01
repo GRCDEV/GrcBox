@@ -16,12 +16,12 @@ public class GrcBoxRuleIn extends GrcBoxRule {
 	 */
 	public GrcBoxRuleIn(int id, Protocol proto, int appid,
 			String ifName, long expireDate, int srcPort, int dstPort,
-			String srcAddr,String dstAddr, int dstFwdPort, String dstFwdAddr) {
-		super(id, proto, true, appid, ifName, expireDate, srcPort, dstPort, srcAddr, dstAddr, dstFwdPort, dstFwdAddr);
+			String srcAddr,String dstAddr, int dstFwdPort) {
+		super(id, proto, true, appid, ifName, expireDate, srcPort, dstPort, srcAddr, dstAddr, dstFwdPort);
 	}
 	
 	public GrcBoxRuleIn(GrcBoxRule rule){
-		super(rule.id, rule.proto, true, rule.appid, rule.ifName, rule.expireDate, rule.srcPort, rule.dstPort, rule.srcAddr, rule.dstAddr, rule.dstFwdPort, rule.dstFwdAddr);
+		super(rule.id, rule.proto, true, rule.appid, rule.ifName, rule.expireDate, rule.srcPort, rule.dstPort, rule.srcAddr, rule.dstAddr, rule.dstFwdPort);
 	}
 	
 	/*

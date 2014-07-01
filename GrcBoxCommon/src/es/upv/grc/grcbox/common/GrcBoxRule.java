@@ -1,7 +1,5 @@
 package es.upv.grc.grcbox.common;
 
-import org.restlet.resource.ResourceException;
-
 public class GrcBoxRule {
 	public enum Protocol{
 		TCP, UDP;
@@ -39,7 +37,7 @@ public class GrcBoxRule {
 	 */
 	public GrcBoxRule(int id, Protocol proto, boolean incomming, int appid,
 			String ifName, long expireDate, int srcPort, int dstPort,
-			String srcAddr,String dstAddr, int dstFwdPort, String dstFwdAddr) {
+			String srcAddr,String dstAddr, int dstFwdPort) {
 		super();
 		this.id = id;
 		this.proto = proto;
@@ -52,7 +50,7 @@ public class GrcBoxRule {
 		this.srcAddr = srcAddr;
 		this.dstAddr = dstAddr;
 		this.dstFwdPort = dstFwdPort;
-		this.dstFwdAddr = dstFwdAddr;
+		this.dstFwdAddr = null;
 	}
 
 	public GrcBoxRule(){

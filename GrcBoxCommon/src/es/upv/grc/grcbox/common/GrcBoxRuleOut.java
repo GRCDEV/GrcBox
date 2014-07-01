@@ -17,11 +17,11 @@ public class GrcBoxRuleOut extends GrcBoxRule {
 	public GrcBoxRuleOut(int id, Protocol proto, int appid,
 			String ifName, long expireDate, int srcPort, int dstPort,
 			String srcAddr,String dstAddr) {
-		super(id, proto, false, appid, ifName, expireDate, srcPort, dstPort, srcAddr, dstAddr, -1, null);
+		super(id, proto, false, appid, ifName, expireDate, srcPort, dstPort, srcAddr, dstAddr, -1);
 	}
 	
 	public GrcBoxRuleOut(GrcBoxRule rule){
-		super(rule.id, rule.proto, false, rule.appid, rule.ifName, rule.expireDate, rule.srcPort, rule.dstPort, rule.srcAddr, rule.dstAddr, rule.dstFwdPort, rule.dstFwdAddr);
+		super(rule.id, rule.proto, false, rule.appid, rule.ifName, rule.expireDate, rule.srcPort, rule.dstPort, rule.srcAddr, rule.dstAddr, rule.dstFwdPort);
 	}
 	
 	/*
