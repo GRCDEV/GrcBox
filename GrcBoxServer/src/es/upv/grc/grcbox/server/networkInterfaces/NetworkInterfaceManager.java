@@ -5,7 +5,9 @@ import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
 
-import es.upv.grc.grcbox.server.networkInterfaces.Enumerators.*;
+import es.upv.grc.grcbox.common.GrcBoxInterface;
+import es.upv.grc.grcbox.common.KnownInterfaceTypes;
+import es.upv.grc.grcbox.common.KnownInterfaceStates;
 import es.upv.grc.grcbox.server.networkInterfaces.UnableToRunShellCommand;
 import es.upv.grc.grcbox.server.networkInterfaces.NetworkManagerNotRunning;
 
@@ -13,7 +15,7 @@ import es.upv.grc.grcbox.server.networkInterfaces.NetworkManagerNotRunning;
  * Abstract class NetworkInterfaceManager - write a description of the class here
  * 
  * @author Subhadeep Patra
- * @version 0.0.5 using Threads
+ * @version 0.0.6 using Threads
  */
 
 
@@ -23,12 +25,17 @@ import es.upv.grc.grcbox.server.networkInterfaces.NetworkManagerNotRunning;
  */
 public class NetworkInterfaceManager extends Thread
 {
+    private static NetworkInterfaceManager manager = null;
 
-	private static boolean isNetworkManagerWorking = false;
+	private boolean isNetworkManagerWorking;
 
-	private static LinkedList<NetworkInterface> interfaces = null;
+	private LinkedList<GrcBoxInterface> interfaces;
 
-	private static LinkedList<NetworkManagerListener> registeredClasses = null;
+	private LinkedList<NetworkManagerListener> registeredClasses;
+	
+	private LinkedList<GrcBoxInterface> updatedInterfaces;
+	
+	private LinkedList<GrcBoxInterface> removedInterfaces;
 
 	private static final String NetworkManagerRunning = "running";
 
@@ -40,7 +47,25 @@ public class NetworkInterfaceManager extends Thread
 
 	private static final int UPDATE_INTERVAL = 10000;
 
-
+	private NetworkInterfaceManager()
+	{
+	    isNetworkManagerWorking = false;
+	    interfaces = null;
+	    registeredClasses = null;
+	    updatedInterfaces = null;
+	    removedInterfaces = null;
+	}
+	
+	public static NetworkInterfaceManager getObject()
+	{
+	    if(manager == null || manager.getState() == Thread.State.TERMINATED)
+	    {
+	        manager = new NetworkInterfaceManager();
+	    }
+	    return manager;
+	}
+	
+	
 	/**
 	 * Method to restart the network manager of the system
 	 * 
@@ -104,20 +129,20 @@ public class NetworkInterfaceManager extends Thread
 	 * 
 	 */
 
-	private LinkedList<NetworkInterface> getBasicInfoOfInterfaces() throws UnableToRunShellCommand
+	private LinkedList<GrcBoxInterface> getBasicInfoOfInterfaces() throws UnableToRunShellCommand
 	{
-		LinkedList<NetworkInterface> list = new LinkedList<NetworkInterface>();
+		LinkedList<GrcBoxInterface> list = new LinkedList<GrcBoxInterface>();
 		String line = null;
 		try {
 			Process process = Runtime.getRuntime().exec(ShellCommands.ListInferfaces);
 			BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
 			br.readLine(); //the first line is the heading so discard it
 			while((line = br.readLine()) != null) {
-				NetworkInterface iface = new NetworkInterface();
+				GrcBoxInterface iface = new GrcBoxInterface();
 				StringTokenizer st = new StringTokenizer(line, space);
-				iface.setInterfaceName(st.nextToken());
-				iface.setInterfaceType(st.nextToken());
-				iface.setInterfaceState(st.nextToken());
+				iface.setName(st.nextToken());
+				iface.setType(st.nextToken());
+				iface.setState(st.nextToken());
 				list.add(iface);
 			}
 		}
@@ -138,7 +163,7 @@ public class NetworkInterfaceManager extends Thread
 	 * 
 	 */
 
-	private LinkedList<NetworkInterface> getIPInfoOfInterfaces(LinkedList<NetworkInterface> list) throws UnableToRunShellCommand
+	private LinkedList<GrcBoxInterface> getIPInfoOfInterfaces(LinkedList<GrcBoxInterface> list) throws UnableToRunShellCommand
 	{
 		String temp = null;
 		if(list == null)
@@ -149,11 +174,11 @@ public class NetworkInterfaceManager extends Thread
 			for(int i = 0; i < list.size(); i++)
 			{
 				boolean interfaceIPSaved = false;
-				Process process = Runtime.getRuntime().exec(ShellCommands.DetailedInterfaceInformation + list.get(i).getInterfaceName());
+				Process process = Runtime.getRuntime().exec(ShellCommands.DetailedInterfaceInformation + list.get(i).getName());
 				BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
 				while ((temp = br.readLine()) != null) {
 					if (temp.contains(theLineWithIP4)) {
-						list.get(i).setIP4AddressAvailable(true);
+						//list.get(i).setIP4AddressAvailable(true);
 						StringTokenizer st = new StringTokenizer(temp, spaceAndSlash);
 						while (st.hasMoreTokens()) {
 							String s = st.nextToken();
@@ -161,9 +186,9 @@ public class NetworkInterfaceManager extends Thread
 								if (!s.contains(colon)) {
 									// the first token of the string is discarded as it is "IP4.ADDRESS[1]:"
 									if (interfaceIPSaved) {
-										list.get(i).setGatewayIP4(s);
+										list.get(i).setGatewayIp(s);
 									} else {
-										list.get(i).setInterfaceIP4(s);
+										list.get(i).setIpAddress(s);
 										interfaceIPSaved = true;
 									}
 								}
@@ -183,92 +208,76 @@ public class NetworkInterfaceManager extends Thread
 		}
 		return list;
 	}
-
-
-	private boolean compareWithPreviousList(LinkedList<NetworkInterface> list)
+	
+	private LinkedList<GrcBoxInterface> deepCopy(LinkedList<GrcBoxInterface> list)
 	{
+	    LinkedList<GrcBoxInterface> temp = null;
+	    if(list != null)
+	    {
+	        temp = new LinkedList<GrcBoxInterface>();
+	        for(int i = 0; i < list.size(); i++)
+	        {
+	            temp.add(list.get(i).cloneInterface());
+	        }
+	    }
+	    return temp;
+	}
+
+	private void checkInterfaceChanges(LinkedList<GrcBoxInterface> list)
+	{
+	    if(interfaces == null && list == null)
+	    {
+	        return;
+	    }
+	    updatedInterfaces = new LinkedList<GrcBoxInterface>();
+	    removedInterfaces = new LinkedList<GrcBoxInterface>();
+	    LinkedList<GrcBoxInterface> temp = deepCopy(list);
 		if(interfaces == null && list != null)
 		{
-			return false;
+		    //the previous list did not have any devices so only updation possible.
+		    updatedInterfaces = list;
 		}
-		else if(interfaces.size() != list.size())
+		else if(interfaces != null && list == null)
 		{
-			return false;
+		    //all of the interfaces has been removed
+		    removedInterfaces = interfaces;
 		}
 		else
 		{
-			for(int i = 0; i < interfaces.size(); i++)
+		    //both the list of interfaces: previous and current has elements	
+		    for(int i = 0; i < interfaces.size(); i++)
 			{
-				String name = interfaces.get(i).getInterfaceName();
-				boolean found = false;
+				String name = interfaces.get(i).getName();
+				boolean deviceFound = false;
 				//now search for the same interface in the new list
 				for(int j = 0; j < list.size(); j++)
 				{
-					if(list.get(j).getInterfaceName().compareToIgnoreCase(name) == 0)
+					if(list.get(j).getName().compareTo(name) == 0)
 					{
-						found = true;
-						if(interfaces.get(i).getInterfaceType() != list.get(j).getInterfaceType())
+						deviceFound = true;						
+						if(!interfaces.get(i).isEqual(list.get(j)))
 						{
-							return false;
+						    updatedInterfaces.add(list.get(j));
 						}
-						else if(interfaces.get(i).getInterfaceState() != list.get(j).getInterfaceState())
-						{
-							return false;
-						}
-						else if(interfaces.get(i).isIP4AddressAvailable() != list.get(j).isIP4AddressAvailable())
-						{
-							return false;
-						}
-						else
-						{
-							if(interfaces.get(i).getInterfaceIP4() == null && list.get(j).getInterfaceIP4() == null)
-							{
-								//do nothing
-							}
-							else if(interfaces.get(i).getInterfaceIP4() == null && list.get(j).getInterfaceIP4() != null)
-							{
-								return false;
-							}
-							else if(interfaces.get(i).getInterfaceIP4() != null && list.get(j).getInterfaceIP4() == null)
-							{
-								return false;
-							}
-							else if(interfaces.get(i).getInterfaceIP4().compareToIgnoreCase(list.get(j).getInterfaceIP4()) != 0)
-							{
-								return false;
-							}
-							else
-							{}
-
-							if(interfaces.get(i).getGatewayIP4() == null && list.get(j).getGatewayIP4() == null)
-							{
-								//do nothing
-							}
-							else if(interfaces.get(i).getGatewayIP4() == null && list.get(j).getGatewayIP4() != null)
-							{
-								return false;
-							}
-							else if(interfaces.get(i).getGatewayIP4() != null && list.get(j).getGatewayIP4() == null)
-							{
-								return false;
-							}
-							else if(interfaces.get(i).getGatewayIP4().compareToIgnoreCase(list.get(j).getGatewayIP4()) != 0)
-							{
-								return false;
-							}
-							else
-							{}
-						}                        
+						//removing is necessary as it will help in the end to detect devices that has been recently added
+						list.remove(j);						
 						break; //you dont want it to go on checking
 					}
 				}
-				if(!found)
+				if(!deviceFound)
 				{
-					return false;
+					removedInterfaces.add(interfaces.get(i));
 				}
 			}
-		}
-		return true;
+			if(list.size() > 0)
+			{
+			    for(int i = 0; i < list.size(); i++)
+			    {
+			        updatedInterfaces.add(list.get(i));
+			    }
+			}			
+		}	
+		interfaces = temp;
 	}
 
 	public String[] getListOfNetworkInterfaceNames() throws NetworkManagerNotRunning, UnableToRunShellCommand
@@ -278,7 +287,7 @@ public class NetworkInterfaceManager extends Thread
 			String temp[] = new String[interfaces.size()];
 			for(int i = 0; i < temp.length; i++)
 			{
-				temp[i] = interfaces.get(i).getInterfaceName();
+				temp[i] = interfaces.get(i).getName();
 			}
 			return temp;
 		}        
@@ -292,34 +301,34 @@ public class NetworkInterfaceManager extends Thread
 	 * At the third column, it says "Ifrastructure" or "Ad-Hoc"
 	 * The eighth column indicates if the connection is active
 	 */
-	public InterfaceType getType(String interfaceName)
+	public GrcBoxInterface.Type getType(String interfaceName)
 	{
 		if(interfaces != null)
 		{
 			for(int i = 0; i < interfaces.size(); i++)
 			{
-				if(interfaceName.compareToIgnoreCase(interfaces.get(i).getInterfaceName()) == 0)
+				if(interfaceName.compareTo(interfaces.get(i).getName()) == 0)
 				{
-					return interfaces.get(i).getInterfaceType();
+					return interfaces.get(i).getType();
 				}
 			}
 		}        
-		return InterfaceType.UNKNOWN;
+		return GrcBoxInterface.Type.UNKNOWN;
 	}
 
-	public InterfaceState getState(String interfaceName)
+	public GrcBoxInterface.State getState(String interfaceName)
 	{
 		if(interfaces != null)
 		{
 			for(int i = 0; i < interfaces.size(); i++)
 			{
-				if(interfaceName.compareToIgnoreCase(interfaces.get(i).getInterfaceName()) == 0)
+				if(interfaceName.compareTo(interfaces.get(i).getName()) == 0)
 				{
-					return interfaces.get(i).getInterfaceState();
+					return interfaces.get(i).getState();
 				}
 			}
 		}        
-		return InterfaceState.OTHERS;
+		return GrcBoxInterface.State.OTHERS;
 	}
 
 	public String getIpAddress(String interfaceName)
@@ -328,9 +337,9 @@ public class NetworkInterfaceManager extends Thread
 		{
 			for(int i = 0; i < interfaces.size(); i++)
 			{
-				if(interfaceName.compareToIgnoreCase(interfaces.get(i).getInterfaceName()) == 0)
+				if(interfaceName.compareTo(interfaces.get(i).getName()) == 0)
 				{
-					return interfaces.get(i).getInterfaceIP4();
+					return interfaces.get(i).getIpAddress();
 				}
 			}
 		}        
@@ -343,9 +352,9 @@ public class NetworkInterfaceManager extends Thread
 		{
 			for(int i = 0; i < interfaces.size(); i++)
 			{
-				if(interfaceName.compareToIgnoreCase(interfaces.get(i).getInterfaceName()) == 0)
+				if(interfaceName.compareTo(interfaces.get(i).getName()) == 0)
 				{
-					return interfaces.get(i).getGatewayIP4();
+					return interfaces.get(i).getGatewayIp();
 				}
 			}
 		}        
@@ -364,7 +373,7 @@ public class NetworkInterfaceManager extends Thread
 		}
 		while(isNetworkManagerWorking) 
 		{
-			LinkedList<NetworkInterface> list = null;
+			LinkedList<GrcBoxInterface> list = null;
 			try{
 				list =  getBasicInfoOfInterfaces();
 				list =  getIPInfoOfInterfaces(list);
@@ -373,28 +382,35 @@ public class NetworkInterfaceManager extends Thread
 			{
 				System.err.println("Class NetworkInterfaceManager: Error while accessing interface information!");
 			}
-			if(!compareWithPreviousList(list))
+			updatedInterfaces = removedInterfaces = null;
+			checkInterfaceChanges(list);			
+			if(updatedInterfaces != null || removedInterfaces != null)
 			{
 				//results of recent scan is different from the previous results
 				//save changes and notify registered classes
-				interfaces = list;
-				String updatedInterfaceNames[] = null;
-				/*
-				 * TODO Inform the listener only about changes, do not return the whole list of interfaces. 
-				 * Only the different ones.
-				 */
-				try{
-					updatedInterfaceNames = getListOfNetworkInterfaceNames();
-				}
-				catch(Exception e)
-				{
-					System.err.println("Class NetworkInterfaceManager: Error while parsing interface names.");
-				}
 				if(registeredClasses != null)
 				{
+				    String deviceNamesUpdated[] = null, deviceNamesRemoved[] = null;
+				    if(updatedInterfaces.size() > 0)
+				    {
+				        deviceNamesUpdated = new String[updatedInterfaces.size()];
+				        for(int i = 0; i < updatedInterfaces.size(); i++)
+				        {
+				            deviceNamesUpdated[i] = updatedInterfaces.get(i).getName();
+				        }
+				    }
+				    if(removedInterfaces.size() > 0)
+				    {
+				        deviceNamesRemoved = new String[removedInterfaces.size()];				    
+				        for(int i = 0; i < removedInterfaces.size(); i++)
+				        {
+				            deviceNamesRemoved[i] = removedInterfaces.get(i).getName();
+				        }
+				    }
 					for(int i = 0; i < registeredClasses.size(); i++)
 					{
-						registeredClasses.get(i).getUpdates(updatedInterfaceNames);
+						registeredClasses.get(i).getUpdatedDevices(deviceNamesUpdated);
+						registeredClasses.get(i).getRemovedDevices(deviceNamesRemoved);
 					}
 				}
 			}
