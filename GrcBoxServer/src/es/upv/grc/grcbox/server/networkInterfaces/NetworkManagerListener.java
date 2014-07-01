@@ -1,6 +1,7 @@
 package es.upv.grc.grcbox.server.networkInterfaces;
 
-
+import java.util.LinkedList;
+import es.upv.grc.grcbox.common.GrcBoxInterface;
 /**
  * Write a description of interface NetworkManagerListener here.
  * 
@@ -15,7 +16,7 @@ public interface NetworkManagerListener
      * @param  y    a sample parameter for a method
      * @return        the result produced by sampleMethod 
      */
-    public abstract void getUpdatedDevices(String interfaceNames[]);
+    public abstract void getUpdatedDevices(LinkedList<GrcBoxInterface> interfaces);
     
     public abstract void getRemovedDevices(String interfaceNames[]);
 }
