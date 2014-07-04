@@ -15,18 +15,18 @@ public class GrcBoxRuleOut extends GrcBoxRule {
 	 * If incomming is false dstFwdPort and dstFwdAddr must be -1 and will be ignored.
 	 */
 	public GrcBoxRuleOut(int id, Protocol proto, int appid,
-			String ifName, long expireDate, int srcPort, int dstPort,
-			String srcAddr,String dstAddr) {
-		super(id, proto, false, appid, ifName, expireDate, srcPort, dstPort, srcAddr, dstAddr, -1);
+			String ifName, long expireDate, int srcPort, int dstPort,String dstAddr) {
+		super(id, proto, false, appid, ifName, expireDate, srcPort, dstPort, null, dstAddr, -1, null);
 	}
 	
 	public GrcBoxRuleOut(GrcBoxRule rule){
-		super(rule.id, rule.proto, false, rule.appid, rule.ifName, rule.expireDate, rule.srcPort, rule.dstPort, rule.srcAddr, rule.dstAddr, rule.dstFwdPort);
+		super(rule.id, rule.proto, false, rule.appid, rule.ifName, rule.expireDate, rule.srcPort, rule.dstPort, rule.srcAddr, rule.dstAddr, rule.dstFwdPort, rule.dstFwdAddr);
 	}
 	
 	/*
 	 * Return an iptables rule to mark packets matching this rule with mark
 	 */
+	@Override
 	public String createIptablesRule(int mark){
 		String ruleStr = "";
 		ruleStr += "iptables -t mangle -A PREROUTING -i " + ifName + " -p " + proto.toString().toLowerCase();

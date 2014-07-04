@@ -109,7 +109,6 @@ public class GrcBoxClient {
     	appResource = clientResource.getChild("/apps/"+myIdSecret.getAppId(), AppResource.class);
         appResource.keepAlive();
         
-    	myInfo = appResource.retrieve();
         /*
          * Create a new resource for rules of this App 
          */
@@ -123,9 +122,10 @@ public class GrcBoxClient {
         List<GrcBoxRule> myRules;
     	myRules = rulesResource.getList();
     	GrcBoxRule rule = null;
+        appResource.keepAlive();
     	for(int i = 0; i < 4; i++){
     		int port = 20+i;
-    		rule = new GrcBoxRuleIn(-1, GrcBoxRule.Protocol.TCP, 12, "wlan0", System.currentTimeMillis()+200, 1648, port, null, null, port, "192.168.5.147");
+    		rule = new GrcBoxRuleIn(-1, GrcBoxRule.Protocol.TCP, 12, "wlan1", System.currentTimeMillis()+200, 1648, port, null, null, port);
     		
     		try{
     			/*

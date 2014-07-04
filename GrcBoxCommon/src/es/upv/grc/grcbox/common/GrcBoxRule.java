@@ -37,7 +37,7 @@ public class GrcBoxRule {
 	 */
 	public GrcBoxRule(int id, Protocol proto, boolean incomming, int appid,
 			String ifName, long expireDate, int srcPort, int dstPort,
-			String srcAddr,String dstAddr, int dstFwdPort) {
+			String srcAddr,String dstAddr, int dstFwdPort, String dstFwdAddr) {
 		super();
 		this.id = id;
 		this.proto = proto;
@@ -50,7 +50,7 @@ public class GrcBoxRule {
 		this.srcAddr = srcAddr;
 		this.dstAddr = dstAddr;
 		this.dstFwdPort = dstFwdPort;
-		this.dstFwdAddr = null;
+		this.dstFwdAddr = dstFwdAddr;
 	}
 
 	public GrcBoxRule(){
@@ -152,4 +152,8 @@ public class GrcBoxRule {
 	public void setIncomming(boolean incomming) {
 		this.incomming = incomming;
 	}
+	
+	public String createIptablesRule(int mark){
+		return "Dummy method";
+	};
 }
