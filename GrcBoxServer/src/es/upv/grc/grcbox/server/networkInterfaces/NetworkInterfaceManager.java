@@ -92,7 +92,9 @@ public class NetworkInterfaceManager extends Thread
      */
 
     private void checkNetworkManager() throws NetworkManagerNotRunning, UnableToRunShellCommand{
-        isNetworkManagerWorking = false;
+        synchronized(this) {
+            isNetworkManagerWorking = false;
+        }
         try {
             Process process = Runtime.getRuntime().exec(ShellCommands.VerifyNetworkManager);
             BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -108,7 +110,9 @@ public class NetworkInterfaceManager extends Thread
             {
                 process = null;
                 br = null;
-                isNetworkManagerWorking = true;
+                synchronized(this) {
+                    isNetworkManagerWorking = true;
+                }
             }
         }catch(Exception e) {
             throw new UnableToRunShellCommand("Exception: Unable to run the shell command to verify if Network Manager is running!");
@@ -223,156 +227,172 @@ public class NetworkInterfaceManager extends Thread
         return temp;
     }
     
-	public LinkedList<GrcBoxInterface> getListOfAllInterfaces() throws NetworkInterfaceManagerThreadNotRunning
-	{
-	    if(manager == null || manager.getState() == Thread.State.NEW || manager.getState() == Thread.State.TERMINATED)
-	    {
-	        throw new NetworkInterfaceManagerThreadNotRunning();
-	    }
-	    return deepCopy(interfaces);      
-	}
-	
+    public LinkedList<GrcBoxInterface> getListOfAllInterfaces() throws NetworkInterfaceManagerThreadNotRunning
+    {
+        if(manager == null || manager.getState() == Thread.State.NEW || manager.getState() == Thread.State.TERMINATED)
+        {
+            throw new NetworkInterfaceManagerThreadNotRunning();
+        }
+        synchronized(this) {
+            return deepCopy(interfaces);
+        }
+    }
+    
     private void checkInterfaceChanges(LinkedList<GrcBoxInterface> list)
     {
         if(interfaces == null && list == null)
         {
             return;
         }
-        updatedInterfaces = null;
-        removedInterfaces = null;
+        synchronized(this) {
+            updatedInterfaces = null;
+            removedInterfaces = null;
+        }
         LinkedList<GrcBoxInterface> temp = deepCopy(list);
-        if(interfaces == null && list != null)
-        {
-            //the previous list did not have any devices so only updation possible.
-            updatedInterfaces = list;
-        }
-        else if(interfaces != null && list == null)
-        {
-            //all of the interfaces has been removed
-            removedInterfaces = interfaces;
-        }
-        else
-        {
-            //both the list of interfaces: previous and current has elements    
-            for(int i = 0; i < interfaces.size(); i++)
+        synchronized(this) {
+            if(interfaces == null && list != null)
             {
-                String name = interfaces.get(i).getName();
-                boolean deviceFound = false;
-                //now search for the same interface in the new list
-                for(int j = 0; j < list.size(); j++)
-                {
-                    if(list.get(j).getName().compareTo(name) == 0)
-                    {
-                        deviceFound = true;                     
-                        if(!interfaces.get(i).isEqual(list.get(j)))
-                        {
-                            if(updatedInterfaces == null)
-                            {
-                                updatedInterfaces = new LinkedList<GrcBoxInterface>();
-                            }
-                            updatedInterfaces.add(list.get(j));
-                        }
-                        //removing is necessary as it will help in the end to detect devices that has been recently added
-                        list.remove(j);                     
-                        break; //you dont want it to go on checking
-                    }
-                }
-                if(!deviceFound)
-                {
-                    if(removedInterfaces == null)
-                    {
-                        removedInterfaces = new LinkedList<GrcBoxInterface>();
-                    }
-                    removedInterfaces.add(interfaces.get(i));
-                }
+                //the previous list did not have any devices so only updation possible.
+                updatedInterfaces = list;
             }
-            if(list.size() > 0)
+            else if(interfaces != null && list == null)
             {
-                for(int i = 0; i < list.size(); i++)
+                //all of the interfaces has been removed
+                removedInterfaces = interfaces;
+            }
+            else
+            {
+                //both the list of interfaces: previous and current has elements    
+                for(int i = 0; i < interfaces.size(); i++)
                 {
-                    if(updatedInterfaces == null)
+                    String name = interfaces.get(i).getName();
+                    boolean deviceFound = false;
+                    //now search for the same interface in the new list
+                    for(int j = 0; j < list.size(); j++)
                     {
-                        updatedInterfaces = new LinkedList<GrcBoxInterface>();
+                        if(list.get(j).getName().compareTo(name) == 0)
+                        {
+                            deviceFound = true;                     
+                            if(!interfaces.get(i).isEqual(list.get(j)))
+                            {
+                                if(updatedInterfaces == null)
+                                {
+                                    updatedInterfaces = new LinkedList<GrcBoxInterface>();
+                                }
+                                updatedInterfaces.add(list.get(j));
+                            }
+                            //removing is necessary as it will help in the end to detect devices that has been recently added
+                            list.remove(j);                     
+                            break; //you dont want it to go on checking
+                        }
                     }
-                    updatedInterfaces.add(list.get(i));
+                    if(!deviceFound)
+                    {
+                        if(removedInterfaces == null)
+                        {
+                            removedInterfaces = new LinkedList<GrcBoxInterface>();
+                        }
+                        removedInterfaces.add(interfaces.get(i));
+                    }
                 }
-            }           
-        }   
-        interfaces = temp;
+                if(list.size() > 0)
+                {
+                    for(int i = 0; i < list.size(); i++)
+                    {
+                        if(updatedInterfaces == null)
+                        {
+                            updatedInterfaces = new LinkedList<GrcBoxInterface>();
+                        }
+                        updatedInterfaces.add(list.get(i));
+                    }
+                }           
+            }   
+            interfaces = temp;
+        }
     }
 
     public String[] getListOfNetworkInterfaceNames() throws NetworkManagerNotRunning, UnableToRunShellCommand
-    {        
-        if(interfaces != null && interfaces.size() > 0)
-        {
-            String temp[] = new String[interfaces.size()];
-            for(int i = 0; i < temp.length; i++)
+    {
+        synchronized(this) {
+            if(interfaces != null && interfaces.size() > 0)
             {
-                temp[i] = interfaces.get(i).getName();
+                String temp[] = new String[interfaces.size()];
+                for(int i = 0; i < temp.length; i++)
+                {
+                    temp[i] = interfaces.get(i).getName();
+                }
+                return temp;
             }
-            return temp;
-        }        
+        }
         return null;
     }
 
     public GrcBoxInterface.Type getType(String interfaceName)
     {
-        if(interfaces != null)
-        {
-            for(int i = 0; i < interfaces.size(); i++)
+        synchronized(this) {
+            if(interfaces != null)
             {
-                if(interfaceName.compareTo(interfaces.get(i).getName()) == 0)
+                for(int i = 0; i < interfaces.size(); i++)
                 {
-                    return interfaces.get(i).getType();
+                    if(interfaceName.compareTo(interfaces.get(i).getName()) == 0)
+                    {
+                        return interfaces.get(i).getType();
+                    }
                 }
             }
-        }        
+        }
         return GrcBoxInterface.Type.UNKNOWN;
     }
 
     public GrcBoxInterface.State getState(String interfaceName)
     {
-        if(interfaces != null)
-        {
-            for(int i = 0; i < interfaces.size(); i++)
+        synchronized(this) {
+            if(interfaces != null)
             {
-                if(interfaceName.compareTo(interfaces.get(i).getName()) == 0)
+                for(int i = 0; i < interfaces.size(); i++)
                 {
-                    return interfaces.get(i).getState();
+                    if(interfaceName.compareTo(interfaces.get(i).getName()) == 0)
+                    {
+                        return interfaces.get(i).getState();
+                    }
                 }
             }
-        }        
+        }
         return GrcBoxInterface.State.OTHERS;
     }
 
     public String getIpAddress(String interfaceName)
     {
-        if(interfaces != null)
-        {
-            for(int i = 0; i < interfaces.size(); i++)
+        synchronized(this) {
+            if(interfaces != null)
             {
-                if(interfaceName.compareTo(interfaces.get(i).getName()) == 0)
+                for(int i = 0; i < interfaces.size(); i++)
                 {
-                    return interfaces.get(i).getIpAddress();
+                    if(interfaceName.compareTo(interfaces.get(i).getName()) == 0)
+                    {
+                        return interfaces.get(i).getIpAddress();
+                    }
                 }
             }
-        }        
+        }
         return null;
     }
 
     public String getGatewayIp(String interfaceName)
     {
-        if(interfaces != null)
-        {
-            for(int i = 0; i < interfaces.size(); i++)
+        synchronized(this) {
+            if(interfaces != null)
             {
-                if(interfaceName.compareTo(interfaces.get(i).getName()) == 0)
+                for(int i = 0; i < interfaces.size(); i++)
                 {
-                    return interfaces.get(i).getGatewayIp();
+                    if(interfaceName.compareTo(interfaces.get(i).getName()) == 0)
+                    {
+                        return interfaces.get(i).getGatewayIp();
+                    }
                 }
-            }
-        }        
-        return null;
+            }   
+        }
+        return null;            
     }
 
     public void run()
@@ -395,27 +415,31 @@ public class NetworkInterfaceManager extends Thread
             {
                 System.err.println("Class NetworkInterfaceManager: Error while accessing interface information!");
             }
-            updatedInterfaces = removedInterfaces = null;
-            checkInterfaceChanges(list);            
-            if(updatedInterfaces != null || removedInterfaces != null)
-            {
-                //results of recent scan is different from the previous results
-                //save changes and notify registered classes
-                if(registeredClasses != null)
+            synchronized(this) {
+                updatedInterfaces = removedInterfaces = null;
+            }
+            checkInterfaceChanges(list);
+            synchronized(this) {
+                if(updatedInterfaces != null || removedInterfaces != null)
                 {
-                    String deviceNamesRemoved[] = null;                    
-                    if(removedInterfaces != null && removedInterfaces.size() > 0)
+                    //results of recent scan is different from the previous results
+                    //save changes and notify registered classes
+                    if(registeredClasses != null)
                     {
-                        deviceNamesRemoved = new String[removedInterfaces.size()];                  
-                        for(int i = 0; i < removedInterfaces.size(); i++)
+                        String deviceNamesRemoved[] = null;                    
+                        if(removedInterfaces != null && removedInterfaces.size() > 0)
                         {
-                            deviceNamesRemoved[i] = removedInterfaces.get(i).getName();
+                            deviceNamesRemoved = new String[removedInterfaces.size()];                  
+                            for(int i = 0; i < removedInterfaces.size(); i++)
+                            {
+                                deviceNamesRemoved[i] = removedInterfaces.get(i).getName();
+                            }
                         }
-                    }
-                    for(int i = 0; i < registeredClasses.size(); i++)
-                    {
-                        registeredClasses.get(i).getUpdatedDevices(deepCopy(updatedInterfaces)); //dont want to send the original list, but just a copy
-                        registeredClasses.get(i).getRemovedDevices(deviceNamesRemoved);
+                        for(int i = 0; i < registeredClasses.size(); i++)
+                        {
+                            registeredClasses.get(i).getUpdatedDevices(deepCopy(updatedInterfaces)); //dont want to send the original list, but just a copy
+                            registeredClasses.get(i).getRemovedDevices(deviceNamesRemoved);
+                        }
                     }
                 }
             }
@@ -432,12 +456,14 @@ public class NetworkInterfaceManager extends Thread
 
     public void registerForUpdates(NetworkManagerListener object)
     {
-        if(registeredClasses == null)
-        {
-            registeredClasses = new LinkedList<NetworkManagerListener>();
-        }
-        if(object != null){
-            registeredClasses.add(object);
+        synchronized(this) {
+            if(registeredClasses == null)
+            {
+                registeredClasses = new LinkedList<NetworkManagerListener>();
+            }
+            if(object != null){
+                registeredClasses.add(object);
+            }
         }
     }
 }
