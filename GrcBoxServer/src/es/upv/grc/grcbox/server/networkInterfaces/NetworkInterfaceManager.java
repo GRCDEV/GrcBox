@@ -19,10 +19,6 @@ import es.upv.grc.grcbox.server.networkInterfaces.NetworkManagerNotRunning;
  */
 
 
-/*
- * TODO
- * Please, use the types I created under GrcBoxInterface
- */
 public class NetworkInterfaceManager extends Thread
 {
     private static NetworkInterfaceManager manager = null;
@@ -141,8 +137,8 @@ public class NetworkInterfaceManager extends Thread
                 GrcBoxInterface iface = new GrcBoxInterface();
                 StringTokenizer st = new StringTokenizer(line, space);
                 iface.setName(st.nextToken());
-                iface.setType(st.nextToken());
-                iface.setState(st.nextToken());
+                iface.setTypeByString(st.nextToken());
+                iface.setStateByString(st.nextToken());
                 if(list == null)
                 {
                     list = new LinkedList<GrcBoxInterface>();
@@ -319,13 +315,6 @@ public class NetworkInterfaceManager extends Thread
         return null;
     }
 
-    /*
-     * TODO
-     * Add support for WIFI Ad-hoc networking. The wifi mode appears on
-     * nmcli dev wifi list iface <ifName>
-     * At the third column, it says "Ifrastructure" or "Ad-Hoc"
-     * The eighth column indicates if the connection is active
-     */
     public GrcBoxInterface.Type getType(String interfaceName)
     {
         if(interfaces != null)

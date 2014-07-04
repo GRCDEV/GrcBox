@@ -37,7 +37,7 @@ public class AppsServerResource extends ServerResource implements AppsResource {
 		System.out.println("Adding a new application to DB:"+Integer.toString(id)+" " +  Integer.toString(secret)
 				+ "There are " + verifier.getLocalSecrets().size() +" pairs registered.");
 
-		IdSecret idSecret = new IdSecret(id, secret,GrcBoxServerApplication.getConfig().getDatabase().getUpdateTime());
+		IdSecret idSecret = new IdSecret(id, secret,GrcBoxServerApplication.getConfig().getKeepAliveTime());
 		return idSecret;
 	}
 }

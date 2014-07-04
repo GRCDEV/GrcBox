@@ -2,36 +2,34 @@ package es.upv.grc.grcbox.server;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 import es.upv.grc.grcbox.common.GrcBoxInterface;
 import es.upv.grc.grcbox.server.networkInterfaces.*;
 
-
-
 public class IfaceMonitor implements NetworkManagerListener{
 	NetworkInterfaceManager nm;
 	HashMap<String, Integer> nameIndex;
+	boolean initialized;
 	
 	public IfaceMonitor(NetworkInterfaceManager nm) {
 		super();
+		initialized = false;
 		this.nm = nm;
 	}
 
-	public void getUpdates(String interfaceNames[])
-	{
-		if(interfaceNames != null)
-		{
-			System.out.println("Network interfaces changed");
-			for (String string : interfaceNames) {
-				updateDefaultRoute(string);
-			}
-			System.out.println();
-		}
+	public HashMap<String, Integer> getNameIndexMap(){
+		return nameIndex;
 	}
 	
-	private void updateDefaultRoute(String ifaceName){
+	public void setNameIndexMap(HashMap<String, Integer> map){
+		initialized = true;
+		nameIndex = map;
+	}
+
+	private void updateDefaultRoute(GrcBoxInterface grcBoxInterface){
 		
-		String delRoute = "ip route del table "+nameIndex.get(ifaceName) + " default ";
+		String delRoute = "ip route del table "+nameIndex.get(grcBoxInterface.getName()) + " default ";
 //		try {
 			System.out.println(delRoute);
 //			Runtime.getRuntime().exec(delRoute);
@@ -40,7 +38,7 @@ public class IfaceMonitor implements NetworkManagerListener{
 //			e.printStackTrace();
 //		}
 		
-		String iproute = "ip route add table "+ nameIndex.get(ifaceName) + "default dev " + ifaceName + " via " + nm.getGatewayIp(ifaceName);
+		String iproute = "ip route add table "+ nameIndex.get(grcBoxInterface.getName()) + "default dev " + grcBoxInterface + " via " + grcBoxInterface.getGatewayIp();
 //		try {
 			System.out.println(iproute);
 //			//Runtime.getRuntime().exec(iproute);
@@ -48,6 +46,27 @@ public class IfaceMonitor implements NetworkManagerListener{
 //			// TODO Auto-generated catch block
 //			e.printStackTrace();
 //		}
+	}
+
+	@Override
+	public void getRemovedDevices(String[] interfaceNames) {
+		/*
+		 * If an interface has been removed
+		 */
+		// TODO Auto-generated method stub Future
+		
+	}
+
+	@Override
+	public void getUpdatedDevices(LinkedList<GrcBoxInterface> interfaces) {
+		if(!interfaces.isEmpty())
+		{
+			System.out.println("Network interfaces changed");
+			for (GrcBoxInterface grcBoxInterface : interfaces) {
+				updateDefaultRoute(grcBoxInterface);
+			}
+			System.out.println();
+		}
 	}
 	
 }

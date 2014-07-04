@@ -13,6 +13,7 @@ import es.upv.grc.grcbox.common.GrcBoxRule;
 
 /*
  * TODO Multicast Socket are currently unsupported.
+ * Rules must be created when join a leave group methods are called.
  */
 
 public class GrcBoxMulticasSocket extends MulticastSocket {

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
@@ -22,21 +23,14 @@ public class CreateExampleConfig {
 	 */
 	public static void main(String[] args) {
 		GrcBoxConfig config = new GrcBoxConfig();
-		ConfigInterface iface = new ConfigInterface();
-		ConfigDatabase db = new ConfigDatabase();
-		db.setPath("db/rules.db");
-		db.setUpdateTime(5000);
-		db.setFlushAtStartup(true);
-		iface.setCost(1);
-		iface.setName("eth2");
-		iface.setType(Type.ETHERNET);
-		config.setDatabase(db);
-		List<ConfigInterface> inInterfaces = new ArrayList<>();
-		inInterfaces.add(iface);
-		config.setInInterfaces(inInterfaces);
-		config.setDebug(true);
-		config.setOutInterfaces(inInterfaces);
-		
+		config.setKeepAliveTime( 10000);
+		LinkedList<String> ifaces = new LinkedList<String>();
+		ifaces.add("wlan0");
+		config.setInnerInterfaces(ifaces);
+		ifaces.clear();
+		ifaces.add("wlan1");
+		ifaces.add("wlan2");
+		config.setOuterInterfaces(ifaces);
 		ObjectMapper mapper = new ObjectMapper();
 		String configFile = "/res/config.json";
 		URL uri = CreateExampleConfig.class.getResource(configFile);

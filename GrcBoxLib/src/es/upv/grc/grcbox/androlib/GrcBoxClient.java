@@ -7,11 +7,13 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.channels.DatagramChannel;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.restlet.*;
 import org.restlet.data.*;
@@ -22,14 +24,40 @@ import es.upv.grc.grcbox.common.*;
 import es.upv.grc.grcbox.common.AppsResource.IdSecret;
 import es.upv.grc.grcbox.common.GrcBoxRule.Protocol;
 
+/*
+ * TODO Check if the application is registered an throw an exception if not in all the methods. 
+ */
 public class GrcBoxClient {
 	private static String SERVER_URL = "http://grcbox:8080";
 
 	private static ClientResource clientResource = new ClientResource(SERVER_URL);;
 	private static AppResource appResource = null;
 	private static GrcBoxApp app;
-	private static long updatePeriod;
-	private static boolean registered;
+	private static long keepAliveTime;
+	private volatile static boolean registered;
+	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+	private static ScheduledFuture<?> keepAliveMonitor;
+	
+	
+	private final static Runnable sendKeepAlive = new Runnable() {
+		@Override
+		public void run() {
+			if(isRegistered()){
+				appResource = clientResource.getChild("/apps/"+app.getAppId(), AppResource.class);
+				appResource.keepAlive();
+			}
+			else{
+				keepAliveMonitor.cancel(true);
+			}
+		}
+	};
+	
+	/**
+	 * @return the registered
+	 */
+	public static boolean isRegistered() {
+		return registered;
+	}
 
 	/*
 	 * Check if the GrcBox Server is available
@@ -56,7 +84,6 @@ public class GrcBoxClient {
 		clientResource.setNext(client);
 		AppsResource appsResource = clientResource.getChild("/apps", AppsResource.class);
 
-		GrcBoxAppInfo myInfo;
 		IdSecret myIdSecret;
 		try {
 			myIdSecret = appsResource.newApp(appName);
@@ -71,10 +98,8 @@ public class GrcBoxClient {
 		/*
 		 * Get the information stored in the server. 
 		 */
-		appResource = clientResource.getChild("/apps/"+myIdSecret.getAppId(), AppResource.class);
-
 		app = new GrcBoxApp(myIdSecret.getAppId(), appName, System.currentTimeMillis());
-		updatePeriod = myIdSecret.getUpdatePeriod();
+		keepAliveTime = myIdSecret.getUpdatePeriod();
 		
 		/*
 		 * Add authentication information to clientResource class
@@ -85,17 +110,36 @@ public class GrcBoxClient {
     			Integer.toString(myIdSecret.getSecret()).toCharArray());
 		
     	clientResource.setChallengeResponse(authentication);
-		
+    	keepAliveMonitor = scheduler.scheduleAtFixedRate(
+    			sendKeepAlive, keepAliveTime/3, 
+    			keepAliveTime/3, 
+    			TimeUnit.MILLISECONDS);
 		registered = true;
 		return true;
 	}
 
+	public static void deregister(){
+		registered = false;
+		keepAliveMonitor.cancel(true);
+	}
+	
 	/*
 	 * get a list of the available interfaces from the server
 	 */
 	List<GrcBoxInterface> getInterfaces(){
 		IfacesResource ifaces = clientResource.getChild("/ifaces", IfacesResource.class);
 		return ifaces.getList();
+	}
+	
+	/*
+	 * Register a new rule in the server.
+	 * Low level method for compatibility with third party communication libraries.
+	 * The application must remove the rule after communication have finished.
+	 */
+	GrcBoxRule registerNewRule(GrcBoxRule rule){
+		RulesResource rulesRes = clientResource.getChild("/apps/"+app.getAppId()+"/rules", RulesResource.class);
+		rule = rulesRes.newRule(rule);
+		return rule;
 	}
 	
 	/*
@@ -107,14 +151,14 @@ public class GrcBoxClient {
 		return;
 	}
 	
+	
 	/*
 	 * Register an incoming flow in the server using the provided information
 	 * Return a GrcServerSocket ready to be used 
 	 */
 	GrcBoxServerSocket createServerSocket(int port, GrcBoxInterface iface) throws IOException{
 		GrcBoxRule rule = new GrcBoxRuleIn(-1, Protocol.TCP, app.getAppId(), iface.getName(), 0, -1, port, null, iface.getIpAddress(), port);
-		RulesResource rulesRes = clientResource.getChild("/apps/"+app.getAppId()+"/rules", RulesResource.class);
-		rule = rulesRes.newRule(rule);
+		registerNewRule(rule);
 		ServerSocket socket = new ServerSocket(port);
 		GrcBoxServerSocket grcSocket = new GrcBoxServerSocket(this, rule, socket);
 		return grcSocket;
@@ -126,9 +170,8 @@ public class GrcBoxClient {
 	 */
 	GrcBoxSocket createSocket(InetAddress addr, int port, GrcBoxInterface iface) throws IOException{
 		Socket socket = new Socket(addr, port);
-		GrcBoxRule rule = new GrcBoxRuleOut(-1, Protocol.TCP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), port, null, addr.getHostAddress());
-		RulesResource rulesRes = clientResource.getChild("/apps/"+app.getAppId()+"/rules", RulesResource.class);
-		rule = rulesRes.newRule(rule);
+		GrcBoxRule rule = new GrcBoxRuleOut(-1, Protocol.TCP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), port, addr.getHostAddress());
+		registerNewRule(rule);
 		GrcBoxSocket grcSocket = new GrcBoxSocket(this, rule, socket);
 		return grcSocket;
 	}
@@ -139,9 +182,8 @@ public class GrcBoxClient {
 	 */
 	GrcBoxSocket createSocket(InetAddress address, int port, InetAddress localAddr, int localPort, GrcBoxInterface iface) throws IOException{
 		Socket socket = new Socket(address, port, localAddr, localPort);
-		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.TCP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), port, null, address.getHostAddress());
-		RulesResource rulesRes = clientResource.getChild("/apps/"+app.getAppId()+"/rules", RulesResource.class);
-		rule = rulesRes.newRule(rule);
+		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.TCP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), port, address.getHostAddress());
+		registerNewRule(rule);
 		GrcBoxSocket grcSocket = new GrcBoxSocket(this, rule, socket);
 		return grcSocket;
 	}
@@ -151,36 +193,32 @@ public class GrcBoxClient {
 	 */
 	GrcBoxSocket createSocket(String host, int port, GrcBoxInterface iface) throws UnknownHostException, IOException{
 		Socket socket = new Socket(host, port);
-		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.TCP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), port, null, socket.getInetAddress().getHostAddress());
-		RulesResource rulesRes = clientResource.getChild("/apps/"+app.getAppId()+"/rules", RulesResource.class);
-		rule = rulesRes.newRule(rule);
+		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.TCP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), port, socket.getInetAddress().getHostAddress());
+		registerNewRule(rule);
 		GrcBoxSocket grcSocket = new GrcBoxSocket(this, rule, socket);
 		return grcSocket;
 	}
 
 	GrcBoxSocket createSocket(String host, int port, InetAddress localAddr, int localPort, GrcBoxInterface iface) throws IOException{
 		Socket socket = new Socket(host, port, localAddr, localPort);
-		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.TCP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), port, null, socket.getInetAddress().getHostAddress());
-		RulesResource rulesRes = clientResource.getChild("/apps/"+app.getAppId()+"/rules", RulesResource.class);
-		rule = rulesRes.newRule(rule);
+		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.TCP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), port, socket.getInetAddress().getHostAddress());
+		registerNewRule(rule);
 		GrcBoxSocket grcSocket = new GrcBoxSocket(this, rule, socket);
 		return grcSocket;
 	}
 
 	GrcBoxDatagramSocket createDatagramSocket(GrcBoxInterface iface) throws SocketException{
 		DatagramSocket socket = new DatagramSocket();
-		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.UDP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), -1, null, null);
-		RulesResource rulesRes = clientResource.getChild("/apps/"+app.getAppId()+"/rules", RulesResource.class);
-		rule = rulesRes.newRule(rule);
+		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.UDP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), -1, null);
+		registerNewRule(rule);
 		GrcBoxDatagramSocket grcSocket = new GrcBoxDatagramSocket(this, rule, socket);
 		return grcSocket;
 	}
 
 	GrcBoxDatagramSocket createDatagramSocket(int port, GrcBoxInterface iface) throws SocketException{
 		DatagramSocket socket = new DatagramSocket(port);
-		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.UDP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), -1, null, null);
-		RulesResource rulesRes = clientResource.getChild("/apps/"+app.getAppId()+"/rules", RulesResource.class);
-		rule = rulesRes.newRule(rule);
+		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.UDP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), -1, null);
+		registerNewRule(rule);
 		GrcBoxDatagramSocket grcSocket = new GrcBoxDatagramSocket(this, rule, socket);
 		return grcSocket;
 	}
@@ -192,9 +230,8 @@ public class GrcBoxClient {
 	 */
 	GrcBoxDatagramSocket createDatagramSocket(int port, InetAddress remoteAddr, int remotePort, GrcBoxInterface iface) throws SocketException{
 		DatagramSocket socket = new DatagramSocket(port);
-		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.UDP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), remotePort, null, remoteAddr.getHostAddress());
-		RulesResource rulesRes = clientResource.getChild("/apps/"+app.getAppId()+"/rules", RulesResource.class);
-		rule = rulesRes.newRule(rule);
+		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.UDP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), remotePort, remoteAddr.getHostAddress());
+		registerNewRule(rule);
 		GrcBoxDatagramSocket grcSocket = new GrcBoxDatagramSocket(this, rule, socket);
 		return grcSocket;
 	}
@@ -206,9 +243,8 @@ public class GrcBoxClient {
 	 */
 	GrcBoxDatagramSocket createDatagramSocket(int port, InetSocketAddress remoteHost, GrcBoxInterface iface) throws SocketException{
 		DatagramSocket socket = new DatagramSocket(port);
-		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.UDP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), remoteHost.getPort(), null, remoteHost.getAddress().getHostAddress());
-		RulesResource rulesRes = clientResource.getChild("/apps/"+app.getAppId()+"/rules", RulesResource.class);
-		rule = rulesRes.newRule(rule);
+		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.UDP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), remoteHost.getPort(), remoteHost.getAddress().getHostAddress());
+		registerNewRule(rule);
 		GrcBoxDatagramSocket grcSocket = new GrcBoxDatagramSocket(this, rule, socket);
 		return grcSocket;
 	}
@@ -227,6 +263,9 @@ public class GrcBoxClient {
 	
 	/*
 	 * Create a new multicast socket bound to the local specific port
+	 * No rule will be registered in the server until 
+	 * subscribe or bind are called 
+	 * TODO This feature is not supported yet
 	 */
 	GrcBoxMulticasSocket createMulticasSocket(int port, GrcBoxInterface iface) throws IOException{
 		MulticastSocket socket = new MulticastSocket(port);

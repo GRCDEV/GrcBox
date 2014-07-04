@@ -1,49 +1,31 @@
 package es.upv.grc.grcbox.common;
 
-import java.util.ArrayList;
-import java.util.List;
-
-
 public class GrcBoxStatus {
 	String name;
-	List<GrcBoxInterface> interfaces;
-	List<GrcBoxRule> rules;
+	int numIfaces;
+	int numApps;
+	int numRules;
+	
+	public GrcBoxStatus(){
+	}
+	public GrcBoxStatus(String name, int numIfaces, int numApps, int numRules) {
+		super();
+		this.name = name;
+		this.numIfaces = numIfaces;
+		this.numApps = numApps;
+		this.numRules = numRules;
+	}
 	
 	public String getName() {
 		return name;
 	}
-
-	public void setName(String name) {
-		this.name = name;
+	public int getNumIfaces() {
+		return numIfaces;
 	}
-
-	public GrcBoxStatus() {
-		super();
-		this.interfaces = new ArrayList<>(); 
-		this.rules = new ArrayList<>();
+	public int getNumApps() {
+		return numApps;
 	}
-
-	public List<GrcBoxInterface> getInterfaces() {
-		return interfaces;
-	}
-
-	public void setInterfaces(List<GrcBoxInterface> ifList) {
-		this.interfaces = ifList;
-	}
-	
-	public List<GrcBoxRule> getFlows() {
-		return rules;
-	}
-
-	public void setFlows(List<GrcBoxRule> flows) {
-		this.rules = flows;
-	}
-
-	public void addInterface(GrcBoxInterface iface){
-		interfaces.add(iface);
-	}
-	
-	public void addFlow(GrcBoxRule flow){
-		rules.add(flow);
+	public int getNumRules() {
+		return numRules;
 	}
 }

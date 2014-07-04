@@ -41,30 +41,34 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
 
+import org.restlet.resource.ResourceException;
 import org.restlet.resource.ServerResource;
 
 import es.upv.grc.grcbox.common.GrcBoxInterface;
+import es.upv.grc.grcbox.common.GrcBoxInterface.State;
 import es.upv.grc.grcbox.common.GrcBoxRule;
+import es.upv.grc.grcbox.common.GrcBoxRuleIn;
 import es.upv.grc.grcbox.common.GrcBoxStatus;
 import es.upv.grc.grcbox.common.RootResource;
 import es.upv.grc.grcbox.common.GrcBoxInterface.Type;
 import es.upv.grc.grcbox.common.GrcBoxRule.Protocol;
+import es.upv.grc.grcbox.server.networkInterfaces.NetworkInterfaceManagerThreadNotRunning;
 
 /**
  * Mail server resource implementing the {@link MailResource} interface.
  */
 public class RootServerResource extends ServerResource implements RootResource {
-	/*
-	 * TODO
-	 * @see es.upv.grc.andropi.common.RootResource#getAndroPiStatus()
-	 */
+	
 	@Override
     public GrcBoxStatus getAndroPiStatus() {
-    	GrcBoxStatus status = new GrcBoxStatus();
-        status.addInterface(new GrcBoxInterface("wlan1", 0, Type.WIFISTA, 15, 1500, "192.168.5.147", false, true, true, true));
-        GrcBoxRule flow = null;
-        flow = new GrcBoxRule(12, Protocol.TCP, false, 10, "wlan0", System.currentTimeMillis(), 22, 22, "0.0.0.0", "0.0.0.0", 11, "0.0.0.0");
-        status.addFlow(flow);
-        return status;
+		RulesDB db = GrcBoxServerApplication.getDb();
+    	GrcBoxStatus status;
+		try {
+			status = new GrcBoxStatus(GrcBoxServerApplication.getCurrent().getName(), db.getOuterInterfaces().size(), db.getApps().size(), db.getAllRules().size());
+		} catch (NetworkInterfaceManagerThreadNotRunning e) {
+			e.printStackTrace();
+			throw new ResourceException(503);
+		}
+    	return status;
     }
 }

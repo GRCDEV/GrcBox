@@ -36,7 +36,13 @@ package es.upv.grc.grcbox.server;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
 import java.net.URL;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -85,10 +91,13 @@ public class GrcBoxServerApplication extends Application {
 	
 	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	
+	/*
+	 * TODO Move this thread to the DB class FUTURE
+	 */
 	final static Runnable dbMonitor = new Runnable() {
 		@Override
 		public void run() {
-			long timeout = config.getDatabase().getUpdateTime();
+			long timeout = config.getKeepAliveTime();
 			long now = System.currentTimeMillis();
 			List<GrcBoxApp> appList = db.getApps();
 			for (GrcBoxApp androPiApp : appList) {
@@ -111,10 +120,10 @@ public class GrcBoxServerApplication extends Application {
 	};
 	
 	public GrcBoxServerApplication(){
-		setName("RESTful Mail Server");
-		setDescription("Example for 'Restlet in Action' book");
-		setOwner("Restlet SAS");
-		setAuthor("The Restlet Team");
+		setName("GRCBox Server");
+		setDescription("Connectivity for smartphones");
+		setOwner("GRC");
+		setAuthor("Sergio Martínez Tornell and Subhadeep Patra");
 	}
 
 	
@@ -139,24 +148,54 @@ public class GrcBoxServerApplication extends Application {
 		File file = new File(uri.getPath());
 		ObjectMapper mapper = new ObjectMapper();
 		config = mapper.readValue(file, GrcBoxConfig.class);
-
+		
+		if(!Collections.disjoint(config.getInnerInterfaces(), config.getOuterInterfaces())){
+			System.err.print("InnerInterfaces and Outerinterfaces has elements in common. Aborting execution.");
+			System.exit(-1);
+		}
+		
 		db = new RulesDB();
-		final ScheduledFuture<?> monitorHandle = scheduler.scheduleAtFixedRate(dbMonitor, config.getDatabase().getUpdateTime(), config.getDatabase().getUpdateTime(), TimeUnit.MILLISECONDS);
 		
-		nim = new NetworkInterfaceManager();
-		nim.registerForUpdates(new IfaceMonitor(nim));
+		/*
+		 * TODO Move this into the RulesDB class FUTURE
+		 */
+		final ScheduledFuture<?> monitorHandle = scheduler.scheduleAtFixedRate(dbMonitor, config.getKeepAliveTime(), config.getKeepAliveTime(), TimeUnit.MILLISECONDS);
 		
-		
+		LinkedList<String> innerInterfaces = config.getInnerInterfaces();
+		db.setInnerInterfaces(innerInterfaces);
+		db.setOuterInterfaces(config.getOuterInterfaces());
+		db.initialize();
+		for (String string : innerInterfaces) {
+			startServer(string);
+		}
+	}
+
+	private static void startServer(String string) throws Exception {
 		Component androPiComponent = new Component();
-		Server server = androPiComponent.getServers().add(Protocol.HTTP, 8080);
-        Series<Parameter> parameters = server.getContext().getParameters();
-        parameters.add("keystorePath",
-                "src/res/serverKey.jks");
-        parameters.add("keystorePassword", "password");
-        parameters.add("keystoreType", "JKS");
-        parameters.add("keyPassword", "password");
-		androPiComponent.getDefaultHost().attach(new GrcBoxServerApplication());
-        androPiComponent.start();
+		NetworkInterface iface = NetworkInterface.getByName(string);
+		List<InterfaceAddress> addresses =  iface.getInterfaceAddresses();
+		InterfaceAddress addr = null;
+		for (InterfaceAddress interfaceAddress : addresses) {			
+			if(interfaceAddress.getAddress() instanceof Inet4Address){
+				addr = interfaceAddress;
+				break;
+			}
+		}
+		
+		if(addr != null){
+			Server server = androPiComponent.getServers().add(Protocol.HTTP, addr.getAddress().getHostAddress(), 8080);
+			Series<Parameter> parameters = server.getContext().getParameters();
+			parameters.add("keystorePath",
+					"src/res/serverKey.jks");
+			parameters.add("keystorePassword", "password");
+			parameters.add("keystoreType", "JKS");
+			parameters.add("keyPassword", "password");
+			androPiComponent.getDefaultHost().attach(new GrcBoxServerApplication());
+			androPiComponent.start();
+		}
+		else {
+			System.out.println("The server could not be initialized. No Ipv4 address on innerinterface present");
+		}
 	}
 
 	public class Tracer extends Filter {
@@ -231,15 +270,5 @@ public class GrcBoxServerApplication extends Application {
 
 	public static RulesDB getDb() {
 		return db;
-	}
-	
-	private void createIfaceTable(GrcBoxInterface iface){
-		String iprule = "ip rule add fwmark " + iface.getIndex() + " table " + iface.getIndex();
-		try {
-			Runtime.getRuntime().exec(iprule);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 }

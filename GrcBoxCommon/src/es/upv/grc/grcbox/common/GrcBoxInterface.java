@@ -43,7 +43,15 @@ public class GrcBoxInterface {
     private static final boolean DEFAULT_IS_MULTICAST = false;
     private static final boolean DEFAULT_HAS_INTERNET = false;
     
-    public GrcBoxInterface(){
+    public boolean isHasInternet() {
+		return hasInternet;
+	}
+
+	public void setHasInternet(boolean hasInternet) {
+		this.hasInternet = hasInternet;
+	}
+
+	public GrcBoxInterface(){
         name = null;
         type = GrcBoxInterface.Type.UNKNOWN;
         state = GrcBoxInterface.State.UNKNOWN;
@@ -97,7 +105,7 @@ public class GrcBoxInterface {
         this.type = type;
     }
     
-    public void setType(String type)
+    public void setTypeByString(String type)
     {
         if(type.equalsIgnoreCase(KnownInterfaceTypes.wifi))
         {
@@ -131,7 +139,7 @@ public class GrcBoxInterface {
         this.state = state;
     }
     
-    public void setState(String state)
+    public void setStateByString(String state)
     {
         if(state.equalsIgnoreCase(KnownInterfaceStates.connected))
         {
