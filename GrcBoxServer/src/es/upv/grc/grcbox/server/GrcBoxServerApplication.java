@@ -84,10 +84,8 @@ public class GrcBoxServerApplication extends Application {
 
 	private static final String configFile = "/res/config.json";
 	private static GrcBoxConfig config;
-	private static LinkedList<GrcBoxInterface> ifaces = new LinkedList<>();
 	private static MapVerifier verifier = new MapVerifier();
 	private static RulesDB db;
-	private static NetworkInterfaceManager nim = null;
 	
 	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	

@@ -33,13 +33,6 @@ public class RulesDB {
 		IfaceMonitor ifaceMonitor = new IfaceMonitor(nm);
 		List<GrcBoxInterface> outIfaces = null;
 		try {
-			//TODO remove after solving the problem
-			try {
-				wait(1000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
 			outIfaces = getOuterInterfaces();
 			List<GrcBoxInterface> ifaces = getAllInterfaces();
 			for (GrcBoxInterface grcBoxInterface : ifaces) {
