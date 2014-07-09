@@ -23,6 +23,8 @@ public class NetworkInterfaceManager extends Thread
 {
     private static NetworkInterfaceManager manager = null;
 
+    private boolean isUpdatingInterfaces;
+    
     private boolean isNetworkManagerWorking;
 
     private LinkedList<GrcBoxInterface> interfaces;
@@ -45,6 +47,7 @@ public class NetworkInterfaceManager extends Thread
 
     private NetworkInterfaceManager()
     {
+    	isUpdatingInterfaces = true;	//has been set to true so that no information can be asked before one thread cycle
         isNetworkManagerWorking = false;
         interfaces = null;
         registeredClasses = null;
@@ -233,9 +236,25 @@ public class NetworkInterfaceManager extends Thread
         {
             throw new NetworkInterfaceManagerThreadNotRunning();
         }
-        synchronized(this) {
-            return deepCopy(interfaces);
+        if(interfaces == null)
+        {
+        	//System.out.println("NULL");
         }
+        synchronized(this)
+        {
+        	if(isUpdatingInterfaces)
+        	{
+        		//System.out.println("IS-INITIALIZING");
+        		try{
+        			this.wait();
+        		}
+        		catch(InterruptedException e)
+        		{
+        		//	nothing
+        		}
+        	}
+        }
+        return deepCopy(interfaces);
     }
     
     private void checkInterfaceChanges(LinkedList<GrcBoxInterface> list)
@@ -283,7 +302,7 @@ public class NetworkInterfaceManager extends Thread
                             }
                             //removing is necessary as it will help in the end to detect devices that has been recently added
                             list.remove(j);                     
-                            break; //you dont want it to go on checking
+                            break; //you don't want it to go on checking
                         }
                     }
                     if(!deviceFound)
@@ -407,19 +426,19 @@ public class NetworkInterfaceManager extends Thread
         }
         while(isNetworkManagerWorking) 
         {
-            LinkedList<GrcBoxInterface> list = null;
-            try{
-                list =  getIPInfoOfInterfaces(getBasicInfoOfInterfaces());
-            }
-            catch(Exception e)
-            {
-                System.err.println("Class NetworkInterfaceManager: Error while accessing interface information!");
-            }
-            synchronized(this) {
+        	LinkedList<GrcBoxInterface> list = null;
+        	synchronized(this)
+        	{
+        		isUpdatingInterfaces = true;        		
+        		try{
+        			list =  getIPInfoOfInterfaces(getBasicInfoOfInterfaces());
+        		}
+        		catch(Exception e)
+        		{
+        			System.err.println("Class NetworkInterfaceManager: Error while accessing interface information!");
+        		}
                 updatedInterfaces = removedInterfaces = null;
-            }
-            checkInterfaceChanges(list);
-            synchronized(this) {
+                checkInterfaceChanges(list);
                 if(updatedInterfaces != null || removedInterfaces != null)
                 {
                     //results of recent scan is different from the previous results
@@ -442,7 +461,9 @@ public class NetworkInterfaceManager extends Thread
                         }
                     }
                 }
-            }
+                isUpdatingInterfaces = false;
+                notify();
+        	}
             try {
                 Thread.sleep(UPDATE_INTERVAL);
             } catch (InterruptedException ex) {
