@@ -3,7 +3,7 @@
 	<name>GrcBoxClient</name>
 	<comment></comment>
 	<projects>
-		<project>Common</project>
+		<project>GrcBoxCommon</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

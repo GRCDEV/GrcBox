@@ -3,7 +3,7 @@
 	<name>GrcBoxServer</name>
 	<comment></comment>
 	<projects>
-		<project>AndroPiCommon</project>
+		<project>GrcBoxClient</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
