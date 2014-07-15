@@ -41,7 +41,6 @@ public class AppServerResource  extends ServerResource implements AppResource{
 	@Override
 	public void rm() {
 		GrcBoxServerApplication.getDb().rmApp(appId);
-		GrcBoxServerApplication.getVerifier().getLocalSecrets().remove(appId);
 	}
 
 	@Override

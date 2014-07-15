@@ -21,52 +21,5 @@ public class GrcBoxRuleOut extends GrcBoxRule {
 	
 	public GrcBoxRuleOut(GrcBoxRule rule){
 		super(rule.id, rule.proto, false, rule.appid, rule.ifName, rule.expireDate, rule.srcPort, rule.dstPort, rule.srcAddr, rule.dstAddr, rule.dstFwdPort, rule.dstFwdAddr);
-	}
-	
-	/*
-	 * Return an iptables rule to mark packets matching this rule with mark
-	 */
-	@Override
-	public String createIptablesRule(int mark){
-		String ruleStr = "";
-		ruleStr += "iptables -t mangle -A PREROUTING -i " + ifName + " -p " + proto.toString().toLowerCase();
-
-		if(dstPort != -1 )
-			ruleStr += " --dport " + dstPort;
-
-		if(dstAddr != null)
-			ruleStr +=  " -d "+ dstAddr;
-
-		if(srcPort != -1 )
-			ruleStr += " --sport " + srcPort;
-
-		if(srcAddr != null)
-			ruleStr += " -s " + srcAddr;
-
-		ruleStr += " -j MARK --set-mark "+ mark;
-		return ruleStr;
-	}
-	
-	/*
-	 * Return an iptables rule to mark packets matching this rule with mark
-	 */
-	public String deleteIptablesRule(){
-		String ruleStr = "";
-		ruleStr += "iptables -t mangle -D PREROUTING -i " + ifName + " -p " + proto.toString().toLowerCase();
-
-		if(dstPort != -1 )
-			ruleStr += " --dport " + dstPort;
-
-		if(dstAddr != null)
-			ruleStr +=  " -d "+ dstAddr;
-
-		if(srcPort != -1 )
-			ruleStr += " --sport " + srcPort;
-
-		if(srcAddr != null)
-			ruleStr += " -s " + srcAddr;
-
-		return ruleStr;
-	}
-	
+	}	
 }

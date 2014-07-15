@@ -1,7 +1,13 @@
 package es.upv.grc.grcbox.server;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.*;
+
+import org.restlet.resource.ResourceException;
+import org.restlet.security.MapVerifier;
 
 import es.upv.grc.grcbox.common.GrcBoxApp;
 import es.upv.grc.grcbox.common.GrcBoxAppInfo;
@@ -28,6 +34,11 @@ public class RulesDB {
 	 * Initialise the rules managing system.
 	 */
 	public synchronized void initialize() throws NetworkManagerNotRunning, UnableToRunShellCommand{
+		flushNatAndMangle();
+		if(innerInterfaces.size() != 1){
+			System.err.println("ERROR: CUrrently GRCBox supports only one inner iface");
+			System.exit(-1);
+		}
 		nm = NetworkInterfaceManager.getObject();
 		nm.start();
 		IfaceMonitor ifaceMonitor = new IfaceMonitor(nm);
@@ -43,20 +54,51 @@ public class RulesDB {
 		} catch (NetworkInterfaceManagerThreadNotRunning e) {
 			e.printStackTrace();
 		}
-		int index = 0;
+		int index = 7;
 		for (GrcBoxInterface grcBoxInterface : outIfaces) {
 			nameIndex.put(grcBoxInterface.getName(), index++);
-			//TODO Uncomment
-			//createIfaceTable(iface);
+			initializeOutIface(grcBoxInterface);
 		}
 		ifaceMonitor.setNameIndexMap(nameIndex);
 		nm.registerForUpdates(ifaceMonitor);
 	}
 	
-	private synchronized void createIfaceTable(GrcBoxInterface iface){
+	private synchronized void initializeOutIface(GrcBoxInterface iface){
+		String ipnat = "iptables -t nat -A POSTROUTING -o " + iface.getName() + " -j MASQUERADE";
 		String iprule = "ip rule add fwmark " + nameIndex.get(iface.getName()) + " table " + nameIndex.get(iface.getName());
+		String iproute = "ip route add table "+ nameIndex.get(iface.getName()) + " default dev " + iface.getName(); 
+		if(iface.getGatewayIp() != null){
+				iproute += " via " + iface.getGatewayIp();
+		}
 		try {
-			Runtime.getRuntime().exec(iprule);
+			System.out.println("Create routing table for Iface " + iface.getName() +"\n"+ iprule);
+			
+			System.out.println("Adding default routing rule for Iface "+ iface.getName()+"\n" + iproute );
+			if(!GrcBoxServerApplication.getConfig().isDebug()){
+				Runtime.getRuntime().exec(ipnat);
+				Runtime.getRuntime().exec(iprule);
+				Runtime.getRuntime().exec(iproute);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	/*
+	 * Flush all nat and masquerade rules from system.
+	 */
+	private void flushNatAndMangle(){
+		String flushNat = "iptables -t nat -F";
+		String flushMangle = "iptables -t mangle -F";
+		
+		try {
+			System.out.println("Flushing nat and mangle rules \n" + flushNat + "\n"+ flushMangle);
+	
+			if(!GrcBoxServerApplication.getConfig().isDebug()){
+				Runtime.getRuntime().exec(flushNat);
+				Runtime.getRuntime().exec(flushMangle);
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -115,16 +157,16 @@ public class RulesDB {
 	public synchronized void rmApp(Integer appId){
 		Map<Integer, GrcBoxRule> rules = rulesMap.get(appId);
 		if(rules != null){
-			for (GrcBoxRule rule : rules.values()) {
+			Collection<GrcBoxRule> rulesList = rules.values();
+			for (GrcBoxRule rule : rulesList) {
 				rmRuleFromSystem(rule);
-				rules.remove(rule.getId());
 			}
-			if(rules.isEmpty()){
-				rulesMap.remove(appId);
-			}
+			rulesMap.remove(appId);
 		}
 		appMap.remove(appId);
-		System.out.println(System.currentTimeMillis()+" An App was removed from the DB, ID:"+ appId);
+		MapVerifier verifier = GrcBoxServerApplication.getVerifier();
+		verifier.getLocalSecrets().remove(Integer.toString(appId));
+		System.out.println(System.currentTimeMillis()+" An App was removed from the DB, ID:"+ appId +" Applications Registered " + GrcBoxServerApplication.getVerifier().getLocalSecrets().size());
 	}
 	
 	/*
@@ -164,30 +206,123 @@ public class RulesDB {
 		 * It must check multicast rules based on IP and throw an exception until supported
 		 */
 		String ruleStr = "";
-		int mark = nameIndex.get(rule.getIfName());
-		if(rule.isIncomming()){
-			ruleStr = new GrcBoxRuleIn(rule).createIptablesRule(mark);
-		}
-		else{
-			ruleStr = new GrcBoxRuleOut(rule).createIptablesRule(mark);
-		}
-		//TODO excute command on shell
+		ruleStr = newRuleToCommand(rule);
 		System.out.println("A new rule is going to be excuted \n" + ruleStr);
+		if(!GrcBoxServerApplication.getConfig().isDebug()){
+			try {
+				Process proc = Runtime.getRuntime().exec(ruleStr);
+				BufferedReader stdInput = new BufferedReader(new 
+			             InputStreamReader(proc.getInputStream()));
+				String s = null;
+		        while ((s = stdInput.readLine()) != null) {
+		            System.out.println(s);
+		        }
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 	
+	private String newRuleToCommand(GrcBoxRule rule) {
+		String ruleStr = "";
+		if(rule instanceof GrcBoxRuleIn){
+			ruleStr = "iptables -t nat -A PREROUTING -i " + rule.getIfName() + " -p " + rule.getProto().toString().toLowerCase();
+			if(rule.getDstPort() == -1){
+				throw new ResourceException(412);
+			}
+			ruleStr += " --dport " + rule.getDstPort();
+			
+			if(rule.getSrcPort() != -1)
+				ruleStr += " --sport "+ rule.getSrcPort();
+			
+			if(rule.getSrcAddr() != null)
+				ruleStr += " --s " + rule.getSrcAddr();
+			
+			if(rule.getDstFwdPort() == -1 || rule.getDstFwdAddr() == null){
+				throw new ResourceException(412);
+			}
+			ruleStr += " -j DNAT --to-destination " +rule.getDstFwdAddr() + ":" + rule.getDstFwdPort();
+		}
+		else if(rule instanceof GrcBoxRuleOut ){
+			ruleStr += "iptables -t mangle -A PREROUTING -i " + innerInterfaces.get(0) + " -p " + rule.getProto().toString().toLowerCase();
+
+			if(rule.getDstPort() != -1 )
+				ruleStr += " --dport " + rule.getDstPort();
+
+			if(rule.getDstAddr() != null)
+				ruleStr +=  " -d "+ rule.getDstAddr();
+
+			if(rule.getSrcPort() != -1 )
+				ruleStr += " --sport " + rule.getSrcPort();
+
+			if(rule.getSrcAddr() != null)
+				ruleStr += " -s " + rule.getSrcAddr();
+
+			ruleStr += " -j MARK --set-mark "+ nameIndex.get(rule.getIfName());
+			
+		}
+		return ruleStr;
+}
+
 	private synchronized void rmRuleFromSystem(GrcBoxRule rule){
 		/*
 		 * TODO Dummy method
 		 */
-		String ruleStr;
-		if(rule.isIncomming()){
-			ruleStr = new GrcBoxRuleIn(rule).deleteIptablesRule();
-		}
-		else{
-			ruleStr = new GrcBoxRuleOut(rule).deleteIptablesRule();
-		}
-		//TODO RUn a command shell with ruleStr
+		String ruleStr; 
+		ruleStr = rmRuleToCommand(rule);
 		System.out.println("A rule has been removed from System:\n"+ ruleStr);
+		if(!GrcBoxServerApplication.getConfig().isDebug()){
+			try {
+				Process proc = Runtime.getRuntime().exec(ruleStr);
+				BufferedReader stdInput = new BufferedReader(new 
+						InputStreamReader(proc.getInputStream()));
+				String s = null;
+				while ((s = stdInput.readLine()) != null) {
+					System.out.println(s);
+				}			} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		}
+	}
+
+
+	private String rmRuleToCommand(GrcBoxRule rule) {
+		String ruleStr = "";
+		if(rule instanceof GrcBoxRuleIn){
+			ruleStr = "iptables -t nat -D PREROUTING -i " + rule.getIfName() + " -p " + rule.getProto().toString().toLowerCase();
+			if(rule.getDstPort() == -1){
+				throw new ResourceException(412);
+			}
+			ruleStr += " --dport " + rule.getDstPort();
+			
+			if(rule.getSrcPort() != -1)
+				ruleStr += " --sport "+ rule.getSrcPort();
+			
+			if(rule.getSrcAddr() != null){
+				ruleStr += " --s " + rule.getSrcAddr();
+			}
+			ruleStr += " -j DNAT --to-destination " +rule.getDstFwdAddr() + ":" + rule.getDstFwdPort();
+		}
+		else if(rule instanceof GrcBoxRuleOut ){
+			ruleStr += "iptables -t mangle -D PREROUTING -i " + innerInterfaces.get(0) + " -p " + rule.getProto().toString().toLowerCase();
+
+			if(rule.getDstPort() != -1 )
+				ruleStr += " --dport " + rule.getDstPort();
+
+			if(rule.getDstAddr() != null)
+				ruleStr +=  " -d "+ rule.getDstAddr();
+
+			if(rule.getSrcPort() != -1 )
+				ruleStr += " --sport " + rule.getSrcPort();
+
+			if(rule.getSrcAddr() != null)
+				ruleStr += " -s " + rule.getSrcAddr();
+			
+			ruleStr += " -j MARK --set-mark "+ nameIndex.get(rule.getIfName());
+		}
+		return ruleStr;
 	}
 
 	public synchronized GrcBoxAppInfo getAppInfo(int appId) {

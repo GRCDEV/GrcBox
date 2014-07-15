@@ -1,13 +1,9 @@
 package es.upv.grc.grcbox.common;
 
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
 
+import com.fasterxml.jackson.annotation.*;
 
+@JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, include=JsonTypeInfo.As.PROPERTY, property="@class")
 public class GrcBoxInterface {
     
     public enum Type{
@@ -66,6 +62,7 @@ public class GrcBoxInterface {
         hasInternet = DEFAULT_HAS_INTERNET;
     }
     
+	
     public GrcBoxInterface(String name, GrcBoxInterface.Type type, GrcBoxInterface.State state,
                             String ipAddress, String gatewayIp, double cost, int index, int mtu,
                             boolean isLoopback, boolean isUp, boolean isMulticast, boolean hasInternet)

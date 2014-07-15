@@ -12,7 +12,17 @@ import es.upv.grc.grcbox.common.GrcBoxInterface.Type;
 public class GrcBoxConfig {
 	private LinkedList<String> innerInterfaces = new LinkedList<>();
 	private LinkedList<String> outerInterfaces = new LinkedList<>();
+	private boolean debug;
 	private long keepAliveTime;
+
+	public boolean isDebug() {
+		return debug;
+	}
+
+	public void setDebug(boolean debug) {
+		this.debug = debug;
+	}
+
 	
 	public  void addInInterface(String name){
 		innerInterfaces.add(name);

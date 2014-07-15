@@ -1,5 +1,8 @@
 package es.upv.grc.grcbox.common;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+@JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, include=JsonTypeInfo.As.PROPERTY, property="@class")
 public class GrcBoxRule {
 	public enum Protocol{
 		TCP, UDP;
@@ -152,8 +155,4 @@ public class GrcBoxRule {
 	public void setIncomming(boolean incomming) {
 		this.incomming = incomming;
 	}
-	
-	public String createIptablesRule(int mark){
-		return "Dummy method";
-	};
 }

@@ -23,6 +23,7 @@ public class CreateExampleConfig {
 	 */
 	public static void main(String[] args) {
 		GrcBoxConfig config = new GrcBoxConfig();
+		config.setDebug(true);
 		config.setKeepAliveTime( 10000);
 		LinkedList<String> ifaces = new LinkedList<String>();
 		ifaces.add("wlan0");

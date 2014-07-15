@@ -70,7 +70,7 @@ public interface AppsResource {
 	}
 	
     @Get
-    public List<GrcBoxApp> getList();
+    public GrcBoxAppList getList();
     
     @Post
     public IdSecret newApp(String name);

@@ -82,11 +82,11 @@ import es.upv.grc.grcbox.server.networkInterfaces.NetworkInterfaceManager;
  */
 public class GrcBoxServerApplication extends Application {
 
-	private static final String configFile = "/res/config.json";
+	private static final String configFile = "config.json";
 	private static GrcBoxConfig config;
 	private static MapVerifier verifier = new MapVerifier();
 	private static RulesDB db;
-	
+
 	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	
 	/*
@@ -103,15 +103,15 @@ public class GrcBoxServerApplication extends Application {
 				if(diff > timeout ){
 					System.out.println(diff);
 					db.rmApp(androPiApp.getAppId());
-					GrcBoxServerApplication.getVerifier().getLocalSecrets().remove(androPiApp.getAppId());
 				}
 				else{
-					List<GrcBoxRule> rules = db.getRulesByApp(androPiApp.getAppId());
-					for (GrcBoxRule rule : rules) {
-						if(rule.getExpire() < now){
-							db.rmRule(androPiApp.getAppId(), rule.getId());
-						}
-					}
+					//TODO Currently the expire property is ignored.
+//					List<GrcBoxRule> rules = db.getRulesByApp(androPiApp.getAppId());
+//					for (GrcBoxRule rule : rules) {
+//						if(rule.getExpire() < now){
+//							db.rmRule(androPiApp.getAppId(), rule.getId());
+//						}
+//					}
 				}
 			}
 		}
@@ -142,11 +142,10 @@ public class GrcBoxServerApplication extends Application {
 	 */
 	public static void main(String[] args) throws Exception {
 		//Load Config File
-		URL uri = GrcBoxServerApplication.class.getResource(configFile);
-		File file = new File(uri.getPath());
+		System.out.println("Working Directory = " + System.getProperty("user.dir"));
+		File file = new File("./config.json");
 		ObjectMapper mapper = new ObjectMapper();
 		config = mapper.readValue(file, GrcBoxConfig.class);
-		
 		if(!Collections.disjoint(config.getInnerInterfaces(), config.getOuterInterfaces())){
 			System.err.print("InnerInterfaces and Outerinterfaces has elements in common. Aborting execution.");
 			System.exit(-1);
@@ -171,6 +170,10 @@ public class GrcBoxServerApplication extends Application {
 	private static void startServer(String string) throws Exception {
 		Component androPiComponent = new Component();
 		NetworkInterface iface = NetworkInterface.getByName(string);
+		if(iface == null){
+			System.err.println("ERROR: No inner  interface called "+ string + " exists");
+			System.exit(-1);
+		}
 		List<InterfaceAddress> addresses =  iface.getInterfaceAddresses();
 		InterfaceAddress addr = null;
 		for (InterfaceAddress interfaceAddress : addresses) {			

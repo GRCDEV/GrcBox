@@ -9,6 +9,7 @@ import org.restlet.resource.ResourceException;
 import org.restlet.resource.ServerResource;
 
 import es.upv.grc.grcbox.common.GrcBoxInterface;
+import es.upv.grc.grcbox.common.GrcBoxInterfaceList;
 import es.upv.grc.grcbox.common.IfacesResource;
 import es.upv.grc.grcbox.server.networkInterfaces.NetworkInterfaceManagerThreadNotRunning;
 
@@ -22,9 +23,11 @@ public class IfacesServerResource extends ServerResource implements IfacesResour
 	 * @see es.upv.grc.andropi.common.IfacesResource#getList()
 	 */
 	@Override
-	public List<GrcBoxInterface> getList() {
+	public GrcBoxInterfaceList getList() {
 		try {
-			return GrcBoxServerApplication.getDb().getOuterInterfaces();
+			GrcBoxInterfaceList list = new GrcBoxInterfaceList();
+			list.setList(GrcBoxServerApplication.getDb().getOuterInterfaces());
+			return list;
 		} catch (NetworkInterfaceManagerThreadNotRunning e) {
 			throw new ResourceException(500);
 		}

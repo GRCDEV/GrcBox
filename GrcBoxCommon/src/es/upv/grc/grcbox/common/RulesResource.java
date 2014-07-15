@@ -47,7 +47,7 @@ public interface RulesResource {
 	 * return a list of rules associated to an app
 	 */
     @Get
-    public List<GrcBoxRule> getList();
+    public GrcBoxRuleList getList();
     
     /*
      * Create a new rule associated to this app

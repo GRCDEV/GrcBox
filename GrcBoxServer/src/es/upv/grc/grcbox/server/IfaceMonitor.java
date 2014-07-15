@@ -38,7 +38,7 @@ public class IfaceMonitor implements NetworkManagerListener{
 //			e.printStackTrace();
 //		}
 		
-		String iproute = "ip route add table "+ nameIndex.get(grcBoxInterface.getName()) + "default dev " + grcBoxInterface + " via " + grcBoxInterface.getGatewayIp();
+		String iproute = "ip route add table "+ nameIndex.get(grcBoxInterface.getName()) + "default dev " + grcBoxInterface.getName() + " via " + grcBoxInterface.getGatewayIp();
 //		try {
 			System.out.println(iproute);
 //			//Runtime.getRuntime().exec(iproute);

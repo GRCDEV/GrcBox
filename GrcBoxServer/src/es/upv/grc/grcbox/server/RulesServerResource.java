@@ -12,6 +12,7 @@ import org.restlet.resource.ServerResource;
 
 import es.upv.grc.grcbox.common.GrcBoxApp;
 import es.upv.grc.grcbox.common.GrcBoxRule;
+import es.upv.grc.grcbox.common.GrcBoxRuleList;
 import es.upv.grc.grcbox.common.RulesResource;
 
 /**
@@ -25,8 +26,10 @@ public class RulesServerResource extends ServerResource implements RulesResource
 	private String clientIp;
 	
 	@Override
-	public List<GrcBoxRule> getList() {
-		return db.getRulesByApp(appId);
+	public GrcBoxRuleList getList() {
+		GrcBoxRuleList list = new GrcBoxRuleList();
+		list.setList(db.getRulesByApp(appId));
+		return list;
 	}
 
 

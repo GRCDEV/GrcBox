@@ -49,6 +49,7 @@ import org.restlet.util.Series;
 
 import es.upv.grc.grcbox.common.*;
 import es.upv.grc.grcbox.common.AppsResource.IdSecret;
+import es.upv.grc.grcbox.common.GrcBoxInterface.State;
 
 /**
  * AndroPiClient Read Information from the server and print it
@@ -56,12 +57,31 @@ import es.upv.grc.grcbox.common.AppsResource.IdSecret;
 public class GrcBoxClient {
 		private static IdSecret myIdSecret;
     public static void main(String[] args) throws Exception {
-        ClientResource clientResource = new ClientResource("http://localhost:8080");
+        ClientResource clientResource = new ClientResource("http://grcbox:8080");
         /*
          * Get the status of the server
          */
         RootResource rootResource = clientResource.getChild("/", RootResource.class);
         GrcBoxStatus status = rootResource.getAndroPiStatus();
+        
+        /*
+         * Get list of interfaces
+         */
+        IfacesResource ifacesResource = clientResource.getChild("/ifaces", IfacesResource.class);
+        GrcBoxInterfaceList ifacesList = ifacesResource.getList();
+        List<GrcBoxInterface> ifaces = ifacesList.getList();
+        System.out.println("The server has " +ifaces.size() + " ifaces");
+        
+        GrcBoxInterface iface = null;
+        /*
+         * chose the first CONNECTED interface
+         */
+        for (GrcBoxInterface grcBoxInterface : ifaces) {
+			if(grcBoxInterface.getState() == State.CONNECTED){
+				iface = grcBoxInterface;
+				break;
+			}
+		}
         
         /*
          * Register a new application
@@ -119,35 +139,38 @@ public class GrcBoxClient {
         
         RulesResource rulesResource = clientResource.getChild("/apps/"+myIdSecret.getAppId()+"/rules", RulesResource.class);
         
-        List<GrcBoxRule> myRules;
-    	myRules = rulesResource.getList();
-    	GrcBoxRule rule = null;
+        GrcBoxRuleList rulesList =rulesResource.getList();
+    	List<GrcBoxRule> myRules = rulesList.getList();
+    	GrcBoxRule ruleIn = null;
+    	GrcBoxRule ruleOut = null;
         appResource.keepAlive();
     	for(int i = 0; i < 4; i++){
     		int port = 20+i;
-    		rule = new GrcBoxRuleIn(-1, GrcBoxRule.Protocol.TCP, 12, "wlan1", System.currentTimeMillis()+200, 1648, port, null, null, port);
-    		
+    		ruleIn = new GrcBoxRuleIn(-1, GrcBoxRule.Protocol.TCP, 12, "wlan1", System.currentTimeMillis()+200, 1648, port, null, null, port);
+    		ruleOut = new GrcBoxRuleOut(-1, GrcBoxRule.Protocol.TCP, 12, "wlan1", System.currentTimeMillis()+200, 1648, port, null);
     		try{
     			/*
     			 * Create a new rule
     			 */
-    			rule = rulesResource.newRule(rule);
+    			ruleIn = rulesResource.newRule(ruleIn);
+    			ruleOut = rulesResource.newRule(ruleOut);
     		}
     		catch(ResourceException re){
     			if(re.getStatus().equals(Status.CONNECTOR_ERROR_COMMUNICATION)){
-    				rule = rulesResource.newRule(rule);
+    				ruleIn = rulesResource.newRule(ruleIn);
     			}
     			else{
     				throw re;
     			}
     		}
     	}
-        myRules = rulesResource.getList();
-        System.out.println("I've defined :"+myRules.size()+ " rules");
+        rulesList = rulesResource.getList();
+        myRules = rulesList.getList();
+        System.out.println("I've defined "+myRules.size()+ " rules");
         /*
          * Check that the new rule exists
          */
-        RuleResource ruleResource = clientResource.getChild("/apps/"+myIdSecret.getAppId()+"/rules/"+rule.getId(),RuleResource.class);
+        RuleResource ruleResource = clientResource.getChild("/apps/"+myIdSecret.getAppId()+"/rules/"+ruleIn.getId(),RuleResource.class);
         GrcBoxRule rule2 = ruleResource.retrieve();
         
         /*

@@ -1,5 +1,8 @@
 package es.upv.grc.grcbox.common;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+@JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, include=JsonTypeInfo.As.PROPERTY, property="@class")
 public class GrcBoxApp {
 	private int appId;
 	private int secret;
