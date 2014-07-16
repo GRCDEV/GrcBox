@@ -62,7 +62,7 @@ public class GrcBoxClient {
 	/*
 	 * Check if the GrcBox Server is available
 	 */
-	boolean isServerAvailable(){
+	public boolean isServerAvailable(){
 		RootResource rootResource = clientResource.getChild("/", RootResource.class);
 		GrcBoxStatus status = rootResource.getAndroPiStatus();
 		return true;
@@ -71,7 +71,7 @@ public class GrcBoxClient {
 	/*
 	 * Register this app into the server.
 	 */
-	boolean register(String appName){
+	public boolean register(String appName){
 		/*
 		 * Register a new application
 		 */
@@ -126,9 +126,9 @@ public class GrcBoxClient {
 	/*
 	 * get a list of the available interfaces from the server
 	 */
-	List<GrcBoxInterface> getInterfaces(){
+	public List<GrcBoxInterface> getInterfaces(){
 		IfacesResource ifaces = clientResource.getChild("/ifaces", IfacesResource.class);
-		return ifaces.getList();
+		return ifaces.getList().getList();
 	}
 	
 	/*
@@ -136,7 +136,7 @@ public class GrcBoxClient {
 	 * Low level method for compatibility with third party communication libraries.
 	 * The application must remove the rule after communication have finished.
 	 */
-	GrcBoxRule registerNewRule(GrcBoxRule rule){
+	public GrcBoxRule registerNewRule(GrcBoxRule rule){
 		RulesResource rulesRes = clientResource.getChild("/apps/"+app.getAppId()+"/rules", RulesResource.class);
 		rule = rulesRes.newRule(rule);
 		return rule;
@@ -145,7 +145,7 @@ public class GrcBoxClient {
 	/*
 	 * Remove a certain rule. It is usually called after closing a GrcBox"socket"
 	 */
-	void removeRule(GrcBoxRule rule){
+	public void removeRule(GrcBoxRule rule){
 		RuleResource ruleRes = clientResource.getChild("/apps/"+app.getAppId()+"/rules/"+rule.getId(), RuleResource.class);
 		ruleRes.remove();
 		return;
@@ -156,7 +156,7 @@ public class GrcBoxClient {
 	 * Register an incoming flow in the server using the provided information
 	 * Return a GrcServerSocket ready to be used 
 	 */
-	GrcBoxServerSocket createServerSocket(int port, GrcBoxInterface iface) throws IOException{
+	public GrcBoxServerSocket createServerSocket(int port, GrcBoxInterface iface) throws IOException{
 		GrcBoxRule rule = new GrcBoxRuleIn(-1, Protocol.TCP, app.getAppId(), iface.getName(), 0, -1, port, null, iface.getIpAddress(), port);
 		registerNewRule(rule);
 		ServerSocket socket = new ServerSocket(port);
@@ -168,7 +168,7 @@ public class GrcBoxClient {
 	 * register an outgoing flow at the server using the destination addr and the destination port.
 	 * Return a socket already connected.
 	 */
-	GrcBoxSocket createSocket(InetAddress addr, int port, GrcBoxInterface iface) throws IOException{
+	public GrcBoxSocket createSocket(InetAddress addr, int port, GrcBoxInterface iface) throws IOException{
 		Socket socket = new Socket(addr, port);
 		GrcBoxRule rule = new GrcBoxRuleOut(-1, Protocol.TCP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), port, addr.getHostAddress());
 		registerNewRule(rule);
@@ -180,7 +180,7 @@ public class GrcBoxClient {
 	 * Register an outgoing flow at the server using the destination address, 
 	 * the destination port, and the local port.
 	 */
-	GrcBoxSocket createSocket(InetAddress address, int port, InetAddress localAddr, int localPort, GrcBoxInterface iface) throws IOException{
+	public GrcBoxSocket createSocket(InetAddress address, int port, InetAddress localAddr, int localPort, GrcBoxInterface iface) throws IOException{
 		Socket socket = new Socket(address, port, localAddr, localPort);
 		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.TCP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), port, address.getHostAddress());
 		registerNewRule(rule);
@@ -191,7 +191,7 @@ public class GrcBoxClient {
 	/*
 	 * Register an outgoing flow at the server using the destination host.
 	 */
-	GrcBoxSocket createSocket(String host, int port, GrcBoxInterface iface) throws UnknownHostException, IOException{
+	public GrcBoxSocket createSocket(String host, int port, GrcBoxInterface iface) throws UnknownHostException, IOException{
 		Socket socket = new Socket(host, port);
 		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.TCP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), port, socket.getInetAddress().getHostAddress());
 		registerNewRule(rule);
@@ -199,7 +199,7 @@ public class GrcBoxClient {
 		return grcSocket;
 	}
 
-	GrcBoxSocket createSocket(String host, int port, InetAddress localAddr, int localPort, GrcBoxInterface iface) throws IOException{
+	public GrcBoxSocket createSocket(String host, int port, InetAddress localAddr, int localPort, GrcBoxInterface iface) throws IOException{
 		Socket socket = new Socket(host, port, localAddr, localPort);
 		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.TCP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), port, socket.getInetAddress().getHostAddress());
 		registerNewRule(rule);
@@ -207,7 +207,7 @@ public class GrcBoxClient {
 		return grcSocket;
 	}
 
-	GrcBoxDatagramSocket createDatagramSocket(GrcBoxInterface iface) throws SocketException{
+	public GrcBoxDatagramSocket createDatagramSocket(GrcBoxInterface iface) throws SocketException{
 		DatagramSocket socket = new DatagramSocket();
 		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.UDP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), -1, null);
 		registerNewRule(rule);
@@ -215,7 +215,7 @@ public class GrcBoxClient {
 		return grcSocket;
 	}
 
-	GrcBoxDatagramSocket createDatagramSocket(int port, GrcBoxInterface iface) throws SocketException{
+	public GrcBoxDatagramSocket createDatagramSocket(int port, GrcBoxInterface iface) throws SocketException{
 		DatagramSocket socket = new DatagramSocket(port);
 		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.UDP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), -1, null);
 		registerNewRule(rule);
@@ -228,7 +228,7 @@ public class GrcBoxClient {
 	 *	The traffic flow registered on the server is restricted to the specifics remote address
 	 *	and remote port. 
 	 */
-	GrcBoxDatagramSocket createDatagramSocket(int port, InetAddress remoteAddr, int remotePort, GrcBoxInterface iface) throws SocketException{
+	public GrcBoxDatagramSocket createDatagramSocket(int port, InetAddress remoteAddr, int remotePort, GrcBoxInterface iface) throws SocketException{
 		DatagramSocket socket = new DatagramSocket(port);
 		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.UDP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), remotePort, remoteAddr.getHostAddress());
 		registerNewRule(rule);
@@ -241,7 +241,7 @@ public class GrcBoxClient {
 	 *	The traffic flow registered on the server is restricted to the specifics remote address
 	 *	and remote port. 
 	 */
-	GrcBoxDatagramSocket createDatagramSocket(int port, InetSocketAddress remoteHost, GrcBoxInterface iface) throws SocketException{
+	public GrcBoxDatagramSocket createDatagramSocket(int port, InetSocketAddress remoteHost, GrcBoxInterface iface) throws SocketException{
 		DatagramSocket socket = new DatagramSocket(port);
 		GrcBoxRule rule = new GrcBoxRuleOut( -1, Protocol.UDP, app.getAppId(), iface.getName(), 0, socket.getLocalPort(), remoteHost.getPort(), remoteHost.getAddress().getHostAddress());
 		registerNewRule(rule);
@@ -255,7 +255,7 @@ public class GrcBoxClient {
 	 * subscribe or bind are called 
 	 * TODO This feature is not supported yet
 	 */
-	GrcBoxMulticasSocket createMulticasSocket(GrcBoxInterface iface) throws IOException{
+	public GrcBoxMulticasSocket createMulticasSocket(GrcBoxInterface iface) throws IOException{
 		MulticastSocket socket = new MulticastSocket();
 		GrcBoxMulticasSocket grcSocket = new GrcBoxMulticasSocket(this, socket);
 		return grcSocket;
@@ -267,7 +267,7 @@ public class GrcBoxClient {
 	 * subscribe or bind are called 
 	 * TODO This feature is not supported yet
 	 */
-	GrcBoxMulticasSocket createMulticasSocket(int port, GrcBoxInterface iface) throws IOException{
+	public GrcBoxMulticasSocket createMulticasSocket(int port, GrcBoxInterface iface) throws IOException{
 		MulticastSocket socket = new MulticastSocket(port);
 		GrcBoxMulticasSocket grcSocket = new GrcBoxMulticasSocket(this, socket);
 		return grcSocket;
