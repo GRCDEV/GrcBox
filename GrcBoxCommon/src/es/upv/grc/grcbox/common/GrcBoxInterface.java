@@ -1,11 +1,12 @@
 package es.upv.grc.grcbox.common;
 
+
 import com.fasterxml.jackson.annotation.*;
 
 @JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, include=JsonTypeInfo.As.PROPERTY, property="@class")
 public class GrcBoxInterface {
-
-	public enum Type{
+    
+    public enum Type{
         WIFISTA, WIFIAH, CELLULAR, ETHERNET, WIMAX, WIFIP, OTHERS, UNKNOWN
     }
     

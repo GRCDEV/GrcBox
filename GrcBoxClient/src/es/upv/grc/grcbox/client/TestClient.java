@@ -193,7 +193,7 @@ public class TestClient {
 	    		GrcBoxRule rule = new GrcBoxRuleOut(-1, GrcBoxRule.Protocol.TCP, myIdSecret.getAppId(), iface.getName(), 0, -1, port, addr.getHostAddress());
 	    		rule = rulesResource.newRule(rule);
 	    		long t2rule = System.currentTimeMillis();	    		
-	    		logger.info("Rule " +t2rule+" "+ (t2rule - t1rule));
+	    		logger.info("Rule " +t2rule+" "+ (t2rule - t1rule)); 
 	    	}
 	    	
 	    	/*

@@ -128,7 +128,8 @@ public class GrcBoxClient {
 	 */
 	public List<GrcBoxInterface> getInterfaces(){
 		IfacesResource ifaces = clientResource.getChild("/ifaces", IfacesResource.class);
-		return ifaces.getList().getList();
+		GrcBoxInterfaceList list = ifaces.getList();
+		return list.getList();
 	}
 	
 	/*
