@@ -228,10 +228,11 @@ public class TestClient {
 	            long t2remove = System.currentTimeMillis();
 	            logger.info("Remove  "+ t2remove + " " + (t2remove- t1remove));
 	            keepAliveMonitor.cancel(true);
+	            clientResource.release();
 			}
 			logger.info("Total  "+ System.currentTimeMillis() + " " + (System.currentTimeMillis()- startTime));
-			System.exit(0);
 	    }
+	    System.exit(0);
 	}
 
 }
