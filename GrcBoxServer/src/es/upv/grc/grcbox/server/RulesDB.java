@@ -71,8 +71,8 @@ public class RulesDB {
 				iproute += " via " + iface.getGatewayIp();
 		}
 		try {
+			System.out.println("Activating NAT on iface " + iface.getName() +"\n"+ ipnat);
 			System.out.println("Create routing table for Iface " + iface.getName() +"\n"+ iprule);
-			
 			System.out.println("Adding default routing rule for Iface "+ iface.getName()+"\n" + iproute );
 			if(!GrcBoxServerApplication.getConfig().isDebug()){
 				Runtime.getRuntime().exec(ipnat);
