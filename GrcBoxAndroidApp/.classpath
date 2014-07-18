@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
+	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
+	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
+	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry exported="true" kind="lib" path="/home/subhadeep/GRCBOX/restlet-android-2.2.1/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.annotations.jar"/>
+	<classpathentry exported="true" kind="lib" path="/home/subhadeep/GRCBOX/restlet-android-2.2.1/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.core.jar"/>
+	<classpathentry exported="true" kind="lib" path="/home/subhadeep/GRCBOX/restlet-android-2.2.1/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.csv.jar"/>
+	<classpathentry exported="true" kind="lib" path="/home/subhadeep/GRCBOX/restlet-android-2.2.1/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.databind.jar"/>
+	<classpathentry exported="true" kind="lib" path="/home/subhadeep/GRCBOX/restlet-android-2.2.1/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.jaxb.jar"/>
+	<classpathentry exported="true" kind="lib" path="/home/subhadeep/GRCBOX/restlet-android-2.2.1/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.smile.jar"/>
+	<classpathentry exported="true" kind="lib" path="/home/subhadeep/GRCBOX/restlet-android-2.2.1/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.xml.jar"/>
+	<classpathentry exported="true" kind="lib" path="/home/subhadeep/GRCBOX/restlet-android-2.2.1/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.yaml.jar"/>
+	<classpathentry exported="true" kind="lib" path="/home/subhadeep/GRCBOX/restlet-android-2.2.1/lib/org.restlet.jar"/>
+	<classpathentry exported="true" kind="lib" path="/home/subhadeep/GRCBOX/restlet-android-2.2.1/lib/org.restlet.ext.jackson.jar"/>
+	<classpathentry exported="true" kind="src" path="/GrcBoxCommon"/>
+	<classpathentry kind="output" path="bin/classes"/>
+</classpath>
