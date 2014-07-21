@@ -63,7 +63,7 @@ public class RulesDB {
 		nm.registerForUpdates(ifaceMonitor);
 	}
 	
-	private synchronized void initializeOutIface(GrcBoxInterface iface){
+	private void initializeOutIface(GrcBoxInterface iface){
 		String ipnat = "iptables -t nat -A POSTROUTING -o " + iface.getName() + " -j MASQUERADE";
 		String iprule = "ip rule add fwmark " + nameIndex.get(iface.getName()) + " table " + nameIndex.get(iface.getName());
 		String iproute = "ip route add table "+ nameIndex.get(iface.getName()) + " default dev " + iface.getName(); 
@@ -200,7 +200,7 @@ public class RulesDB {
 		}
 	}
 	
-	private synchronized void addRuleToSystem(GrcBoxRule rule) {
+	private  void addRuleToSystem(GrcBoxRule rule) {
 		/*
 		 * TODO Dummy method
 		 * It must check multicast rules based on IP and throw an exception until supported
@@ -265,7 +265,7 @@ public class RulesDB {
 		return ruleStr;
 }
 
-	private synchronized void rmRuleFromSystem(GrcBoxRule rule){
+	private  void rmRuleFromSystem(GrcBoxRule rule){
 		/*
 		 * TODO Dummy method
 		 */

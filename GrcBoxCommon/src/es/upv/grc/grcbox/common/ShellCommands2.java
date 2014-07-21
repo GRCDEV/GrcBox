@@ -9,8 +9,7 @@ package es.upv.grc.grcbox.common;
  */
 public final class ShellCommands2 {
     
-    public static final String ConnectionUUID = "nmcli -t -f UUID,DEVICES con status";
-    public static final String WifiMode = "nmcli -t -f 802-11-wireless con list uuid ";
+    public static final String ConnectionUUID = "nmcli -t -f UUID,DEVICE con show";
+    public static final String WifiMode = "nmcli -t -f 802-11-wireless con show uuid ";
     //public static final String WifiMode = "nmcli con list uuid ";
-    
 }
