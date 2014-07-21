@@ -3,7 +3,6 @@ package es.upv.grc.grcbox.client;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -28,8 +27,10 @@ import org.restlet.util.Series;
 
 import es.upv.grc.grcbox.common.AppResource;
 import es.upv.grc.grcbox.common.AppsResource;
+import es.upv.grc.grcbox.common.AppsResource.IdSecret;
 import es.upv.grc.grcbox.common.GrcBoxAppInfo;
 import es.upv.grc.grcbox.common.GrcBoxInterface;
+import es.upv.grc.grcbox.common.GrcBoxInterface.State;
 import es.upv.grc.grcbox.common.GrcBoxInterfaceList;
 import es.upv.grc.grcbox.common.GrcBoxRule;
 import es.upv.grc.grcbox.common.GrcBoxRuleOut;
@@ -37,8 +38,8 @@ import es.upv.grc.grcbox.common.GrcBoxStatus;
 import es.upv.grc.grcbox.common.IfacesResource;
 import es.upv.grc.grcbox.common.RootResource;
 import es.upv.grc.grcbox.common.RulesResource;
-import es.upv.grc.grcbox.common.AppsResource.IdSecret;
-import es.upv.grc.grcbox.common.GrcBoxInterface.State;
+
+
 
 /*
  * This class is a performance test of the GrcBox server.
@@ -193,7 +194,7 @@ public class TestClient {
 	    		GrcBoxRule rule = new GrcBoxRuleOut(-1, GrcBoxRule.Protocol.TCP, myIdSecret.getAppId(), iface.getName(), 0, -1, port, addr.getHostAddress());
 	    		rule = rulesResource.newRule(rule);
 	    		long t2rule = System.currentTimeMillis();	    		
-	    		logger.info("Rule " +t2rule+" "+ (t2rule - t1rule));
+	    		logger.info("Rule " +t2rule+" "+ (t2rule - t1rule)); 
 	    	}
 	    	
 	    	/*
