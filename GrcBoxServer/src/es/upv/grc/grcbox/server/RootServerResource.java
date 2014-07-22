@@ -62,12 +62,34 @@ public class RootServerResource extends ServerResource implements RootResource {
 	@Override
     public GrcBoxStatus getAndroPiStatus() {
 		RulesDB db = GrcBoxServerApplication.getDb();
+		long start = System.currentTimeMillis();
+		if(GrcBoxServerApplication.getConfig().isDebug())
+			System.out.println("New Root Resource called " + start);
+		
     	GrcBoxStatus status;
+    	System.out.println(System.currentTimeMillis());
+    	String name = GrcBoxServerApplication.getCurrent().getName();
 		try {
-			status = new GrcBoxStatus(GrcBoxServerApplication.getCurrent().getName(), db.getOuterInterfaces().size(), db.getApps().size(), db.getAllRules().size());
+			if(GrcBoxServerApplication.getConfig().isDebug())
+				System.out.println(System.currentTimeMillis());
+			int numIfaces = db.getOuterInterfaces().size();
+			if(GrcBoxServerApplication.getConfig().isDebug())
+				System.out.println(System.currentTimeMillis());
+			int appSize = db.getApps().size();
+			if(GrcBoxServerApplication.getConfig().isDebug())
+				System.out.println(System.currentTimeMillis());
+			int ruleSize =  db.getAllRules().size();
+			if(GrcBoxServerApplication.getConfig().isDebug())
+				System.out.println(System.currentTimeMillis());
+			status = new GrcBoxStatus(name, numIfaces, appSize, ruleSize);
+			if(GrcBoxServerApplication.getConfig().isDebug())
+				System.out.println(System.currentTimeMillis());
 		} catch (NetworkInterfaceManagerThreadNotRunning e) {
 			e.printStackTrace();
 			throw new ResourceException(503);
+		}
+		if(GrcBoxServerApplication.getConfig().isDebug()){
+			System.out.println("New Root Resource finalized " + (System.currentTimeMillis() - start));
 		}
     	return status;
     }

@@ -30,22 +30,22 @@ public class IfaceMonitor implements NetworkManagerListener{
 	private void updateDefaultRoute(GrcBoxInterface grcBoxInterface){
 		
 		String delRoute = "ip route del table "+nameIndex.get(grcBoxInterface.getName()) + " default ";
-//		try {
+		try {
 			System.out.println(delRoute);
-//			Runtime.getRuntime().exec(delRoute);
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
+			Runtime.getRuntime().exec(delRoute);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
-		String iproute = "ip route add table "+ nameIndex.get(grcBoxInterface.getName()) + "default dev " + grcBoxInterface.getName() + " via " + grcBoxInterface.getGatewayIp();
-//		try {
+		String iproute = "ip route add table "+ nameIndex.get(grcBoxInterface.getName()) + " default dev " + grcBoxInterface.getName() + " via " + grcBoxInterface.getGatewayIp();
+		try {
 			System.out.println(iproute);
-//			//Runtime.getRuntime().exec(iproute);
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
+			Runtime.getRuntime().exec(iproute);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override

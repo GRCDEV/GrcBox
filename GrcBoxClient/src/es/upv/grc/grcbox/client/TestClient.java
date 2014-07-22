@@ -37,6 +37,7 @@ import es.upv.grc.grcbox.common.GrcBoxRuleOut;
 import es.upv.grc.grcbox.common.GrcBoxStatus;
 import es.upv.grc.grcbox.common.IfacesResource;
 import es.upv.grc.grcbox.common.RootResource;
+import es.upv.grc.grcbox.common.RuleResource;
 import es.upv.grc.grcbox.common.RulesResource;
 
 
@@ -51,6 +52,7 @@ public class TestClient {
 	}
 	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private static int appid = 0;
+	private static int ruleId = 0;
 	private static ClientResource clientResource;
 	
 	private final static Runnable sendKeepAlive = new Runnable() {
@@ -126,19 +128,20 @@ public class TestClient {
 	    		/*
 	    		 * Get the status of the server
 	    		 */
+	    		long checkTime1 = System.currentTimeMillis();
 	    		RootResource rootResource = clientResource.getChild("/", RootResource.class);
 	    		GrcBoxStatus status = rootResource.getAndroPiStatus();
-	    		long checkTime = System.currentTimeMillis();
-	    		logger.info("CheckStatus " +checkTime+" "+ (checkTime - startTime));
+	    		long checkTime2 = System.currentTimeMillis();
+	    		logger.info("CheckStatus " +checkTime2 +" "+ (checkTime2 -checkTime1));
 	    		/*
 	    		 * Get list of interfaces
 	    		 */
+	    		long ifacesTime1 = System.currentTimeMillis();
 	    		IfacesResource ifacesResource = clientResource.getChild("/ifaces", IfacesResource.class);
 	    		GrcBoxInterfaceList ifacesList = ifacesResource.getList();
+	    		long ifacesTime2 = System.currentTimeMillis();
 	    		List<GrcBoxInterface> ifaces = ifacesList.getList();
-	    		System.out.println("The server has " +ifaces.size() + " ifaces");
-	    		long ifacesTime = System.currentTimeMillis();
-	    		logger.info("ListOfIfaces " +ifacesTime+" "+ (ifacesTime - checkTime));
+	    		logger.info("ListOfIfaces " +ifacesTime2 +" "+ (ifacesTime2 - ifacesTime1));
 	    		
 	    		GrcBoxInterface iface = null;
 	    		/*
@@ -193,6 +196,7 @@ public class TestClient {
 				RulesResource rulesResource = clientResource.getChild("/apps/"+myIdSecret.getAppId()+"/rules", RulesResource.class);
 	    		GrcBoxRule rule = new GrcBoxRuleOut(-1, GrcBoxRule.Protocol.TCP, myIdSecret.getAppId(), iface.getName(), 0, -1, port, addr.getHostAddress());
 	    		rule = rulesResource.newRule(rule);
+	    		ruleId = rule.getId();
 	    		long t2rule = System.currentTimeMillis();	    		
 	    		logger.info("Rule " +t2rule+" "+ (t2rule - t1rule)); 
 	    	}
@@ -220,6 +224,11 @@ public class TestClient {
 			 * Second block after downloading the file
 			 */
 			if(method == Method.GRCBOX){
+				long rmRule1 = System.currentTimeMillis();
+				RuleResource ruleResource = clientResource.getChild("/apps/"+appid+"/rules/"+ruleId, RuleResource.class);
+				ruleResource.remove();
+				long rmRule2 = System.currentTimeMillis();
+				logger.info("RmRule "+ rmRule2 + " " + (rmRule2-rmRule1));
 				/*
 				 * Deregister App
 				 */

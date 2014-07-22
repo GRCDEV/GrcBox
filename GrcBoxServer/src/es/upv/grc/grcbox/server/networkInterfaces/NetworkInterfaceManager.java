@@ -22,7 +22,7 @@ import es.upv.grc.grcbox.server.networkInterfaces.NetworkManagerNotRunning;
 public class NetworkInterfaceManager extends Thread
 {
     private static NetworkInterfaceManager manager = null;
-
+    Object syncUpdate = new Object();
     private boolean isUpdatingInterfaces;
     
     private boolean isNetworkManagerWorking;
@@ -172,6 +172,10 @@ public class NetworkInterfaceManager extends Thread
 
     private LinkedList<GrcBoxInterface> getIPInfoOfInterfaces(LinkedList<GrcBoxInterface> list) throws UnableToRunShellCommand
     {
+    	/*
+    	 * TODO REFACTORIZE TO CALL NM ONLY ONCE OR TWICE!!!
+    	 * TODO
+    	 */
         String temp = null;
         if(list == null || list.size() == 0)
         {
@@ -240,13 +244,13 @@ public class NetworkInterfaceManager extends Thread
         {
         	//System.out.println("NULL");
         }
-        synchronized(this)
+        synchronized(syncUpdate)
         {
-        	if(isUpdatingInterfaces)
+        	while(isUpdatingInterfaces)
         	{
         		//System.out.println("IS-INITIALIZING");
         		try{
-        			this.wait();
+        			syncUpdate.wait();
         		}
         		catch(InterruptedException e)
         		{
@@ -427,7 +431,7 @@ public class NetworkInterfaceManager extends Thread
         while(isNetworkManagerWorking) 
         {
         	LinkedList<GrcBoxInterface> list = null;
-        	synchronized(this)
+        	synchronized(syncUpdate)
         	{
         		isUpdatingInterfaces = true;        		
         		try{
@@ -437,33 +441,35 @@ public class NetworkInterfaceManager extends Thread
         		{
         			System.err.println("Class NetworkInterfaceManager: Error while accessing interface information!");
         		}
-                updatedInterfaces = removedInterfaces = null;
-                checkInterfaceChanges(list);
-                if(updatedInterfaces != null || removedInterfaces != null)
-                {
-                    //results of recent scan is different from the previous results
-                    //save changes and notify registered classes
-                    if(registeredClasses != null)
-                    {
-                        String deviceNamesRemoved[] = null;                    
-                        if(removedInterfaces != null && removedInterfaces.size() > 0)
-                        {
-                            deviceNamesRemoved = new String[removedInterfaces.size()];                  
-                            for(int i = 0; i < removedInterfaces.size(); i++)
-                            {
-                                deviceNamesRemoved[i] = removedInterfaces.get(i).getName();
-                            }
-                        }
-                        for(int i = 0; i < registeredClasses.size(); i++)
-                        {
-                            registeredClasses.get(i).getUpdatedDevices(deepCopy(updatedInterfaces)); //dont want to send the original list, but just a copy
-                            registeredClasses.get(i).getRemovedDevices(deviceNamesRemoved);
-                        }
-                    }
-                }
                 isUpdatingInterfaces = false;
-                notify();
+                syncUpdate.notify();
         	}
+        	
+        	updatedInterfaces = removedInterfaces = null;
+        	checkInterfaceChanges(list);
+        	if(updatedInterfaces != null || removedInterfaces != null)
+        	{
+        		//results of recent scan is different from the previous results
+        		//save changes and notify registered classes
+        		if(registeredClasses != null)
+        		{
+        			String deviceNamesRemoved[] = null;                    
+        			if(removedInterfaces != null && removedInterfaces.size() > 0)
+        			{
+        				deviceNamesRemoved = new String[removedInterfaces.size()];                  
+        				for(int i = 0; i < removedInterfaces.size(); i++)
+        				{
+        					deviceNamesRemoved[i] = removedInterfaces.get(i).getName();
+        				}
+        			}
+        			for(int i = 0; i < registeredClasses.size(); i++)
+        			{
+        				registeredClasses.get(i).getUpdatedDevices(deepCopy(updatedInterfaces)); //dont want to send the original list, but just a copy
+        				registeredClasses.get(i).getRemovedDevices(deviceNamesRemoved);
+        			}
+        		}
+        	}
+
             try {
                 Thread.sleep(UPDATE_INTERVAL);
             } catch (InterruptedException ex) {
