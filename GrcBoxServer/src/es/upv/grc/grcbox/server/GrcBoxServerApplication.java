@@ -35,20 +35,13 @@ package es.upv.grc.grcbox.server;
 
 
 import java.io.File;
-import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
-import java.net.URL;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import org.restlet.Application;
 import org.restlet.Component;
@@ -71,52 +64,29 @@ import org.restlet.util.Series;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import es.upv.grc.grcbox.common.GrcBoxApp;
-import es.upv.grc.grcbox.common.GrcBoxInterface;
-import es.upv.grc.grcbox.common.GrcBoxRule;
 import es.upv.grc.grcbox.server.networkInterfaces.NetworkInterfaceManager;
+import es.upv.grc.grcbox.server.resources.AppServerResource;
+import es.upv.grc.grcbox.server.resources.AppsServerResource;
+import es.upv.grc.grcbox.server.resources.IfaceServerResource;
+import es.upv.grc.grcbox.server.resources.IfacesServerResource;
+import es.upv.grc.grcbox.server.resources.RootServerResource;
+import es.upv.grc.grcbox.server.resources.RuleServerResource;
+import es.upv.grc.grcbox.server.resources.RulesServerResource;
 
 
 /**
  * Routing to annotated server resources.
  */
 public class GrcBoxServerApplication extends Application {
+	private static final Logger LOG = Logger.getLogger(NetworkInterfaceManager.class.getName()); 
 
 	private static final String configFile = "config.json";
 	private static GrcBoxConfig config;
 	private static MapVerifier verifier = new MapVerifier();
 	private static RulesDB db;
 
-	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	
-	/*
-	 * TODO Move this thread to the DB class FUTURE
-	 */
-	final static Runnable dbMonitor = new Runnable() {
-		@Override
-		public void run() {
-			long timeout = config.getKeepAliveTime();
-			long now = System.currentTimeMillis();
-			List<GrcBoxApp> appList = db.getApps();
-			for (GrcBoxApp androPiApp : appList) {
-				long diff = now - androPiApp.getLastKeepAlive();
-				if(diff > timeout ){
-					System.out.println(diff);
-					db.rmApp(androPiApp.getAppId());
-				}
-				else{
-					//TODO Currently the expire property is ignored.
-//					List<GrcBoxRule> rules = db.getRulesByApp(androPiApp.getAppId());
-//					for (GrcBoxRule rule : rules) {
-//						if(rule.getExpire() < now){
-//							db.rmRule(androPiApp.getAppId(), rule.getId());
-//						}
-//					}
-				}
-			}
-		}
-	};
-	
+
 	public GrcBoxServerApplication(){
 		setName("GRCBox Server");
 		setDescription("Connectivity for smartphones");
@@ -125,7 +95,7 @@ public class GrcBoxServerApplication extends Application {
 	}
 
 	
-	protected static GrcBoxConfig getConfig() {
+	public static GrcBoxConfig getConfig() {
 		return config;
 	}
 
@@ -142,7 +112,7 @@ public class GrcBoxServerApplication extends Application {
 	 */
 	public static void main(String[] args) throws Exception {
 		//Load Config File
-		System.out.println("Working Directory = " + System.getProperty("user.dir"));
+		LOG.info("Working Directory = " + System.getProperty("user.dir"));
 		File file = new File("./config.json");
 		ObjectMapper mapper = new ObjectMapper();
 		config = mapper.readValue(file, GrcBoxConfig.class);
@@ -152,15 +122,8 @@ public class GrcBoxServerApplication extends Application {
 		}
 		
 		db = new RulesDB();
-		
-		/*
-		 * TODO Move this into the RulesDB class FUTURE
-		 */
-		final ScheduledFuture<?> monitorHandle = scheduler.scheduleAtFixedRate(dbMonitor, config.getKeepAliveTime(), config.getKeepAliveTime(), TimeUnit.MILLISECONDS);
-		
 		LinkedList<String> innerInterfaces = config.getInnerInterfaces();
 		db.setInnerInterfaces(innerInterfaces);
-		db.setOuterInterfaces(config.getOuterInterfaces());
 		db.initialize();
 		for (String string : innerInterfaces) {
 			startServer(string);
@@ -195,7 +158,8 @@ public class GrcBoxServerApplication extends Application {
 			androPiComponent.start();
 		}
 		else {
-			System.out.println("The server could not be initialized. No Ipv4 address on innerinterface present");
+			LOG.severe("The server could not be initialized. No Ipv4 address on innerinterface present");
+			System.exit(1);
 		}
 	}
 
@@ -209,7 +173,7 @@ public class GrcBoxServerApplication extends Application {
 		 */
 		@Override
 		protected int beforeHandle(Request request, Response response) {
-			System.out.println(
+			LOG.info(
 					"Method: " + request.getMethod()
 					+ "\nUser ID:" + request.getClientInfo().getUser()
 					+ "\nResource URI : " + request.getResourceRef()

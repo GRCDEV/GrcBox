@@ -1,8 +1,0 @@
-#BlueJ class context
-comment0.params=interfaces
-comment0.target=void\ getUpdatedDevices(java.util.LinkedList)
-comment1.params=interfaceNames
-comment1.target=void\ getRemovedDevices(java.lang.String[])
-comment2.params=args
-comment2.target=void\ main(java.lang.String[])
-numComments=3

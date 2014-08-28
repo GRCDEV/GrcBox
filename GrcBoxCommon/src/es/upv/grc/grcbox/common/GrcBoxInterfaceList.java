@@ -1,15 +1,15 @@
 package es.upv.grc.grcbox.common;
 
-import java.util.List;
+import java.util.Collection;
 
 public class GrcBoxInterfaceList {
-	List<GrcBoxInterface> list;
+	Collection<GrcBoxInterface> list;
 
-	public List<GrcBoxInterface> getList() {
+	public Collection<GrcBoxInterface> getList() {
 		return list;
 	}
 
-	public void setList(List<GrcBoxInterface> list) {
+	public void setList(Collection<GrcBoxInterface> list) {
 		this.list = list;
 	}
 }

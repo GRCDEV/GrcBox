@@ -7,7 +7,7 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -25,20 +25,18 @@ import org.restlet.data.Protocol;
 import org.restlet.resource.ClientResource;
 import org.restlet.util.Series;
 
-import es.upv.grc.grcbox.common.AppResource;
-import es.upv.grc.grcbox.common.AppsResource;
-import es.upv.grc.grcbox.common.AppsResource.IdSecret;
 import es.upv.grc.grcbox.common.GrcBoxAppInfo;
 import es.upv.grc.grcbox.common.GrcBoxInterface;
-import es.upv.grc.grcbox.common.GrcBoxInterface.State;
+import es.upv.grc.grcbox.common.resources.AppResource;
+import es.upv.grc.grcbox.common.resources.AppsResource;
+import es.upv.grc.grcbox.common.resources.IfacesResource;
+import es.upv.grc.grcbox.common.resources.RootResource;
+import es.upv.grc.grcbox.common.resources.RuleResource;
+import es.upv.grc.grcbox.common.resources.RulesResource;
+import es.upv.grc.grcbox.common.resources.AppsResource.IdSecret;
 import es.upv.grc.grcbox.common.GrcBoxInterfaceList;
 import es.upv.grc.grcbox.common.GrcBoxRule;
-import es.upv.grc.grcbox.common.GrcBoxRuleOut;
 import es.upv.grc.grcbox.common.GrcBoxStatus;
-import es.upv.grc.grcbox.common.IfacesResource;
-import es.upv.grc.grcbox.common.RootResource;
-import es.upv.grc.grcbox.common.RuleResource;
-import es.upv.grc.grcbox.common.RulesResource;
 
 
 
@@ -130,7 +128,7 @@ public class TestClient {
 	    		 */
 	    		long checkTime1 = System.currentTimeMillis();
 	    		RootResource rootResource = clientResource.getChild("/", RootResource.class);
-	    		GrcBoxStatus status = rootResource.getAndroPiStatus();
+	    		GrcBoxStatus status = rootResource.getGrcBoxStatus();
 	    		long checkTime2 = System.currentTimeMillis();
 	    		logger.info("CheckStatus " +checkTime2 +" "+ (checkTime2 -checkTime1));
 	    		/*
@@ -140,7 +138,7 @@ public class TestClient {
 	    		IfacesResource ifacesResource = clientResource.getChild("/ifaces", IfacesResource.class);
 	    		GrcBoxInterfaceList ifacesList = ifacesResource.getList();
 	    		long ifacesTime2 = System.currentTimeMillis();
-	    		List<GrcBoxInterface> ifaces = ifacesList.getList();
+	    		Collection<GrcBoxInterface> ifaces = ifacesList.getList();
 	    		logger.info("ListOfIfaces " +ifacesTime2 +" "+ (ifacesTime2 - ifacesTime1));
 	    		
 	    		GrcBoxInterface iface = null;
@@ -148,7 +146,7 @@ public class TestClient {
 	    		 * chose the first CONNECTED interface
 	    		 */
 	    		for (GrcBoxInterface grcBoxInterface : ifaces) {
-	    			if(grcBoxInterface.getState() == State.CONNECTED){
+	    			if(grcBoxInterface.hasInternet()){
 	    				iface = grcBoxInterface;
 	    				break;
 	    			}
@@ -194,7 +192,7 @@ public class TestClient {
 				
 				long t1rule = System.currentTimeMillis();
 				RulesResource rulesResource = clientResource.getChild("/apps/"+myIdSecret.getAppId()+"/rules", RulesResource.class);
-	    		GrcBoxRule rule = new GrcBoxRuleOut(-1, GrcBoxRule.Protocol.TCP, myIdSecret.getAppId(), iface.getName(), 0, -1, port, addr.getHostAddress());
+	    		GrcBoxRule rule = new GrcBoxRule(-1, GrcBoxRule.Protocol.TCP, false, myIdSecret.getAppId(), iface.getName(), 0, -1, port, addr.getHostAddress(), null, port, null);
 	    		rule = rulesResource.newRule(rule);
 	    		ruleId = rule.getId();
 	    		long t2rule = System.currentTimeMillis();	    		

@@ -33,7 +33,7 @@
 
 package es.upv.grc.grcbox.client;
 
-import java.net.InetAddress;
+import java.util.Collection;
 import java.util.List;
 
 import org.restlet.Client;
@@ -43,13 +43,20 @@ import org.restlet.data.ChallengeScheme;
 import org.restlet.data.Parameter;
 import org.restlet.data.Protocol;
 import org.restlet.data.Status;
+import org.restlet.engine.Engine;
+import org.restlet.ext.jackson.JacksonConverter;
 import org.restlet.resource.ClientResource;
 import org.restlet.resource.ResourceException;
 import org.restlet.util.Series;
 
 import es.upv.grc.grcbox.common.*;
-import es.upv.grc.grcbox.common.AppsResource.IdSecret;
-import es.upv.grc.grcbox.common.GrcBoxInterface.State;
+import es.upv.grc.grcbox.common.resources.AppResource;
+import es.upv.grc.grcbox.common.resources.AppsResource;
+import es.upv.grc.grcbox.common.resources.IfacesResource;
+import es.upv.grc.grcbox.common.resources.RootResource;
+import es.upv.grc.grcbox.common.resources.RuleResource;
+import es.upv.grc.grcbox.common.resources.RulesResource;
+import es.upv.grc.grcbox.common.resources.AppsResource.IdSecret;
 
 /**
  * AndroPiClient Read Information from the server and print it
@@ -57,19 +64,20 @@ import es.upv.grc.grcbox.common.GrcBoxInterface.State;
 public class GrcBoxClient {
 		private static IdSecret myIdSecret;
     public static void main(String[] args) throws Exception {
+    	Engine.getInstance().getRegisteredConverters().add(new JacksonConverter());
         ClientResource clientResource = new ClientResource("http://grcbox:8080");
         /*
          * Get the status of the server
          */
         RootResource rootResource = clientResource.getChild("/", RootResource.class);
-        GrcBoxStatus status = rootResource.getAndroPiStatus();
+        GrcBoxStatus status = rootResource.getGrcBoxStatus();
         
         /*
          * Get list of interfaces
          */
         IfacesResource ifacesResource = clientResource.getChild("/ifaces", IfacesResource.class);
         GrcBoxInterfaceList ifacesList = ifacesResource.getList();
-        List<GrcBoxInterface> ifaces = ifacesList.getList();
+        Collection<GrcBoxInterface> ifaces = ifacesList.getList();
         System.out.println("The server has " +ifaces.size() + " ifaces");
         
         GrcBoxInterface iface = null;
@@ -77,7 +85,7 @@ public class GrcBoxClient {
          * chose the first CONNECTED interface
          */
         for (GrcBoxInterface grcBoxInterface : ifaces) {
-			if(grcBoxInterface.getState() == State.CONNECTED){
+			if(grcBoxInterface.isUp()){
 				iface = grcBoxInterface;
 				break;
 			}
@@ -146,8 +154,8 @@ public class GrcBoxClient {
         appResource.keepAlive();
     	for(int i = 0; i < 4; i++){
     		int port = 20+i;
-    		ruleIn = new GrcBoxRuleIn(-1, GrcBoxRule.Protocol.TCP, 12, "wlan1", System.currentTimeMillis()+200, 1648, port, null, null, port);
-    		ruleOut = new GrcBoxRuleOut(-1, GrcBoxRule.Protocol.TCP, 12, "wlan1", System.currentTimeMillis()+200, 1648, port, null);
+    		ruleIn = new GrcBoxRule(-1, GrcBoxRule.Protocol.TCP, true, 12, "wlan0", System.currentTimeMillis()+200, 1648, port, null, null, port, null);
+    		ruleOut = new GrcBoxRule(-1, GrcBoxRule.Protocol.TCP, false, 12, "wlan0", System.currentTimeMillis()+200, 1648, port, null, null, port, null);
     		try{
     			/*
     			 * Create a new rule

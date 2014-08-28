@@ -3,18 +3,13 @@ package es.upv.grc.grcbox.server;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
+
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-
-import es.upv.grc.grcbox.common.GrcBoxInterface.Type;
-import es.upv.grc.grcbox.server.GrcBoxConfig.*;
-
 
 public class CreateExampleConfig {
 

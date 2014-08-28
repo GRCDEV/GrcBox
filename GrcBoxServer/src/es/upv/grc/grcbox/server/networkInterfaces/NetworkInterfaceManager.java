@@ -1,496 +1,468 @@
 package es.upv.grc.grcbox.server.networkInterfaces;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.math.BigInteger;
+import java.net.Inet4Address;
+import java.net.UnknownHostException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.StringTokenizer;
+import java.util.List;
+import java.util.Map;
+import java.util.Vector;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.freedesktop.DBus.Properties;
+import org.freedesktop.NetworkManagerIface;
+import org.freedesktop.NetworkManager.DeviceInterface.StateChanged;
+import org.freedesktop.NetworkManager.Constants.NM_802_11_MODE;
+import org.freedesktop.NetworkManager.Constants.NM_DEVICE_STATE;
+import org.freedesktop.NetworkManager.Constants.NM_DEVICE_TYPE;
+import org.freedesktop.NetworkManager.Settings.Connection;
+import org.freedesktop.dbus.DBusConnection;
+import org.freedesktop.dbus.DBusSigHandler;
+import org.freedesktop.dbus.ObjectPath;
+import org.freedesktop.dbus.Path;
+import org.freedesktop.dbus.UInt32;
+import org.freedesktop.dbus.Variant;
+import org.freedesktop.dbus.exceptions.DBusException;
 
 import es.upv.grc.grcbox.common.GrcBoxInterface;
-import es.upv.grc.grcbox.common.KnownInterfaceTypes;
-import es.upv.grc.grcbox.common.KnownInterfaceStates;
-import es.upv.grc.grcbox.server.networkInterfaces.UnableToRunShellCommand;
-import es.upv.grc.grcbox.server.networkInterfaces.NetworkManagerNotRunning;
-
-/**
- * Abstract class NetworkInterfaceManager - write a description of the class here
- * 
- * @author Subhadeep Patra
- * @version 0.0.6 using Threads
- */
+import es.upv.grc.grcbox.common.GrcBoxInterface.Type;
 
 
-public class NetworkInterfaceManager extends Thread
-{
-    private static NetworkInterfaceManager manager = null;
-    Object syncUpdate = new Object();
-    private boolean isUpdatingInterfaces;
-    
-    private boolean isNetworkManagerWorking;
+public class NetworkInterfaceManager {
+	private static final Logger LOG = Logger.getLogger(NetworkInterfaceManager.class.getName()); 
+	/*
+	 * A map name, GrcBoxInterfaces to cache info from NetworkManager
+	 */
+	private static volatile Map<String, GrcBoxInterface> cachedInterfaces = new HashMap<>();
+	private static volatile Map<String, Device> devices = new HashMap<>();
 
-    private LinkedList<GrcBoxInterface> interfaces;
+	/*
+	 * List of signal listeners
+	 */
+	private static Vector<NetworkManagerListener> ifaceSubscribers = new Vector<>();
 
-    private LinkedList<NetworkManagerListener> registeredClasses;
-    
-    private LinkedList<GrcBoxInterface> updatedInterfaces;
-    
-    private LinkedList<GrcBoxInterface> removedInterfaces;
+	private static DBusConnection conn; 
+	private static Properties nmProp;
+	private static NetworkManagerIface nm;
 
-    private static final String NetworkManagerRunning = "running";
-
-    private static final String space = " ";
-    private static final String theLineWithIP4 = "IP4.ADDRESS[1]:";
-    private static final String spaceAndSlash = " /";
-    private static final String dot = ".";
-    private static final String colon = ":";
-
-    private static final int UPDATE_INTERVAL = 10000;
-
-    private NetworkInterfaceManager()
-    {
-    	isUpdatingInterfaces = true;	//has been set to true so that no information can be asked before one thread cycle
-        isNetworkManagerWorking = false;
-        interfaces = null;
-        registeredClasses = null;
-        updatedInterfaces = null;
-        removedInterfaces = null;
-    }
-    
-    public static NetworkInterfaceManager getObject()
-    {
-        if(manager == null || manager.getState() == Thread.State.TERMINATED)
-        {
-            manager = new NetworkInterfaceManager();
-        }
-        return manager;
-    }
-    
-    
-    /**
-     * Method to restart the network manager of the system
-     * 
-     * @param   None                        Not required
-     * @return  void                        Nothing
-     * @throws  UnableToRunShellCommand     An exception showing that the command could not be run
-     * 
-     */
-
-    public void networkRestart() throws UnableToRunShellCommand{
-        try {
-            Process process = Runtime.getRuntime().exec(ShellCommands.RestartNetworkManager);
-            process.waitFor();
-        } catch(Exception e) {
-            throw new UnableToRunShellCommand("Exception: Unable to restart the Network Mananger!");
-        }
-    }
+	private static volatile Boolean initialized = false;
 
 
-    /**
-     * Method to check the activity of the system network manager
-     * 
-     * @param   None                        Not required
-     * @return  void                        Nothing
-     * @throws  NetworkManagerNotRunning    An exception showing that the system network manager is not running
-     * @throws  UnableToRunShellCommand     An exception showing that the command could not be run
-     * 
-     */
 
-    private void checkNetworkManager() throws NetworkManagerNotRunning, UnableToRunShellCommand{
-        synchronized(this) {
-            isNetworkManagerWorking = false;
-        }
-        try {
-            Process process = Runtime.getRuntime().exec(ShellCommands.VerifyNetworkManager);
-            BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            if(br.readLine().compareToIgnoreCase(NetworkManagerRunning) != 0) {
-                process.waitFor();
-                process = null;
-                br = null;
-                throw new NetworkManagerNotRunning("Exception: The NetworkManager has been checked if running using shell commands." +
-                        " It has been found that the Network Manager is not running. Please check if it has been properly " +
-                        "installed or else restart the Network Manager!");
-            }
-            else
-            {
-                process = null;
-                br = null;
-                synchronized(this) {
-                    isNetworkManagerWorking = true;
-                }
-            }
-        }catch(Exception e) {
-            throw new UnableToRunShellCommand("Exception: Unable to run the shell command to verify if Network Manager is running!");
-        }
-    }
+	/*
+	 * Constants
+	 */
+	private static final String _VERSION_SUPPORTED= "0.9.10.0";
+	private static final String _WIRELESS_IFACE = "org.freedesktop.NetworkManager.Device.Wireless";
+	private static final String _WIRED_IFACE = "org.freedesktop.NetworkManager.Device.Wired";
+	private static final String _DEVICE_IFACE = "org.freedesktop.NetworkManager.Device";
+	private static final String _IP4CONFIG_IFACE = "org.freedesktop.NetworkManager.IP4Config";
+	private static final String _ACTIVE_IFACE = "org.freedesktop.NetworkManager.Connection.Active";
+	private static final String _NM_IFACE = "org.freedesktop.NetworkManager";
+	private static final String _NM_PATH = "/org/freedesktop/NetworkManager";
+
+	/*
+	 * Handlers for NM signals
+	 */
+
+	private class PropertiesChangedHandler implements DBusSigHandler<org.freedesktop.NetworkManagerIface.PropertiesChanged>{
+		/*
+		 * Network Manager Properties Handler
+		 * Keeps the list of devices updated
+		 */
+		@Override
+		public synchronized void handle(org.freedesktop.NetworkManagerIface.PropertiesChanged signal) {
+			LOG.entering(this.getClass().getName(), "handleProp", signal);
+			if(signal.a.containsKey("Devices")){
+				LOG.info("Devices have changed");
+
+				List<ObjectPath> devList = (List<ObjectPath>) signal.a.get("Devices").getValue();
+				if( devList.size() > devices.size() ){
+					LOG.info("There is a new device");
+					for (ObjectPath devPath : devList) {
+						try {
+							Properties props = conn.getRemoteObject("org.freedesktop.NetworkManager", devPath.getPath(),  Properties.class);
+							Map<String, Variant> propsMap = props.GetAll(_DEVICE_IFACE);
+							String iface = (String)propsMap.get("Interface").getValue();
+							if(!devices.containsKey(iface)){
+								LOG.info("New Device found "+ iface);
+								Device device = readDeviceFromDbus(devPath.getPath());
+								devices.put(iface, device);
+								GrcBoxInterface grcIface = device2grcBoxIface(device);
+								cachedInterfaces.put(iface, grcIface);
+								informInterfaceAdded(grcIface);
+							}
+						} catch (DBusException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (ExecutionException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
+				else if( devList.size() < devices.size()){
+					LOG.info("A device has been removed");
+					List<String> toRemove = new LinkedList<>();
+					for (Device dev : devices.values()) {
+						String iface = dev.getIface();
+						boolean exists = false;
+						for (ObjectPath devPath : devList) {
+							Properties props;
+							try {
+								props = (Properties) conn.getRemoteObject("org.freedesktop.NetworkManager", devPath.getPath(),  Properties.class);
+								Map<String, Variant> propsMap = props.GetAll(_DEVICE_IFACE);
+								String iface2 = (String)propsMap.get("Interface").getValue();
+								if(iface2.equals(iface)){
+									exists = true;
+									break;
+								}
+							} catch (DBusException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+						if(!exists){
+							LOG.info("Device removed "+ iface);
+							toRemove.add(iface);
+						}
+					}
+					for (String iface : toRemove) {
+						devices.remove(iface);
+						GrcBoxInterface grcInterface = cachedInterfaces.get(iface);
+						cachedInterfaces.remove(iface);
+						informInterfaceRemoved(grcInterface);
+					}
+				}
+				else{
+					LOG.warning("Devices Properties changed but no device was added or removed");
+				}
+			}
+			LOG.entering(this.getClass().getName(), "handleProp", signal);
+		}
+	}
+
+	private class StateChangedHandler implements DBusSigHandler<org.freedesktop.NetworkManager.DeviceInterface.StateChanged>{
+
+		@Override
+		public void handle(StateChanged signal) {
+			LOG.entering(this.getClass().getName(), "stateChanged");
+			/*
+			 * Only update the device information if the old or the new states are "ACTIVATED"
+			 */
+			if( !( signal.a.equals(NM_DEVICE_STATE.UNAVAILABLE) || 
+				   signal.a.equals(NM_DEVICE_STATE.UNMANAGED) ) &&
+				  (signal.a.equals(NM_DEVICE_STATE.ACTIVATED) || 
+				   signal.b.equals(NM_DEVICE_STATE.ACTIVATED))
+					){
+				updateDevStatus(signal.getPath());
+			}
+			LOG.exiting(this.getClass().getName(), "stateChanged");
+		}
+	}
+	
+	private void updateDevStatus(String path) {
+		try {
+			Device dev = readDeviceFromDbus(path);
+			devices.put(dev.getIface(), dev);
+			GrcBoxInterface iface = device2grcBoxIface(dev);
+			cachedInterfaces.put(dev.getIface(), iface);
+			LOG.info("Device "+ dev.getIface() + " has been updated");
+			informInterfaceChanged(iface);
+		} catch (DBusException e) {
+			LOG.severe(e.toString());
+		} catch (ExecutionException e) {
+			LOG.severe(e.toString());
+		}
+	}
+	
+	/*
+	 * Return a list with all the managed interfaces
+	 */
+	public Collection<GrcBoxInterface> getInterfaces(){
+		return cachedInterfaces.values();
+	}
+
+	public synchronized boolean initialize() throws DBusException, ExecutionException{
+		LOG.entering(this.getClass().getName(), "initialize");
+		if(isNMAvailable()){
+			readDevicesInfo();
+			subscribeToNMSignals();
+			initialized = true;
+			return true;
+		}
+		return false;
+	}
+
+	/*
+	 * Subscribe to NM signals to monitor devices status.
+	 */
+	private void subscribeToNMSignals() throws DBusException {
+		conn.addSigHandler(org.freedesktop.NetworkManagerIface.PropertiesChanged.class, new PropertiesChangedHandler());
+		conn.addSigHandler(org.freedesktop.NetworkManager.DeviceInterface.StateChanged.class, new StateChangedHandler());
+	}
+
+	/*
+	 * Read the information from the NetworkManager and stores it in
+	 * devices, also populate the cachedInterfaces map;
+	 */
+	private synchronized void readDevicesInfo() throws DBusException{
+		LOG.entering(this.getClass().getName(),"readDevicesInfo");
+		List<Path> devList = nm.GetDevices();
+		for (Path devInterface : devList) {
+			Device dev = readDeviceFromDbus(devInterface.getPath());
+			devices.put(dev.getIface(), dev);
+			LOG.info("Processing interface "+ dev.getIface());
+			if(dev.isManaged()){
+				try {
+					GrcBoxInterface grcIface = device2grcBoxIface(dev);
+					cachedInterfaces.put(grcIface.getName(), grcIface);
+				} catch (ExecutionException e) {
+					LOG.log(Level.WARNING,"Error processing interface "+dev.getIface(),e);
+				}
+			}
+		}
+		LOG.exiting(this.getClass().getName(), "readdevicesInfo");;
+	}
+	
+	/*
+	 * Convert a Device object into a GrcBoxInterface object
+	 */
+	private GrcBoxInterface device2grcBoxIface(Device dev) throws DBusException, ExecutionException{
+		LOG.entering(this.getClass().getName(), "device2GrcBoxIface");
+		GrcBoxInterface iface = new GrcBoxInterface();
+		Properties devProp = (Properties) conn.getRemoteObject(_NM_IFACE, dev.getDbusPath(),  Properties.class);
+		iface.setName(dev.getIface());
+		GrcBoxInterface.Type type;
+
+		/*
+		 * Get the interface Type
+		 */
+		if(dev.getType().equals(NM_DEVICE_TYPE.WIFI)){
+			UInt32 wifiMode = devProp.Get(_WIRELESS_IFACE, "Mode");
+			if(wifiMode.equals(NM_802_11_MODE.ADHOC)){
+				type = Type.WIFIAH;
+			}
+			else if(wifiMode.equals(NM_802_11_MODE.INFRA)){
+				type = Type.WIFISTA;
+			}
+			else{
+				type = Type.UNKNOWN;
+			}
+		}
+		else if(dev.getType().equals(NM_DEVICE_TYPE.ETHERNET)){
+			type = Type.ETHERNET; 
+		}
+		else if(dev.getType().equals(NM_DEVICE_TYPE.MODEM)){
+			type = Type.CELLULAR;
+		}
+		else if(dev.getType().equals(NM_DEVICE_TYPE.ADSL) ||
+				dev.getType().equals(NM_DEVICE_TYPE.BT) ||
+				dev.getType().equals(NM_DEVICE_TYPE.GENERIC))
+			type = Type.OTHERS;
+		else{
+			type = Type.UNKNOWN;
+		}
+
+		iface.setType(type);
+		boolean isUp = (dev.getState().equals(NM_DEVICE_STATE.ACTIVATED));
+		iface.setUp(isUp);
+
+		/*
+		 * Find the used Connection and other values only if the device is up
+		 */
+
+		
+		if(isUp){
+			if((boolean) devProp.Get(_DEVICE_IFACE, "Managed")){
+				Path activeConnPath = (Path) devProp.Get(_DEVICE_IFACE, "ActiveConnection");
+				Properties actConnProp = (Properties) conn.getRemoteObject(_NM_IFACE, activeConnPath.getPath(),  Properties.class);
+				Path connPath = actConnProp.Get(_ACTIVE_IFACE, "Connection");
+				Connection connIface = (Connection) conn.getRemoteObject(_NM_IFACE, connPath.getPath(),  Connection.class);
+				Map<String,Map<String,Variant>> settings = connIface.GetSettings();
+				String connection = (String)settings.get("connection").get("id").getValue();
+				iface.setConnection(connection);
+				
+				Boolean isDefault = actConnProp.Get(_ACTIVE_IFACE, "Default");
+				iface.setDefault(isDefault);
+				
+				/*
+				 * We assume that devices are connected to Internet when a gateway is defined.
+				 */
+				Path ip4Path = (Path) devProp.Get(_DEVICE_IFACE, "Ip4Config");
+				Properties ip4Prop = (Properties) conn.getRemoteObject(_NM_IFACE, ip4Path.getPath(),  Properties.class);
+				Vector<Vector<UInt32>> addresses = ip4Prop.Get(_IP4CONFIG_IFACE, "Addresses");
+				UInt32 gw = addresses.get(0).get(2);
+				iface.setHasinternet(gw.intValue() != 0);
+			}
+			else{
+				iface.setConnection(null);
+			}
+			
+			/*
+			 * TODO Add support for other kind of interfaces.
+			 */
+			UInt32 speed;
+			switch (iface.getType()){
+			case ETHERNET:
+				speed = devProp.Get(_WIRED_IFACE, "Speed");
+				iface.setRate(speed.doubleValue());
+				break;
+			case WIFISTA:
+			case WIFIAH:
+				speed = devProp.Get("org.freedesktop.NetworkManager.Device.Wireless", "Bitrate");
+				iface.setRate(speed.doubleValue()/1000);
+				break;
+			default:
+				throw new ExecutionException("Unsupported Device type", new Throwable());
+			}
+		}
+		else{
+			iface.setConnection(null);
+			iface.setRate(0);
+			iface.setDefault(false);
+		}
+
+		/*
+		 * TODO Estimate the real cost in some way.
+		 */
+		iface.setCost(0);
 
 
-    /**
-     * Method to get the list of available network interfaces, their names, types and state.
-     * 
-     * @param   None                        Not required
-     * @return  LinkedList                  List of NetworkInterfaces
-     * @throws  UnableToRunShellCommand     An exception showing that the command could not be run
-     * 
-     */
 
-    private LinkedList<GrcBoxInterface> getBasicInfoOfInterfaces() throws UnableToRunShellCommand
-    {
-        LinkedList<GrcBoxInterface> list = null;
-        String line = null;
-        try {
-            Process process = Runtime.getRuntime().exec(ShellCommands.ListInferfaces);
-            BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            br.readLine(); //the first line is the heading so discard it
-            while((line = br.readLine()) != null) {
-                GrcBoxInterface iface = new GrcBoxInterface();
-                StringTokenizer st = new StringTokenizer(line, space);
-                iface.setName(st.nextToken());
-                iface.setTypeByString(st.nextToken());
-                iface.setStateByString(st.nextToken());
-                if(list == null)
-                {
-                    list = new LinkedList<GrcBoxInterface>();
-                }
-                list.add(iface);
-            }
-        }
-        catch(Exception e)
-        {
-            throw new UnableToRunShellCommand("Exception: Unable to find/update the interface information!");
-        }
-        return list;
-    }
+		/*
+		 * TODO Currently there is only support for Wifi or ethernet. Both  interfaces support multicast.
+		 */
+		iface.setMulticast(true);
+		LOG.exiting(this.getClass().getName(), "device2GrcBoxIface", iface);
+		return iface;
+	}
 
+	private Device readDeviceFromDbus(String path) throws DBusException{
+		Device device = new Device();
+		Properties props = (Properties) conn.getRemoteObject(_NM_IFACE, path,  Properties.class);
+		device.setDbusPath(path);
+		if(props instanceof Properties){
+			
+			Map<String, Variant> propsMap = props.GetAll(_DEVICE_IFACE);
+			if(propsMap.get("Interface") != null) 
+				device.setIface((String) propsMap.get("Interface").getValue());
+			if(propsMap.get("Ip4Address") != null) 
+				device.setIfaceIpAddress((UInt32) propsMap.get("Ip4Address").getValue());
+			if(propsMap.get("Capabilities") != null) 
+				device.setCapabilities((UInt32) propsMap.get("Capabilities").getValue());
+			if(propsMap.get("State") != null) 
+				device.setState((UInt32) propsMap.get("State").getValue());
+			if(propsMap.get("ActiveConnection") != null) 
+				device.setActiveConnection(((ObjectPath)propsMap.get("ActiveConnection").getValue()).getPath());
+			if(propsMap.get("Ip4Config") != null) 
+				device.setIp4Config(((ObjectPath)propsMap.get("Ip4Config").getValue()).getPath());
+			if(propsMap.get("Managed") != null) 
+				device.setManaged((Boolean)propsMap.get("Managed").getValue());
+			if(propsMap.get("DeviceType") != null) 
+				device.setType((UInt32)propsMap.get("DeviceType").getValue());
+		}
+		return device;
+	}
 
-    /**
-     * Method to get the IP addresses of the network interfaces and the gateways being used.
-     * 
-     * @param   LinkedList                  List of NetworkInterfaces
-     * @return  LinkedList                  List of NetworkInterfaces with IP information updated
-     * @throws  UnableToRunShellCommand     An exception showing that the command could not be run
-     * 
-     */
+	private boolean isNMAvailable() throws ExecutionException{
+		try {
+			conn = DBusConnection.getConnection(DBusConnection.SYSTEM);
 
-    private LinkedList<GrcBoxInterface> getIPInfoOfInterfaces(LinkedList<GrcBoxInterface> list) throws UnableToRunShellCommand
-    {
-    	/*
-    	 * TODO REFACTORIZE TO CALL NM ONLY ONCE OR TWICE!!!
-    	 * TODO
-    	 */
-        String temp = null;
-        if(list == null || list.size() == 0)
-        {
-            return null;
-        }
-        try {
-            for(int i = 0; i < list.size(); i++)
-            {
-                boolean interfaceIPSaved = false;
-                Process process = Runtime.getRuntime().exec(ShellCommands.IpInformation + list.get(i).getName());
-                BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                while ((temp = br.readLine()) != null) {
-                    if (temp.contains(theLineWithIP4)) {
-                        //list.get(i).setIP4AddressAvailable(true);
-                        StringTokenizer st = new StringTokenizer(temp, spaceAndSlash);
-                        while (st.hasMoreTokens()) {
-                            String s = st.nextToken();
-                            if (s.contains(dot)) {
-                                if (!s.contains(colon)) {
-                                    // the first token of the string is discarded as it is "IP4.ADDRESS[1]:"
-                                    if (interfaceIPSaved) {
-                                        list.get(i).setGatewayIp(s);
-                                    } else {
-                                        list.get(i).setIpAddress(s);
-                                        interfaceIPSaved = true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                temp = null;
-                process.waitFor();
-                process = null;
-                br = null;
-            }           
-        }
-        catch(Exception e)
-        {
-            throw new UnableToRunShellCommand("Exception: Unable to find/update the interface information!");
-        }
-        return list;
-    }
-    
-    private LinkedList<GrcBoxInterface> deepCopy(LinkedList<GrcBoxInterface> list)
-    {
-        LinkedList<GrcBoxInterface> temp = null;
-        if(list != null && list.size() > 0)
-        {
-            temp = new LinkedList<GrcBoxInterface>();
-            for(int i = 0; i < list.size(); i++)
-            {
-                temp.add(list.get(i).cloneInterface());
-            }
-        }
-        return temp;
-    }
-    
-    public LinkedList<GrcBoxInterface> getListOfAllInterfaces() throws NetworkInterfaceManagerThreadNotRunning
-    {
-        if(manager == null || manager.getState() == Thread.State.NEW || manager.getState() == Thread.State.TERMINATED)
-        {
-            throw new NetworkInterfaceManagerThreadNotRunning();
-        }
-        if(interfaces == null)
-        {
-        	//System.out.println("NULL");
-        }
-        synchronized(syncUpdate)
-        {
-        	while(isUpdatingInterfaces)
-        	{
-        		//System.out.println("IS-INITIALIZING");
-        		try{
-        			syncUpdate.wait();
-        		}
-        		catch(InterruptedException e)
-        		{
-        		//	nothing
-        		}
-        	}
-        }
-        return deepCopy(interfaces);
-    }
-    
-    private void checkInterfaceChanges(LinkedList<GrcBoxInterface> list)
-    {
-        if(interfaces == null && list == null)
-        {
-            return;
-        }
-        synchronized(this) {
-            updatedInterfaces = null;
-            removedInterfaces = null;
-        }
-        LinkedList<GrcBoxInterface> temp = deepCopy(list);
-        synchronized(this) {
-            if(interfaces == null && list != null)
-            {
-                //the previous list did not have any devices so only updation possible.
-                updatedInterfaces = list;
-            }
-            else if(interfaces != null && list == null)
-            {
-                //all of the interfaces has been removed
-                removedInterfaces = interfaces;
-            }
-            else
-            {
-                //both the list of interfaces: previous and current has elements    
-                for(int i = 0; i < interfaces.size(); i++)
-                {
-                    String name = interfaces.get(i).getName();
-                    boolean deviceFound = false;
-                    //now search for the same interface in the new list
-                    for(int j = 0; j < list.size(); j++)
-                    {
-                        if(list.get(j).getName().compareTo(name) == 0)
-                        {
-                            deviceFound = true;                     
-                            if(!interfaces.get(i).isEqual(list.get(j)))
-                            {
-                                if(updatedInterfaces == null)
-                                {
-                                    updatedInterfaces = new LinkedList<GrcBoxInterface>();
-                                }
-                                updatedInterfaces.add(list.get(j));
-                            }
-                            //removing is necessary as it will help in the end to detect devices that has been recently added
-                            list.remove(j);                     
-                            break; //you don't want it to go on checking
-                        }
-                    }
-                    if(!deviceFound)
-                    {
-                        if(removedInterfaces == null)
-                        {
-                            removedInterfaces = new LinkedList<GrcBoxInterface>();
-                        }
-                        removedInterfaces.add(interfaces.get(i));
-                    }
-                }
-                if(list.size() > 0)
-                {
-                    for(int i = 0; i < list.size(); i++)
-                    {
-                        if(updatedInterfaces == null)
-                        {
-                            updatedInterfaces = new LinkedList<GrcBoxInterface>();
-                        }
-                        updatedInterfaces.add(list.get(i));
-                    }
-                }           
-            }   
-            interfaces = temp;
-        }
-    }
+			nmProp = (Properties)conn.getRemoteObject(_NM_IFACE, 
+					_NM_PATH, 
+					Properties.class);
+			nm = (NetworkManagerIface)conn.getRemoteObject(_NM_IFACE, 
+					_NM_PATH, 
+					NetworkManagerIface.class);
 
-    public String[] getListOfNetworkInterfaceNames() throws NetworkManagerNotRunning, UnableToRunShellCommand
-    {
-        synchronized(this) {
-            if(interfaces != null && interfaces.size() > 0)
-            {
-                String temp[] = new String[interfaces.size()];
-                for(int i = 0; i < temp.length; i++)
-                {
-                    temp[i] = interfaces.get(i).getName();
-                }
-                return temp;
-            }
-        }
-        return null;
-    }
+			String version = nmProp.Get( _NM_IFACE, "Version");
+			if(!version.equals(_VERSION_SUPPORTED)){
+				LOG.severe("NM version not supported "+ version);
+				throw new ExecutionException("Unsupported NetworkManager version", new Throwable());
+			}
+		} catch (DBusException e) {
+			throw new ExecutionException("Error connecting to NetworkManager", e);
+		}
+		return true;
+	}
 
-    public GrcBoxInterface.Type getType(String interfaceName)
-    {
-        synchronized(this) {
-            if(interfaces != null)
-            {
-                for(int i = 0; i < interfaces.size(); i++)
-                {
-                    if(interfaceName.compareTo(interfaces.get(i).getName()) == 0)
-                    {
-                        return interfaces.get(i).getType();
-                    }
-                }
-            }
-        }
-        return GrcBoxInterface.Type.UNKNOWN;
-    }
+	public synchronized int subscribeInterfaces(NetworkManagerListener object){
+		ifaceSubscribers.add(object);
+		return ifaceSubscribers.size();
+	}
+	
+	public synchronized void unsubscribeInterfaces(int index){
+		ifaceSubscribers.remove(index);
+	}
+	
+	
+	public synchronized void informInterfaceAdded(GrcBoxInterface iface){
+		for (NetworkManagerListener networkManagerListener : ifaceSubscribers) {
+			networkManagerListener.interfaceAdded(iface);
+		}
+	}
 
-    public GrcBoxInterface.State getState(String interfaceName)
-    {
-        synchronized(this) {
-            if(interfaces != null)
-            {
-                for(int i = 0; i < interfaces.size(); i++)
-                {
-                    if(interfaceName.compareTo(interfaces.get(i).getName()) == 0)
-                    {
-                        return interfaces.get(i).getState();
-                    }
-                }
-            }
-        }
-        return GrcBoxInterface.State.OTHERS;
-    }
+	public synchronized void informInterfaceRemoved(GrcBoxInterface iface){
+		for (NetworkManagerListener networkManagerListener : ifaceSubscribers) {
+			networkManagerListener.interfaceRemoved(iface);
+		}
+	}
 
-    public String getIpAddress(String interfaceName)
-    {
-        synchronized(this) {
-            if(interfaces != null)
-            {
-                for(int i = 0; i < interfaces.size(); i++)
-                {
-                    if(interfaceName.compareTo(interfaces.get(i).getName()) == 0)
-                    {
-                        return interfaces.get(i).getIpAddress();
-                    }
-                }
-            }
-        }
-        return null;
-    }
+	public synchronized void informInterfaceChanged(GrcBoxInterface iface){
+		for (NetworkManagerListener networkManagerListener : ifaceSubscribers) {
+			networkManagerListener.interfaceChanged(iface);
+		}
+	}
 
-    public String getGatewayIp(String interfaceName)
-    {
-        synchronized(this) {
-            if(interfaces != null)
-            {
-                for(int i = 0; i < interfaces.size(); i++)
-                {
-                    if(interfaceName.compareTo(interfaces.get(i).getName()) == 0)
-                    {
-                        return interfaces.get(i).getGatewayIp();
-                    }
-                }
-            }   
-        }
-        return null;            
-    }
+	public synchronized boolean isInitialized() {
+		return initialized.booleanValue();
+	}
 
-    public void run()
-    {
-        try
-        {
-            checkNetworkManager();
-        }
-        catch(Exception e)
-        {
-            System.err.println("Class NetworkInterfaceManager: Error! Network Manager could not be contacted.");
-        }
-        while(isNetworkManagerWorking) 
-        {
-        	LinkedList<GrcBoxInterface> list = null;
-        	synchronized(syncUpdate)
-        	{
-        		isUpdatingInterfaces = true;        		
-        		try{
-        			list =  getIPInfoOfInterfaces(getBasicInfoOfInterfaces());
-        		}
-        		catch(Exception e)
-        		{
-        			System.err.println("Class NetworkInterfaceManager: Error while accessing interface information!");
-        		}
-                isUpdatingInterfaces = false;
-                syncUpdate.notify();
-        	}
-        	
-        	updatedInterfaces = removedInterfaces = null;
-        	checkInterfaceChanges(list);
-        	if(updatedInterfaces != null || removedInterfaces != null)
-        	{
-        		//results of recent scan is different from the previous results
-        		//save changes and notify registered classes
-        		if(registeredClasses != null)
-        		{
-        			String deviceNamesRemoved[] = null;                    
-        			if(removedInterfaces != null && removedInterfaces.size() > 0)
-        			{
-        				deviceNamesRemoved = new String[removedInterfaces.size()];                  
-        				for(int i = 0; i < removedInterfaces.size(); i++)
-        				{
-        					deviceNamesRemoved[i] = removedInterfaces.get(i).getName();
-        				}
-        			}
-        			for(int i = 0; i < registeredClasses.size(); i++)
-        			{
-        				registeredClasses.get(i).getUpdatedDevices(deepCopy(updatedInterfaces)); //dont want to send the original list, but just a copy
-        				registeredClasses.get(i).getRemovedDevices(deviceNamesRemoved);
-        			}
-        		}
-        	}
-
-            try {
-                Thread.sleep(UPDATE_INTERVAL);
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt(); // very important
-                break;
-            }
-            list = null;
-        }
-        System.out.println("Shutting down thread");
-    }
-
-    public void registerForUpdates(NetworkManagerListener object)
-    {
-        synchronized(this) {
-            if(registeredClasses == null)
-            {
-                registeredClasses = new LinkedList<NetworkManagerListener>();
-            }
-            if(object != null){
-                registeredClasses.add(object);
-            }
-        }
-    }
+	/*
+	 * Returns the gateway associate to interface iface
+	 */
+	public String getGateway(String iface) {
+		LOG.entering(this.getClass().getName(), "getGw");
+		Device dev = devices.get(iface);
+		Properties prop;
+		String gwStr = null;
+		if(dev.getState().equals(NM_DEVICE_STATE.ACTIVATED)){
+			try {
+				prop = (Properties) conn.getRemoteObject(_NM_IFACE, dev.getDbusPath(),  Properties.class);
+				Path ip4Path = (Path) prop.Get(_DEVICE_IFACE, "Ip4Config");
+				Properties ip4Prop = (Properties) conn.getRemoteObject(_NM_IFACE, ip4Path.getPath(),  Properties.class);
+				Vector<Vector<UInt32>> addresses = ip4Prop.Get(_IP4CONFIG_IFACE, "Addresses");
+				UInt32 gw = addresses.get(0).get(2);
+				if(gw.doubleValue() == 0.0)
+					return null;
+				byte [] gwByte = new byte[4];
+				byte [] temp =  (BigInteger.valueOf(gw.longValue())).toByteArray();
+				gwByte[0] = temp[3];
+				gwByte[1] = temp[2];
+				gwByte[2] = temp[1];
+				gwByte[3] = temp[0];
+				gwStr = Inet4Address.getByAddress(gwByte).getHostAddress();
+				LOG.finest("The gateway of the device " + iface +" is " + gwStr);
+			} catch (DBusException e) {
+				gwStr = null;
+			} catch (UnknownHostException e) {
+				gwStr = null;
+			}
+		}
+		return gwStr;
+	}
+	
+	/*
+	 * Returns the gateway associate to interface iface
+	 */
+	public String getIpAddress(String iface) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

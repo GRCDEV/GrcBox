@@ -1,12 +1,10 @@
 package es.upv.grc.grcbox.server;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-import es.upv.grc.grcbox.common.GrcBoxInterface.Type;
+
 
 @JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, include=JsonTypeInfo.As.PROPERTY, property="@class")
 public class GrcBoxConfig {
