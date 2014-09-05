@@ -49,12 +49,11 @@ public class RootServerResource extends ServerResource implements RootResource {
 
 	@Override
 	public GrcBoxStatus getGrcBoxStatus() {
-		RulesDB db = GrcBoxServerApplication.getDb();
 		GrcBoxStatus status;
 		String name = GrcBoxServerApplication.getCurrent().getName();
-		int numIfaces = db.getAllInterfaces().size();
-		int appSize = db.getApps().size();
-		int ruleSize =  db.getAllRules().size();
+		int numIfaces = RulesDB.getOutInterfaces().size();
+		int appSize = RulesDB.getApps().size();
+		int ruleSize =  RulesDB.getAllRules().size();
 		status = new GrcBoxStatus(name, numIfaces, appSize, ruleSize);
 		return status;
 	}

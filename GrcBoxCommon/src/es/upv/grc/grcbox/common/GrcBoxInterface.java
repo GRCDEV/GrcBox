@@ -12,6 +12,7 @@ public class GrcBoxInterface {
     
 
     private String name;
+    private String address;
     private Type type;
     private String connection;
     
@@ -41,12 +42,13 @@ public class GrcBoxInterface {
     }
     
 	
-    public GrcBoxInterface(String name, GrcBoxInterface.Type type, String connection, 
+    public GrcBoxInterface(String name, String address, GrcBoxInterface.Type type, String connection, 
     					   double cost, boolean isUp, 
                            boolean isMulticast, boolean hasInternet, boolean isDefault)
     {
         super();
         this.name = name;
+        this.address = address;
         this.type = type;
         this.connection = connection;
         this.cost = cost;
@@ -66,7 +68,15 @@ public class GrcBoxInterface {
         this.name = name;
     }
     
-    public GrcBoxInterface.Type getType()
+    public String getAddress() {
+		return address;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	public GrcBoxInterface.Type getType()
     {
         return type;
     }

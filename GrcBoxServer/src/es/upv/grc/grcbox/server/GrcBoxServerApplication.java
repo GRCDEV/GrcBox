@@ -83,9 +83,6 @@ public class GrcBoxServerApplication extends Application {
 	private static final String configFile = "config.json";
 	private static GrcBoxConfig config;
 	private static MapVerifier verifier = new MapVerifier();
-	private static RulesDB db;
-
-	
 
 	public GrcBoxServerApplication(){
 		setName("GRCBox Server");
@@ -121,10 +118,9 @@ public class GrcBoxServerApplication extends Application {
 			System.exit(-1);
 		}
 		
-		db = new RulesDB();
 		LinkedList<String> innerInterfaces = config.getInnerInterfaces();
-		db.setInnerInterfaces(innerInterfaces);
-		db.initialize();
+		RulesDB.setInnerInterfaces(innerInterfaces);
+		RulesDB.initialize();
 		for (String string : innerInterfaces) {
 			startServer(string);
 		}
@@ -233,7 +229,4 @@ public class GrcBoxServerApplication extends Application {
 		return configFile;
 	}
 
-	public static RulesDB getDb() {
-		return db;
-	}
 }

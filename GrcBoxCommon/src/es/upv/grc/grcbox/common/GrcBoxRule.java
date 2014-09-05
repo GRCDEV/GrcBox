@@ -6,21 +6,18 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 public class GrcBoxRule {
 	public enum Protocol{
 		TCP, UDP;
-
-		public static Protocol fromInt(int n){
-			return Protocol.values()[n];
-		}
-		
-		public static int toInt(Protocol proto){
-			return proto.ordinal();
-		}
 	}
+	
+	public enum RuleType{
+		INCOMMING, OUTGOING, MULTICAST;
+	}
+	
 	/*
 	 * Common parameters
 	 */
 	protected int id; //Unique Id of this rule
 	protected Protocol proto;	//Protocol
-	protected boolean incomming;
+	protected RuleType type;
 	protected int appid;	//AppId of the owner app
 	protected String ifName; // Outgoing or incomming interface
 	protected long expireDate;
@@ -38,13 +35,13 @@ public class GrcBoxRule {
 	 * Common constructor used for incomming or outgoing flows.
 	 * If incomming is false dstFwdPort and dstFwdAddr must be -1 and will be ignored.
 	 */
-	public GrcBoxRule(int id, Protocol proto, boolean incomming, int appid,
+	public GrcBoxRule(int id, Protocol proto, RuleType type, int appid,
 			String ifName, long expireDate, int srcPort, int dstPort,
 			String srcAddr,String dstAddr, int dstFwdPort, String dstFwdAddr) {
 		super();
 		this.id = id;
 		this.proto = proto;
-		this.incomming = incomming;
+		this.type = type;
 		this.appid = appid;
 		this.ifName = ifName;
 		this.expireDate = expireDate;
@@ -148,11 +145,11 @@ public class GrcBoxRule {
 		this.proto = proto;
 	}
 
-	public boolean isIncomming() {
-		return incomming;
+	public RuleType getType() {
+		return type;
 	}
 
-	public void setIncomming(boolean incomming) {
-		this.incomming = incomming;
+	public void setType(RuleType type) {
+		this.type = type;
 	}
 }

@@ -34,16 +34,15 @@ public class RuleServerResource extends ServerResource implements RuleResource {
 	 */
 	@Override
 	public void remove() {
-		db.rmRule(appId, ruleId);
+		RulesDB.rmRule(appId, ruleId);
 	}
 
 	@Override
 	protected void doInit() throws ResourceException {
 		appId = Integer.parseInt(getAttribute("appId"));
 		ruleId = Integer.parseInt(getAttribute("ruleId"));
-		db = GrcBoxServerApplication.getDb();
-		db.keepAliveApp(appId);
-		GrcBoxRule rule = GrcBoxServerApplication.getDb().getRule(appId, ruleId);
+		RulesDB.keepAliveApp(appId);
+		GrcBoxRule rule = RulesDB.getRule(appId, ruleId);
 		if(rule == null){
 			throw new ResourceException(404);
 		}

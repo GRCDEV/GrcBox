@@ -50,6 +50,7 @@ import org.restlet.resource.ResourceException;
 import org.restlet.util.Series;
 
 import es.upv.grc.grcbox.common.*;
+import es.upv.grc.grcbox.common.GrcBoxRule.RuleType;
 import es.upv.grc.grcbox.common.resources.AppResource;
 import es.upv.grc.grcbox.common.resources.AppsResource;
 import es.upv.grc.grcbox.common.resources.IfacesResource;
@@ -154,8 +155,8 @@ public class GrcBoxClient {
         appResource.keepAlive();
     	for(int i = 0; i < 4; i++){
     		int port = 20+i;
-    		ruleIn = new GrcBoxRule(-1, GrcBoxRule.Protocol.TCP, true, 12, "wlan0", System.currentTimeMillis()+200, 1648, port, null, null, port, null);
-    		ruleOut = new GrcBoxRule(-1, GrcBoxRule.Protocol.TCP, false, 12, "wlan0", System.currentTimeMillis()+200, 1648, port, null, null, port, null);
+    		ruleIn = new GrcBoxRule(-1, GrcBoxRule.Protocol.TCP, RuleType.INCOMMING, 12, "wlan0", System.currentTimeMillis()+200, 1648, port, null, null, port, null);
+    		ruleOut = new GrcBoxRule(-1, GrcBoxRule.Protocol.TCP, RuleType.OUTGOING, 12, "wlan0", System.currentTimeMillis()+200, 1648, port, null, null, port, null);
     		try{
     			/*
     			 * Create a new rule

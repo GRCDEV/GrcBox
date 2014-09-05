@@ -1,6 +1,8 @@
 package es.upv.grc.grcbox.server;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -17,6 +19,9 @@ import es.upv.grc.grcbox.common.GrcBoxApp;
 import es.upv.grc.grcbox.common.GrcBoxAppInfo;
 import es.upv.grc.grcbox.common.GrcBoxInterface;
 import es.upv.grc.grcbox.common.GrcBoxRule;
+import es.upv.grc.grcbox.common.GrcBoxRule.Protocol;
+import es.upv.grc.grcbox.common.GrcBoxRule.RuleType;
+import es.upv.grc.grcbox.server.multicastProxy.MulticastProxy;
 import es.upv.grc.grcbox.server.networkInterfaces.NetworkInterfaceManager;
 import es.upv.grc.grcbox.server.networkInterfaces.NetworkManagerListener;
 
@@ -30,15 +35,16 @@ public class RulesDB {
 	private static volatile Map<Integer, GrcBoxApp> appMap = new HashMap<>();
 	private static volatile Map<Integer, Map<Integer, GrcBoxRule>> rulesMap = new HashMap<>();
 	private static volatile HashMap<String, Integer> nameIndex = new HashMap<>();
+	private static volatile HashMap<Integer, MulticastProxy> proxies = new HashMap<>();
 	private static volatile LinkedList<String> innerInterfaces;
 	private static volatile NetworkInterfaceManager nm;
 
 	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
 	
-	final  Runnable dbMonitor = new Runnable() {
+	final static Runnable dbMonitor = new Runnable() {
 		@Override
-		public void run() {
+		public  void run() {
 			long timeout = GrcBoxServerApplication.getConfig().getKeepAliveTime();
 			long now = System.currentTimeMillis();
 			List<GrcBoxApp> appList = getApps();
@@ -61,7 +67,7 @@ public class RulesDB {
 		}
 	};
 	
-	private class IfaceManager implements NetworkManagerListener{
+	private static class IfaceManager implements NetworkManagerListener{
 
 		@Override
 		public void interfaceRemoved(GrcBoxInterface iface) {
@@ -94,7 +100,7 @@ public class RulesDB {
 	/*
 	 * Initialize the rules managing system.
 	 */
-	public synchronized void initialize(){
+	public static synchronized void initialize(){
 		
 		flushNatAndMangle();
 		if(innerInterfaces.size() != 1){
@@ -113,19 +119,16 @@ public class RulesDB {
 			e.printStackTrace();
 		}
 		
-		Collection<GrcBoxInterface> interfaces = nm.getInterfaces();
+		Collection<GrcBoxInterface> interfaces = getOutInterfaces();
 		for (GrcBoxInterface grcBoxInterface : interfaces) {
 			initializeOutIface(grcBoxInterface);
 		}
 		
-		/*
-		 * TODO register for networkmanager updates
-		 */
 		long time = GrcBoxServerApplication.getConfig().getKeepAliveTime();
 		final ScheduledFuture<?> monitorHandle = scheduler.scheduleAtFixedRate(dbMonitor, time, time, TimeUnit.MILLISECONDS);
 	}
 	
-	private synchronized void initializeOutIface(GrcBoxInterface iface){
+	private synchronized static void initializeOutIface(GrcBoxInterface iface){
 		if(!nameIndex.containsKey(iface.getName())){
 			nameIndex.put(iface.getName(), tableId++);
 		}
@@ -156,7 +159,7 @@ public class RulesDB {
 		}
 	}
 	
-	private synchronized void removeOutIface(GrcBoxInterface iface){
+	private synchronized static void removeOutIface(GrcBoxInterface iface){
 		/*
 		 * Remove iprule
 		 */
@@ -184,7 +187,7 @@ public class RulesDB {
 	/*
 	 * Flush all nat and masquerade rules from system.
 	 */
-	private synchronized void flushNatAndMangle(){
+	private synchronized static void flushNatAndMangle(){
 		String flushNat = "iptables -t nat -F";
 		String flushMangle = "iptables -t mangle -F";
 		
@@ -204,25 +207,25 @@ public class RulesDB {
 	/*
 	 * Returns the app maped to a certain ID or null
 	 */
-	public synchronized GrcBoxApp getApp(Integer appId){
+	public synchronized static GrcBoxApp getApp(Integer appId){
 		return appMap.get(appId);
 	}
 	
 	/*
 	 * Return a list of Apps registered in the system
 	 */
-	public synchronized List<GrcBoxApp> getApps() {
+	public synchronized static List<GrcBoxApp> getApps() {
 		return new LinkedList<>(appMap.values());
 	}
 	
 	/*
 	 * Returns the rule maped to a certain ID or null
 	 */
-	public synchronized GrcBoxRule getRule(Integer appId, Integer ruleId){
+	public synchronized static GrcBoxRule getRule(Integer appId, Integer ruleId){
 		return rulesMap.get(appId).get(ruleId);
 	}
 	
-	public synchronized List<GrcBoxRule> getRulesByApp(Integer appId){
+	public synchronized static List<GrcBoxRule> getRulesByApp(Integer appId){
 		if(appMap.containsKey(appId)){
 			if(rulesMap.containsKey(appId)){
 				return new LinkedList<GrcBoxRule>(rulesMap.get(appId).values());
@@ -239,7 +242,7 @@ public class RulesDB {
 	/*
 	 * add a new App, the appId value is ignored, a new AndroPiApp is returned
 	 */
-	public synchronized int addApp(String name){
+	public synchronized static int addApp(String name){
 		int id = _appId++;
 		GrcBoxApp app = new GrcBoxApp(id, name, System.currentTimeMillis());
 		appMap.put(app.getAppId(), app);
@@ -250,7 +253,7 @@ public class RulesDB {
 	/*
 	 * Remove an applications and its rules from the DB and the system
 	 */
-	public synchronized void rmApp(Integer appId){
+	public synchronized static void rmApp(Integer appId){
 		Map<Integer, GrcBoxRule> rules = rulesMap.get(appId);
 		if(rules != null){
 			Collection<GrcBoxRule> rulesList = rules.values();
@@ -270,7 +273,7 @@ public class RulesDB {
 	 * the ruleId is ignored, a new AndroPiRule object is returned
 	 * 
 	 */
-	public synchronized GrcBoxRule addRule(Integer appId, GrcBoxRule rule){
+	public synchronized static GrcBoxRule addRule(Integer appId, GrcBoxRule rule){
 		if(appMap.containsKey(appId)){
 			rule.setId(_ruleId++);
 			rule.setAppid(appId);
@@ -289,34 +292,53 @@ public class RulesDB {
 	/*
 	 * Remove a rule from DB and from System
 	 */
-	public synchronized void rmRule(Integer appId, Integer ruleId){
+	public synchronized static void rmRule(Integer appId, Integer ruleId){
 		if(rulesMap.containsKey(appId) && rulesMap.get(appId).containsKey(ruleId)){
 			rmRuleFromSystem(rulesMap.get(appId).get(ruleId));
 			rulesMap.get(appId).remove(ruleId);
 		}
 	}
 	
-	private synchronized  void addRuleToSystem(GrcBoxRule rule){
+	private synchronized static  void addRuleToSystem(GrcBoxRule rule){
 		/*
 		 * TODO
 		 * It must check multicast rules based on IP and throw an exception until supported
 		 */
 		String ruleStr = "";
-		ruleStr = newRuleToCommand(rule);
-		LOG.info("A new rule is going to be excuted \n" + ruleStr);
-		if(!GrcBoxServerApplication.getConfig().isDebug()){
+		if(rule.getType().equals(RuleType.MULTICAST)){
+			InetAddress dstAddr;
 			try {
-				Runtime.getRuntime().exec(ruleStr);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
+				dstAddr = InetAddress.getByName(rule.getDstAddr());
+			} catch (UnknownHostException e) {
 				e.printStackTrace();
+				throw new ResourceException(409, e);
+			} 			
+			if(rule.getProto() != Protocol.UDP || !dstAddr.isMulticastAddress()){
+				throw new ResourceException(409);
+			}
+			MulticastProxy proxy = new MulticastProxy(innerInterfaces.get(0), rule.getIfName(), rule.getSrcAddr(), rule.getDstAddr(), rule.getDstPort());
+			Thread proxyThread = new Thread(proxy);
+			proxyThread.setName("MulticastProxy" + rule.getId());
+			proxyThread.start();
+			proxies.put(rule.getId(), proxy);
+		}
+		else{
+			ruleStr = newRuleToCommand(rule);
+			LOG.info("A new rule is going to be excuted \n" + ruleStr);
+			if(!GrcBoxServerApplication.getConfig().isDebug()){
+				try {
+					Runtime.getRuntime().exec(ruleStr);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 	}
 	
-	private  String newRuleToCommand(GrcBoxRule rule) {
+	private static String newRuleToCommand(GrcBoxRule rule) {
 		String ruleStr = "";
-		if(rule.isIncomming()){
+		if(rule.getType() == RuleType.INCOMMING){
 			ruleStr = "iptables -t nat -A PREROUTING -i " + rule.getIfName() + " -p " + rule.getProto().toString().toLowerCase();
 			if(rule.getDstPort() == -1){
 				throw new ResourceException(412);
@@ -334,7 +356,7 @@ public class RulesDB {
 			}
 			ruleStr += " -j DNAT --to-destination " +rule.getDstFwdAddr() + ":" + rule.getDstFwdPort();
 		}
-		else{
+		else if(rule.getType() == RuleType.OUTGOING){
 			ruleStr += "iptables -t mangle -A PREROUTING -i " + innerInterfaces.get(0) + " -p " + rule.getProto().toString().toLowerCase();
 
 			if(rule.getDstPort() != -1 )
@@ -360,24 +382,39 @@ public class RulesDB {
 	}
 
 
-	private synchronized  void rmRuleFromSystem(GrcBoxRule rule){
+	private synchronized static  void rmRuleFromSystem(GrcBoxRule rule){
 		String ruleStr; 
 		ruleStr = rmRuleToCommand(rule);
 		LOG.info("A rule has been removed from System:\n"+ ruleStr);
+		if(rule.getType().equals(RuleType.MULTICAST)){
+			InetAddress dstAddr;
+			try {
+				dstAddr = InetAddress.getByName(rule.getDstAddr());
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+				throw new ResourceException(409, e);
+			} 			
+			if(rule.getProto() != Protocol.UDP || !dstAddr.isMulticastAddress()){
+				throw new ResourceException(409);
+			}
+			MulticastProxy proxy = proxies.get(rule.getId());
+			proxy.stop();
+			proxies.remove(rule.getId());
+		}
+		
 		if(!GrcBoxServerApplication.getConfig().isDebug()){
 			try {
 				Runtime.getRuntime().exec(ruleStr);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 	}
 
 
-	private String rmRuleToCommand(GrcBoxRule rule) {
+	private static String rmRuleToCommand(GrcBoxRule rule) {
 		String ruleStr = "";
-		if(rule.isIncomming()){
+		if(rule.getType() == RuleType.INCOMMING){
 			ruleStr = "iptables -t nat -D PREROUTING -i " + rule.getIfName() + " -p " + rule.getProto().toString().toLowerCase();
 			if(rule.getDstPort() == -1){
 				throw new ResourceException(412);
@@ -392,7 +429,7 @@ public class RulesDB {
 			}
 			ruleStr += " -j DNAT --to-destination " +rule.getDstFwdAddr() + ":" + rule.getDstFwdPort();
 		}
-		else{
+		else if(rule.getType() == RuleType.OUTGOING){
 			ruleStr += "iptables -t mangle -D PREROUTING -i " + innerInterfaces.get(0) + " -p " + rule.getProto().toString().toLowerCase();
 
 			if(rule.getDstPort() != -1 )
@@ -412,12 +449,12 @@ public class RulesDB {
 		return ruleStr;
 	}
 
-	public synchronized GrcBoxAppInfo getAppInfo(int appId) {
+	public synchronized static GrcBoxAppInfo getAppInfo(int appId) {
 		GrcBoxApp app = getApp(appId);
 		return new GrcBoxAppInfo(appId, app.getName(), GrcBoxServerApplication.getConfig().getKeepAliveTime());
 	}
 
-	public synchronized void modifyApp(int appId, String name) {
+	public synchronized static  void modifyApp(int appId, String name) {
 		if(appMap.containsKey(appId)){
 			appMap.get(appId).setName(name);
 		}
@@ -426,19 +463,34 @@ public class RulesDB {
 	/*
 	 * KeepAliveApp: Update the timestamp of an App to prevent removing it.
 	 */
-	public synchronized void keepAliveApp(int appId) {
+	public synchronized static void keepAliveApp(int appId) {
 		appMap.get(appId).setLastKeepAlive(System.currentTimeMillis());
 	}
 
-	public synchronized Collection<GrcBoxInterface> getAllInterfaces() {
-		return nm.getInterfaces();
+	public synchronized static Collection<GrcBoxInterface> getOutInterfaces() {
+		Collection< GrcBoxInterface> list = nm.getInterfaces();
+		for (String ifname : innerInterfaces) {
+			boolean found = false;
+			GrcBoxInterface toRemove = null;
+			for(GrcBoxInterface iface : list){
+				if(iface.getName().equals(ifname)){
+					found = true;
+					toRemove = iface;
+				}
+			}
+			if(found && toRemove != null){
+				list.remove(toRemove);
+			}
+		}
+		return list;
 	}
 	
-	public synchronized void setInnerInterfaces(LinkedList<String> innerInterfaces) {
+	
+	public synchronized static void setInnerInterfaces(LinkedList<String> innerInterfaces) {
 		RulesDB.innerInterfaces = innerInterfaces;
 	}
 
-	public synchronized List<GrcBoxRule> getAllRules() {
+	public synchronized static List<GrcBoxRule> getAllRules() {
 		List<GrcBoxRule> list = new LinkedList<GrcBoxRule>();
 		for (Integer app : rulesMap.keySet()) {
 			for (GrcBoxRule grcBoxRule : rulesMap.get(app).values()) {

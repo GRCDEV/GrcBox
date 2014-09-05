@@ -36,6 +36,7 @@ import es.upv.grc.grcbox.common.resources.RulesResource;
 import es.upv.grc.grcbox.common.resources.AppsResource.IdSecret;
 import es.upv.grc.grcbox.common.GrcBoxInterfaceList;
 import es.upv.grc.grcbox.common.GrcBoxRule;
+import es.upv.grc.grcbox.common.GrcBoxRule.RuleType;
 import es.upv.grc.grcbox.common.GrcBoxStatus;
 
 
@@ -192,7 +193,7 @@ public class TestClient {
 				
 				long t1rule = System.currentTimeMillis();
 				RulesResource rulesResource = clientResource.getChild("/apps/"+myIdSecret.getAppId()+"/rules", RulesResource.class);
-	    		GrcBoxRule rule = new GrcBoxRule(-1, GrcBoxRule.Protocol.TCP, false, myIdSecret.getAppId(), iface.getName(), 0, -1, port, addr.getHostAddress(), null, port, null);
+	    		GrcBoxRule rule = new GrcBoxRule(-1, GrcBoxRule.Protocol.TCP, RuleType.OUTGOING, myIdSecret.getAppId(), iface.getName(), 0, -1, port, null, addr.getHostAddress(), port, null);
 	    		rule = rulesResource.newRule(rule);
 	    		ruleId = rule.getId();
 	    		long t2rule = System.currentTimeMillis();	    		

@@ -9,6 +9,7 @@ import org.restlet.security.MapVerifier;
 import es.upv.grc.grcbox.common.GrcBoxAppList;
 import es.upv.grc.grcbox.common.resources.AppsResource;
 import es.upv.grc.grcbox.server.GrcBoxServerApplication;
+import es.upv.grc.grcbox.server.RulesDB;
 
 /**
  * @author sertinell
@@ -22,7 +23,7 @@ public class AppsServerResource extends ServerResource implements AppsResource {
 	@Override
 	public GrcBoxAppList getList() {
 		GrcBoxAppList appList =  new GrcBoxAppList();
-		appList.setList(GrcBoxServerApplication.getDb().getApps());
+		appList.setList(RulesDB.getApps());
 		return appList;
 	}
 
@@ -32,7 +33,7 @@ public class AppsServerResource extends ServerResource implements AppsResource {
 	@Override
 	public IdSecret newApp(String name) {
 		int secret = (name+System.currentTimeMillis()).hashCode();
-		int id = GrcBoxServerApplication.getDb().addApp(name);
+		int id = RulesDB.addApp(name);
 		MapVerifier verifier = GrcBoxServerApplication.getVerifier();
 		verifier.getLocalSecrets().put(Integer.toString(id), Integer.toString(secret).toCharArray());
 		System.out.println("Adding a new application to DB:"+Integer.toString(id)+" " +  Integer.toString(secret)

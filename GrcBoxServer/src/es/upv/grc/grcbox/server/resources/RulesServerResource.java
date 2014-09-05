@@ -9,6 +9,7 @@ import org.restlet.resource.ServerResource;
 
 import es.upv.grc.grcbox.common.GrcBoxApp;
 import es.upv.grc.grcbox.common.GrcBoxRule;
+import es.upv.grc.grcbox.common.GrcBoxRule.RuleType;
 import es.upv.grc.grcbox.common.GrcBoxRuleList;
 import es.upv.grc.grcbox.common.resources.RulesResource;
 import es.upv.grc.grcbox.server.GrcBoxServerApplication;
@@ -35,22 +36,21 @@ public class RulesServerResource extends ServerResource implements RulesResource
 
 	@Override
 	public GrcBoxRule newRule(GrcBoxRule rule) {
-		if(rule.isIncomming()){
+		if(rule.getType() == RuleType.INCOMMING){
 			rule.setDstFwdAddr(clientIp);
 		}
 		else {
 			rule.setSrcAddr(clientIp);
 		}
-		return GrcBoxServerApplication.getDb().addRule(appId, rule);
+		return RulesDB.addRule(appId, rule);
 	}
 
 	@Override
 	protected void doInit() throws ResourceException {
 		appId = Integer.parseInt(getAttribute("appId"));
-		db = GrcBoxServerApplication.getDb();
 		Request req = getRequest();
 		clientIp = req.getClientInfo().getAddress();
-		GrcBoxApp app = GrcBoxServerApplication.getDb().getApp(appId);
+		GrcBoxApp app = RulesDB.getApp(appId);
 		if(app == null){
 			throw new ResourceException(404);
 		}

@@ -2,6 +2,7 @@ package es.upv.grc.grcbox.server.networkInterfaces;
 
 import java.math.BigInteger;
 import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
@@ -238,6 +239,9 @@ public class NetworkInterfaceManager {
 		GrcBoxInterface iface = new GrcBoxInterface();
 		Properties devProp = (Properties) conn.getRemoteObject(_NM_IFACE, dev.getDbusPath(),  Properties.class);
 		iface.setName(dev.getIface());
+		
+		String ipAddr = getIpAddress(iface.getName());
+		iface.setAddress(ipAddr);
 		GrcBoxInterface.Type type;
 
 		/*
@@ -401,7 +405,6 @@ public class NetworkInterfaceManager {
 		ifaceSubscribers.remove(index);
 	}
 	
-	
 	public synchronized void informInterfaceAdded(GrcBoxInterface iface){
 		for (NetworkManagerListener networkManagerListener : ifaceSubscribers) {
 			networkManagerListener.interfaceAdded(iface);
@@ -441,17 +444,9 @@ public class NetworkInterfaceManager {
 				UInt32 gw = addresses.get(0).get(2);
 				if(gw.doubleValue() == 0.0)
 					return null;
-				byte [] gwByte = new byte[4];
-				byte [] temp =  (BigInteger.valueOf(gw.longValue())).toByteArray();
-				gwByte[0] = temp[3];
-				gwByte[1] = temp[2];
-				gwByte[2] = temp[1];
-				gwByte[3] = temp[0];
-				gwStr = Inet4Address.getByAddress(gwByte).getHostAddress();
+				gwStr = int2Ip(gw.longValue());
 				LOG.finest("The gateway of the device " + iface +" is " + gwStr);
 			} catch (DBusException e) {
-				gwStr = null;
-			} catch (UnknownHostException e) {
 				gwStr = null;
 			}
 		}
@@ -459,10 +454,27 @@ public class NetworkInterfaceManager {
 	}
 	
 	/*
-	 * Returns the gateway associate to interface iface
+	 * Returns the ip address associate to interface iface
 	 */
+	private String int2Ip(long addr) {
+		byte [] gwByte = new byte[4];
+		byte [] temp =  (BigInteger.valueOf(addr)).toByteArray();
+		gwByte[0] = temp[3];
+		gwByte[1] = temp[2];
+		gwByte[2] = temp[1];
+		gwByte[3] = temp[0];
+		String ip = null;
+		try {
+			ip= Inet4Address.getByAddress(gwByte).getHostAddress();
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return ip;
+	}
+
 	public String getIpAddress(String iface) {
-		// TODO Auto-generated method stub
-		return null;
+		Device dev = devices.get(iface);
+		return int2Ip(dev.getIfaceIpAddress().longValue());
 	}
 }

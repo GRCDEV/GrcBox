@@ -10,6 +10,7 @@ import es.upv.grc.grcbox.common.GrcBoxApp;
 import es.upv.grc.grcbox.common.GrcBoxAppInfo;
 import es.upv.grc.grcbox.common.resources.AppResource;
 import es.upv.grc.grcbox.server.GrcBoxServerApplication;
+import es.upv.grc.grcbox.server.RulesDB;
 
 /**
  * @author sertinell
@@ -24,7 +25,7 @@ public class AppServerResource  extends ServerResource implements AppResource{
 	 */
 	@Override
 	public GrcBoxAppInfo retrieve() {
-		GrcBoxAppInfo info = GrcBoxServerApplication.getDb().getAppInfo(appId);
+		GrcBoxAppInfo info = RulesDB.getAppInfo(appId);
 		return info;
 	}
 
@@ -33,7 +34,7 @@ public class AppServerResource  extends ServerResource implements AppResource{
 	 */
 	@Override
 	public void keepAlive() {
-		GrcBoxServerApplication.getDb().keepAliveApp(appId);
+		RulesDB.keepAliveApp(appId);
 	}
 
 	/* (non-Javadoc)
@@ -41,13 +42,13 @@ public class AppServerResource  extends ServerResource implements AppResource{
 	 */
 	@Override
 	public void rm() {
-		GrcBoxServerApplication.getDb().rmApp(appId);
+		RulesDB.rmApp(appId);
 	}
 
 	@Override
 	protected void doInit() throws ResourceException {
 		appId = Integer.parseInt(getAttribute("appId"));
-		GrcBoxApp app= GrcBoxServerApplication.getDb().getApp(appId);
+		GrcBoxApp app= RulesDB.getApp(appId);
 		if(app == null){
 			throw new ResourceException(404);
 		}
