@@ -2,7 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/java-7-openjdk-amd64"/>
-	<classpathentry kind="lib" path="../lib/restlet-jse-2.2.0/lib/org.restlet.jar"/>
-	<classpathentry kind="lib" path="../lib/restlet-jse-2.2.0/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.annotations.jar"/>
+	<classpathentry kind="lib" path="/Libs/restlet-jse-2.2.2/lib/org.restlet.jar"/>
+	<classpathentry kind="lib" path="/Libs/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.annotations.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
