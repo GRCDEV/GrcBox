@@ -1,25 +1,20 @@
 package es.upv.grc.grcbox.server.multicastProxy;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
 import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.savarese.vserv.tcpip.UDPPacket;
 
 import com.savarese.rocksaw.net.RawSocket;
-
-import es.upv.grc.grcbox.server.networkInterfaces.NetworkInterfaceManager;
 
 
 /*
@@ -31,9 +26,11 @@ import es.upv.grc.grcbox.server.networkInterfaces.NetworkInterfaceManager;
 public class MulticastProxy implements Runnable{
 	private static final Logger LOG = Logger.getLogger(MulticastProxy.class.getName());
 	
+	private static final int SENT_SIZE = 10;
 	/*
 	 * Instance variables
 	 */
+	private int appId;
 	private String outerIface;
 	private String innerIface;
 	private String subscribeAddr;
@@ -48,12 +45,13 @@ public class MulticastProxy implements Runnable{
 	private InetAddress inAddr;
 	private MulticastSocket multiSck;
 	volatile boolean running = false;
-	private Set<Integer> sent = new HashSet<Integer>();
+	private List<Integer> sent = new LinkedList<Integer>();
 
 	
-	public MulticastProxy(String innerIface, String outerIface, String clientAddr, 
+	public MulticastProxy(int appId, String innerIface, String outerIface, String clientAddr, 
 			String subscribeAddr, int listenPort) {
 		super();
+		this.appId = appId;
 		this.outerIface = outerIface;
 		this.innerIface = innerIface;
 		this.clientAddr = clientAddr;
@@ -179,7 +177,6 @@ public class MulticastProxy implements Runnable{
 										(srcAddr[1]<<16)&0x00ff0000|
 										(srcAddr[2]<< 8)&0x0000ff00|
 										(srcAddr[3]<< 0)&0x000000ff;
-								newPacket.setData(newData);
 								newPacket.setSourceAsWord(newSrc);
 							}
 							newPacket.computeUDPChecksum();
@@ -197,6 +194,9 @@ public class MulticastProxy implements Runnable{
 									" DstPort " + newPacket.getDestinationPort()+
 									" Combined Header Length " + newPacket.getCombinedHeaderByteLength()+
 									" Payload " + (new String(payload, 0, payload.length)) );
+							if(sent.size() > SENT_SIZE ){
+								sent.remove(0);
+							}
 							sent.add(newPacket.getIPChecksum());
 							if(outgoing){
 								rawOutSock.write(InetAddress.getByName(subscribeAddr), newData, 0, newData.length);

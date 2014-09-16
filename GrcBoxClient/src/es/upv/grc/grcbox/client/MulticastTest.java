@@ -155,6 +155,7 @@ public class MulticastTest {
 				mSock.send(p);
 				Thread.sleep(1000);
 			}
+			mSock.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

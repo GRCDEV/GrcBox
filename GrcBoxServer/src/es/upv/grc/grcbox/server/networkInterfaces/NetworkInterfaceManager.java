@@ -240,8 +240,7 @@ public class NetworkInterfaceManager {
 		Properties devProp = (Properties) conn.getRemoteObject(_NM_IFACE, dev.getDbusPath(),  Properties.class);
 		iface.setName(dev.getIface());
 		
-		String ipAddr = getIpAddress(iface.getName());
-		iface.setAddress(ipAddr);
+
 		GrcBoxInterface.Type type;
 
 		/*
@@ -284,6 +283,8 @@ public class NetworkInterfaceManager {
 		
 		if(isUp){
 			if((boolean) devProp.Get(_DEVICE_IFACE, "Managed")){
+				String ipAddr = getIpAddress(iface.getName());
+				iface.setAddress(ipAddr);
 				Path activeConnPath = (Path) devProp.Get(_DEVICE_IFACE, "ActiveConnection");
 				Properties actConnProp = (Properties) conn.getRemoteObject(_NM_IFACE, activeConnPath.getPath(),  Properties.class);
 				Path connPath = actConnProp.Get(_ACTIVE_IFACE, "Connection");

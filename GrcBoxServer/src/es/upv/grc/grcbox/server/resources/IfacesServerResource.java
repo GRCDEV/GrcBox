@@ -7,7 +7,6 @@ import org.restlet.resource.ServerResource;
 
 import es.upv.grc.grcbox.common.GrcBoxInterfaceList;
 import es.upv.grc.grcbox.common.resources.IfacesResource;
-import es.upv.grc.grcbox.server.GrcBoxServerApplication;
 import es.upv.grc.grcbox.server.RulesDB;
 
 /**

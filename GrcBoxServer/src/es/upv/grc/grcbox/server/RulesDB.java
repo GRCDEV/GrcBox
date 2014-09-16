@@ -121,7 +121,9 @@ public class RulesDB {
 		
 		Collection<GrcBoxInterface> interfaces = getOutInterfaces();
 		for (GrcBoxInterface grcBoxInterface : interfaces) {
-			initializeOutIface(grcBoxInterface);
+			if(grcBoxInterface.isUp()){
+				initializeOutIface(grcBoxInterface);
+			}
 		}
 		
 		long time = GrcBoxServerApplication.getConfig().getKeepAliveTime();
@@ -316,7 +318,10 @@ public class RulesDB {
 			if(rule.getProto() != Protocol.UDP || !dstAddr.isMulticastAddress()){
 				throw new ResourceException(409);
 			}
-			MulticastProxy proxy = new MulticastProxy(innerInterfaces.get(0), rule.getIfName(), rule.getSrcAddr(), rule.getDstAddr(), rule.getDstPort());
+			/*
+			 * TODO Add proxy plugin support.
+			 */
+			MulticastProxy proxy = new MulticastProxy(rule.getAppid(), innerInterfaces.get(0), rule.getIfName(), rule.getSrcAddr(), rule.getDstAddr(), rule.getDstPort());
 			Thread proxyThread = new Thread(proxy);
 			proxyThread.setName("MulticastProxy" + rule.getId());
 			proxyThread.start();

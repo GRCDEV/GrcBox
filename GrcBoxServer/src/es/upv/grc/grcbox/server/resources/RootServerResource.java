@@ -35,16 +35,20 @@ package es.upv.grc.grcbox.server.resources;
 
 
 
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.restlet.resource.ServerResource;
 
 import es.upv.grc.grcbox.common.GrcBoxStatus;
+import es.upv.grc.grcbox.common.StringList;
 import es.upv.grc.grcbox.common.resources.RootResource;
 import es.upv.grc.grcbox.server.GrcBoxServerApplication;
 import es.upv.grc.grcbox.server.RulesDB;
+import es.upv.grc.grcbox.server.multicastProxy.MulticastSupportedPlugins;
 
-/**
- * Mail server resource implementing the {@link MailResource} interface.
- */
+
 public class RootServerResource extends ServerResource implements RootResource {
 
 	@Override
@@ -54,7 +58,11 @@ public class RootServerResource extends ServerResource implements RootResource {
 		int numIfaces = RulesDB.getOutInterfaces().size();
 		int appSize = RulesDB.getApps().size();
 		int ruleSize =  RulesDB.getAllRules().size();
-		status = new GrcBoxStatus(name, numIfaces, appSize, ruleSize);
+		List<String> supportedPlugins = new LinkedList<>();
+		for (MulticastSupportedPlugins plugin : MulticastSupportedPlugins.values()) {
+			supportedPlugins.add(plugin.name());
+		}
+		status = new GrcBoxStatus(name, numIfaces, appSize, ruleSize, new StringList(supportedPlugins));
 		return status;
 	}
 }
