@@ -9,7 +9,7 @@ public class GrcBoxRule {
 	}
 	
 	public enum RuleType{
-		INCOMMING, OUTGOING, MULTICAST;
+		INCOMING, OUTGOING, MULTICAST;
 	}
 	
 	/*

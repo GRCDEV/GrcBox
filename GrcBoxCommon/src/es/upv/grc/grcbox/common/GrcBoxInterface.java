@@ -184,4 +184,16 @@ public class GrcBoxInterface {
         }
         return true;
     }
+	
+	public String toString(){
+		return this.name + ":" +
+				" Address:" + this.address +
+				" Type:" + this.type +
+				" Connection:" + this.connection +
+				" Cost:" + this.cost +
+				" IsUp:" + this.isUp +
+				" Multicast:" + this.isMulticast +
+				" HasInternet:" + this.hasInternet +
+				" IsDefault:" + this.isDefault; 
+	}
 }

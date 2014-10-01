@@ -150,12 +150,19 @@ public class RulesDB {
 			LOG.info("Activating NAT on iface " + iface.getName() +"\n"+ ipnat);
 			LOG.info("Create routing table for Iface " + iface.getName() +"\n"+ iprule);
 			LOG.info("Adding default routing rule for Iface "+ iface.getName()+"\n" + iproute );
+			Process proc;
 			if(!GrcBoxServerApplication.getConfig().isDebug()){
-				Runtime.getRuntime().exec(ipnat);
-				Runtime.getRuntime().exec(iprule);
-				Runtime.getRuntime().exec(iproute);
+				proc = Runtime.getRuntime().exec(ipnat);
+				proc.waitFor();
+				proc = Runtime.getRuntime().exec(iprule);
+				proc.waitFor();
+				proc = Runtime.getRuntime().exec(iproute);
+				proc.waitFor();
 			}
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -175,11 +182,18 @@ public class RulesDB {
 			LOG.info("Remove routing table for Iface " + iface.getName() +"\n"+ ipruleDel);
 
 			if(!GrcBoxServerApplication.getConfig().isDebug()){
-				Runtime.getRuntime().exec(natDel);
-				Runtime.getRuntime().exec(rmRoute);
-				Runtime.getRuntime().exec(ipruleDel);
+				Process proc;
+				proc = Runtime.getRuntime().exec(natDel);
+				proc.waitFor();
+				proc = Runtime.getRuntime().exec(rmRoute);
+				proc.waitFor();
+				proc = Runtime.getRuntime().exec(ipruleDel);
+				proc.waitFor();
 			}
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -197,10 +211,15 @@ public class RulesDB {
 			LOG.info("Flushing nat and mangle rules \n" + flushNat + "\n"+ flushMangle);
 	
 			if(!GrcBoxServerApplication.getConfig().isDebug()){
-				Runtime.getRuntime().exec(flushNat);
-				Runtime.getRuntime().exec(flushMangle);
+				Process proc = Runtime.getRuntime().exec(flushNat);
+				proc.waitFor();
+				proc = Runtime.getRuntime().exec(flushMangle);
+				proc.waitFor();
 			}
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -332,8 +351,14 @@ public class RulesDB {
 			LOG.info("A new rule is going to be excuted \n" + ruleStr);
 			if(!GrcBoxServerApplication.getConfig().isDebug()){
 				try {
-					Runtime.getRuntime().exec(ruleStr);
+					Process proc = Runtime.getRuntime().exec(ruleStr);
+					if(proc.waitFor()!=0){
+						LOG.severe("Rule cannot be added.");
+					}
 				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
@@ -343,7 +368,7 @@ public class RulesDB {
 	
 	private static String newRuleToCommand(GrcBoxRule rule) {
 		String ruleStr = "";
-		if(rule.getType() == RuleType.INCOMMING){
+		if(rule.getType() == RuleType.INCOMING){
 			ruleStr = "iptables -t nat -A PREROUTING -i " + rule.getIfName() + " -p " + rule.getProto().toString().toLowerCase();
 			if(rule.getDstPort() == -1){
 				throw new ResourceException(412);
@@ -409,8 +434,12 @@ public class RulesDB {
 		
 		if(!GrcBoxServerApplication.getConfig().isDebug()){
 			try {
-				Runtime.getRuntime().exec(ruleStr);
+				Process proc = Runtime.getRuntime().exec(ruleStr);
+				proc.waitFor();
 			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -419,7 +448,7 @@ public class RulesDB {
 
 	private static String rmRuleToCommand(GrcBoxRule rule) {
 		String ruleStr = "";
-		if(rule.getType() == RuleType.INCOMMING){
+		if(rule.getType() == RuleType.INCOMING){
 			ruleStr = "iptables -t nat -D PREROUTING -i " + rule.getIfName() + " -p " + rule.getProto().toString().toLowerCase();
 			if(rule.getDstPort() == -1){
 				throw new ResourceException(412);

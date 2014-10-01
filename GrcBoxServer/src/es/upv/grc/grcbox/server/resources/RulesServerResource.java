@@ -36,7 +36,7 @@ public class RulesServerResource extends ServerResource implements RulesResource
 
 	@Override
 	public GrcBoxRule newRule(GrcBoxRule rule) {
-		if(rule.getType() == RuleType.INCOMMING){
+		if(rule.getType() == RuleType.INCOMING){
 			rule.setDstFwdAddr(clientIp);
 		}
 		else {
