@@ -144,12 +144,6 @@ public class GrcBoxServerApplication extends Application {
 		
 		if(addr != null){
 			Server server = androPiComponent.getServers().add(Protocol.HTTP, addr.getAddress().getHostAddress(), 8080);
-			Series<Parameter> parameters = server.getContext().getParameters();
-			parameters.add("keystorePath",
-					"src/res/serverKey.jks");
-			parameters.add("keystorePassword", "password");
-			parameters.add("keystoreType", "JKS");
-			parameters.add("keyPassword", "password");
 			androPiComponent.getDefaultHost().attach(new GrcBoxServerApplication());
 			androPiComponent.start();
 		}
@@ -201,7 +195,7 @@ public class GrcBoxServerApplication extends Application {
      */
     private Restlet authenticated(Class<? extends ServerResource> targetClass) {
         Tracer tracer = new Tracer(getContext());
-        tracer.setNext(targetClass);
+        
  
         ChallengeAuthenticator authenticator = new ChallengeAuthenticator(
                 getContext(), ChallengeScheme.HTTP_BASIC, "AndroPi");
@@ -213,10 +207,9 @@ public class GrcBoxServerApplication extends Application {
         authorizer.getAuthenticatedMethods().add(Method.POST);
         authorizer.getAuthenticatedMethods().add(Method.PUT);
         authorizer.getAuthenticatedMethods().add(Method.DELETE);
-        authorizer.setNext(tracer);
-        
-        authenticator.setNext(authorizer);
-        
+        authenticator.setNext(tracer);
+        tracer.setNext(authorizer);
+        authorizer.setNext(targetClass);
         return authenticator;
     }
 
