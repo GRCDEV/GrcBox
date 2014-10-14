@@ -16,11 +16,11 @@ import es.upv.grc.grcbox.common.GrcBoxRule;
 
 public class GrcBoxSocket {
 
-	private GrcBoxClient owner;
+	private GrcBoxClientService owner;
 	private GrcBoxRule rule;
 	private Socket socket;
 
-	public GrcBoxSocket(GrcBoxClient owner, GrcBoxRule rule, Socket socket) {
+	public GrcBoxSocket(GrcBoxClientService owner, GrcBoxRule rule, Socket socket) {
 		super();
 		this.owner = owner;
 		this.rule = rule;

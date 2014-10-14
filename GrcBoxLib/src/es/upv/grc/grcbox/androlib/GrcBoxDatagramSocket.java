@@ -13,10 +13,10 @@ import es.upv.grc.grcbox.common.GrcBoxRule;
 
 public class GrcBoxDatagramSocket extends DatagramSocket {
 
-	private GrcBoxClient owner;
+	private GrcBoxClientService owner;
 	private GrcBoxRule rule;
 	private DatagramSocket socket;
-	public GrcBoxDatagramSocket(GrcBoxClient owner, GrcBoxRule rule,
+	public GrcBoxDatagramSocket(GrcBoxClientService owner, GrcBoxRule rule,
 			DatagramSocket socket) throws SocketException {
 		super();
 		this.owner = owner;

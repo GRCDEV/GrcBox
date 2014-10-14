@@ -19,11 +19,11 @@ import es.upv.grc.grcbox.common.GrcBoxRule;
 public class GrcBoxMulticasSocket extends MulticastSocket {
 	
 	
-	private GrcBoxClient owner;
+	private GrcBoxClientService owner;
 	private GrcBoxRule rule;
 	private MulticastSocket socket;
 	
-	public GrcBoxMulticasSocket(GrcBoxClient owner,
+	public GrcBoxMulticasSocket(GrcBoxClientService owner,
 			MulticastSocket socket) throws IOException {
 		super();
 		this.owner = owner;

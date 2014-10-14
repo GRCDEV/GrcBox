@@ -14,4 +14,5 @@
         android:theme="@style/AppTheme" >
     </application>
 
+    <service android:name="es.upv.grc.grcbox.androlib.GrcBoxClienService" />
 </manifest>

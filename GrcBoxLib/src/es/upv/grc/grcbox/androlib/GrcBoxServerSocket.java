@@ -12,12 +12,12 @@ import es.upv.grc.grcbox.common.GrcBoxRule;
 
 public class GrcBoxServerSocket{
 
-	private GrcBoxClient owner;
+	private GrcBoxClientService owner;
 	private GrcBoxRule rule;
 	private ServerSocket socket;
 	
 	
-	public GrcBoxServerSocket(GrcBoxClient owner, GrcBoxRule rule,
+	public GrcBoxServerSocket(GrcBoxClientService owner, GrcBoxRule rule,
 			ServerSocket socket) {
 		super();
 		this.owner = owner;
