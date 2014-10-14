@@ -44,4 +44,11 @@ public class GrcBoxApp {
 	public void setLastKeepAlive(long lastKeepAlive) {
 		this.lastKeepAlive = lastKeepAlive;
 	}
+
+	@Override
+	public String toString() {
+		return "Id:"+appId+ " Name:" + name;
+	}
+	
+	
 }

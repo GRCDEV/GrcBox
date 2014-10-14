@@ -25,6 +25,7 @@ public class GrcBoxRule {
 	protected int dstPort;
 	protected String srcAddr;
 	protected String dstAddr;
+	protected String mcastPlugin;
 	/*
 	 * Parameters needed for incomming rules
 	 */
@@ -51,8 +52,32 @@ public class GrcBoxRule {
 		this.dstAddr = dstAddr;
 		this.dstFwdPort = dstFwdPort;
 		this.dstFwdAddr = dstFwdAddr;
+		this.mcastPlugin = null;
 	}
 
+	/*
+	 * Common constructor used for incomming or outgoing flows.
+	 * If incomming is false dstFwdPort and dstFwdAddr must be -1 and will be ignored.
+	 */
+	public GrcBoxRule(int id, Protocol proto, RuleType type, int appid,
+			String ifName, long expireDate, int srcPort, int dstPort,
+			String srcAddr,String dstAddr, int dstFwdPort, String dstFwdAddr, String mcastPlugin) {
+		super();
+		this.id = id;
+		this.proto = proto;
+		this.type = type;
+		this.appid = appid;
+		this.ifName = ifName;
+		this.expireDate = expireDate;
+		this.srcPort = srcPort;
+		this.dstPort = dstPort;
+		this.srcAddr = srcAddr;
+		this.dstAddr = dstAddr;
+		this.dstFwdPort = dstFwdPort;
+		this.dstFwdAddr = dstFwdAddr;
+		this.mcastPlugin = mcastPlugin;
+	}
+	
 	public GrcBoxRule(){
 		
 	}
@@ -151,5 +176,23 @@ public class GrcBoxRule {
 
 	public void setType(RuleType type) {
 		this.type = type;
+	}
+	
+	@Override
+	public String toString(){
+		String value = null;
+		if(type.equals(RuleType.INCOMING)){
+			value = "Id: "+ getId() + " Type:" +getType() + " Protocol:" + getProto()  +
+				" Port: " + getDstPort();
+		}
+		else if(type.equals(RuleType.OUTGOING)){
+			value = " Id: "+ getId() + " Type:" +getType() + " Protocol:" + getProto() +
+					" DstAddr:"+ getDstAddr() + " Port: " + getDstPort();
+		}
+		else if(type.equals(RuleType.MULTICAST)){
+			value = " Id: "+ getId() + " Type:" +getType() + "Address " + getDstAddr() +
+					" Port: " + getDstPort();
+		}
+		return value;
 	}
 }
