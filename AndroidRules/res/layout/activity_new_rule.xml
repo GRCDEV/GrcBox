@@ -1,0 +1,190 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="es.upv.grc.grcbox.android.activities.NewRule" >
+<ScrollView
+android:layout_width="match_parent"
+android:layout_height="0dp"
+android:scrollbars="none"
+android:layout_weight="3">
+	<TableLayout android:id="@+id/ruleTable"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content">
+	    <TableRow
+	        android:id="@+id/rowName"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content" >
+	
+	        <TextView
+	            android:id="@+id/textName"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_gravity="bottom"
+	            android:text="@string/rule_name"
+	            android:textAppearance="?android:attr/textAppearanceLarge" />
+	
+	        <EditText
+	            android:id="@+id/rule_name"
+	            android:layout_weight="1"
+	            android:layout_width="0dp"
+	            android:layout_height="wrap_content"
+	            android:hint="@string/rule_name_hint"
+	            android:inputType="text" />
+	    </TableRow>
+	
+	    <TableRow
+	        android:id="@+id/rowType"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content" >
+	
+	        <TextView
+	            android:id="@+id/textType"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_gravity="bottom"
+	            android:text="@string/rule_type"
+	            android:textAppearance="?android:attr/textAppearanceLarge" />
+	
+	        <Spinner
+	            android:id="@+id/spinner_type"
+	            android:layout_weight="1"
+	            android:layout_width="0dp"
+	            android:layout_height="wrap_content" />
+	    </TableRow>
+	
+	    <TableRow
+	        android:id="@+id/rowProto"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content" >
+	
+	        <TextView
+	            android:id="@+id/textProto"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_gravity="bottom"
+	            android:text="@string/rule_proto"
+	            android:textAppearance="?android:attr/textAppearanceLarge" />
+	
+	        <Spinner
+	            android:id="@+id/spinner_proto"
+	            android:layout_width="0dp"
+	            android:layout_weight="1"
+	            android:layout_height="wrap_content"/>
+
+	    </TableRow>
+	
+	    <TableRow
+	        android:id="@+id/rowPort"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content" >
+	
+	        <TextView
+	            android:id="@+id/textPort"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_gravity="bottom"
+	            android:text="@string/rule_port"
+	            android:textAppearance="?android:attr/textAppearanceLarge" />
+	
+	        <EditText
+	            android:id="@+id/port_number"
+	            android:layout_width="0dp"
+	            android:layout_weight="1"
+	            android:hint="@string/rule_port_hint"
+	            android:inputType="number" />
+	    </TableRow>
+		    	<TableRow
+	        android:id="@+id/rowAddress"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content" >
+	
+	        <TextView
+	            android:id="@+id/textAddress"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_gravity="bottom"
+	            android:text="@string/rule_address"
+	            android:textAppearance="?android:attr/textAppearanceLarge" />
+	
+	        <EditText
+	            android:id="@+id/remote_address"
+	            android:layout_width="0dp"
+	            android:layout_height="wrap_content"
+	            android:layout_weight="1"
+	            android:gravity="center_vertical|right"
+	            android:hint="@string/rule_address_hint"
+	            android:inputType="text"
+	            android:selectAllOnFocus="true"
+	            android:text="ANY" />
+
+	    </TableRow>
+	    
+	    <TableRow
+                android:id="@+id/rowPlugin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+
+                <TextView
+                    android:id="@+id/textPlugin"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom"
+                    android:text="@string/rule_plugin"
+                    android:textAppearance="?android:attr/textAppearanceLarge" />
+
+                <Spinner
+                    android:id="@+id/spinner_plugin"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+            </TableRow>
+	    <TableRow
+	        android:id="@+id/rowIface"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content" >
+	
+	        <TextView
+	            android:id="@+id/textIface"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_gravity="bottom"
+	            android:text="@string/rule_iface"
+	            android:textAppearance="?android:attr/textAppearanceLarge" />
+	
+	        <Spinner
+	            android:id="@+id/spinner_iface"
+	            android:layout_width="0dp"
+	            android:layout_weight="1"
+	            android:layout_height="wrap_content" />
+	    </TableRow>
+	    
+
+
+	</TableLayout>
+
+
+	</ScrollView>
+
+<TextView
+    android:id="@+id/text_iface_status"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1"
+    android:text="@string/iface_status"
+    android:textAppearance="?android:attr/textAppearanceSmall" />
+
+		<Button
+		    android:id="@+id/save_button"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:layout_gravity="center_horizontal"
+		    android:text="@string/button_save"
+		    android:onClick="saveAndReturn" />
+
+</LinearLayout>
