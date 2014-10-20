@@ -24,7 +24,7 @@ import com.savarese.rocksaw.net.RawSocket;
  * by implementing the method processPayload(byte[] payload).
  */
 public class MulticastProxy implements Runnable{
-	private static final Logger LOG = Logger.getLogger(MulticastProxy.class.getName());
+	protected static final Logger LOG = Logger.getLogger(MulticastProxy.class.getName());
 	
 	private static final int SENT_SIZE = 10;
 	/*
@@ -34,6 +34,8 @@ public class MulticastProxy implements Runnable{
 	private String outerIface;
 	private String innerIface;
 	private String subscribeAddr;
+	
+
 	private String clientAddr;
 
 	int listenPort;
@@ -170,6 +172,7 @@ public class MulticastProxy implements Runnable{
 							byte [] newData = outBuff.array();
 							UDPPacket newPacket = new UDPPacket(newData.length);
 							newPacket.setData(newData);
+							newPacket.setUDPDataByteLength(newPayload.length);
 							
 							if(outgoing){
 								byte [] srcAddr = outAddr.getAddress();
@@ -193,7 +196,7 @@ public class MulticastProxy implements Runnable{
 									" SrcPort " + newPacket.getSourcePort() +
 									" DstPort " + newPacket.getDestinationPort()+
 									" Combined Header Length " + newPacket.getCombinedHeaderByteLength()+
-									" Payload " + (new String(payload, 0, payload.length)) );
+									" Payload " + (new String(newPayload, 0, newPayload.length)) );
 							if(sent.size() > SENT_SIZE ){
 								sent.remove(0);
 							}
@@ -222,8 +225,47 @@ public class MulticastProxy implements Runnable{
 		try {
 			rawListenSock.close();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+	}
+
+	public int getAppId() {
+		return appId;
+	}
+
+	public void setAppId(int appId) {
+		this.appId = appId;
+	}
+
+	public String getOuterIface() {
+		return outerIface;
+	}
+
+	public void setOuterIface(String outerIface) {
+		this.outerIface = outerIface;
+	}
+
+	public String getInnerIface() {
+		return innerIface;
+	}
+
+	public void setInnerIface(String innerIface) {
+		this.innerIface = innerIface;
+	}
+
+	public String getClientAddr() {
+		return clientAddr;
+	}
+
+	public void setClientAddr(String clientAddr) {
+		this.clientAddr = clientAddr;
+	}
+
+	public int getListenPort() {
+		return listenPort;
+	}
+
+	public void setListenPort(int listenPort) {
+		this.listenPort = listenPort;
 	}
 }

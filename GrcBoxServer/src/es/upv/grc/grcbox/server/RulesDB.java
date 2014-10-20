@@ -22,6 +22,8 @@ import es.upv.grc.grcbox.common.GrcBoxRule;
 import es.upv.grc.grcbox.common.GrcBoxRule.Protocol;
 import es.upv.grc.grcbox.common.GrcBoxRule.RuleType;
 import es.upv.grc.grcbox.server.multicastProxy.MulticastProxy;
+import es.upv.grc.grcbox.server.multicastProxy.MulticastSupportedPlugins;
+import es.upv.grc.grcbox.server.multicastProxy.scampi.ScampiProxy;
 import es.upv.grc.grcbox.server.networkInterfaces.NetworkInterfaceManager;
 import es.upv.grc.grcbox.server.networkInterfaces.NetworkManagerListener;
 
@@ -275,13 +277,9 @@ public class RulesDB {
 	 * Remove an applications and its rules from the DB and the system
 	 */
 	public synchronized static void rmApp(Integer appId){
-		Map<Integer, GrcBoxRule> rules = rulesMap.get(appId);
-		if(rules != null){
-			Collection<GrcBoxRule> rulesList = rules.values();
-			for (GrcBoxRule rule : rulesList) {
-				rmRuleFromSystem(rule);
-			}
-			rulesMap.remove(appId);
+		Collection<GrcBoxRule> rules = getRulesByApp(appId);
+		for (GrcBoxRule grcBoxRule : rules) {
+			rmRule(appId, grcBoxRule.getId());
 		}
 		appMap.remove(appId);
 		MapVerifier verifier = GrcBoxServerApplication.getVerifier();
@@ -337,15 +335,38 @@ public class RulesDB {
 			if(rule.getProto() != Protocol.UDP || !dstAddr.isMulticastAddress()){
 				throw new ResourceException(409);
 			}
-			/*
-			 * TODO Add proxy plugin support.
-			 */
-			MulticastProxy proxy = new MulticastProxy(rule.getAppid(), innerInterfaces.get(0), rule.getIfName(), rule.getSrcAddr(), rule.getDstAddr(), rule.getDstPort());
-			Thread proxyThread = new Thread(proxy);
-			proxyThread.setName("MulticastProxy" + rule.getId());
-			proxyThread.start();
-			proxies.put(rule.getId(), proxy);
+			MulticastProxy proxy = null;
+			if(rule.getMcastPlugin().equals(MulticastSupportedPlugins.SCAMPI.toString())){
+				proxy = new ScampiProxy(rule.getAppid(), 
+						innerInterfaces.get(0), 
+						rule.getIfName(), 
+						rule.getSrcAddr(), 
+						rule.getDstAddr(), 
+						rule.getDstPort(),
+						nm.getIpAddress(rule.getIfName())
+						);
+			}
+			else if(rule.getMcastPlugin().equals(MulticastSupportedPlugins.NONE.toString())){
+				proxy = new MulticastProxy(rule.getAppid(), 
+						innerInterfaces.get(0), 
+						rule.getIfName(), 
+						rule.getSrcAddr(), 
+						rule.getDstAddr(), 
+						rule.getDstPort()
+						);
+			}
+			else{
+				throw new ResourceException(400);
+			}
+			
+			if(proxy != null){
+				Thread proxyThread = new Thread(proxy);
+				proxyThread.setName("MulticastProxy" + rule.getId());
+				proxyThread.start();
+				proxies.put(rule.getId(), proxy);
+			}
 		}
+		
 		else{
 			ruleStr = newRuleToCommand(rule);
 			LOG.info("A new rule is going to be excuted \n" + ruleStr);
@@ -413,9 +434,6 @@ public class RulesDB {
 
 
 	private synchronized static  void rmRuleFromSystem(GrcBoxRule rule){
-		String ruleStr; 
-		ruleStr = rmRuleToCommand(rule);
-		LOG.info("A rule has been removed from System:\n"+ ruleStr);
 		if(rule.getType().equals(RuleType.MULTICAST)){
 			InetAddress dstAddr;
 			try {
@@ -430,9 +448,12 @@ public class RulesDB {
 			MulticastProxy proxy = proxies.get(rule.getId());
 			proxy.stop();
 			proxies.remove(rule.getId());
+			LOG.info("A multicast proxy was stopped");
 		}
-		
-		if(!GrcBoxServerApplication.getConfig().isDebug()){
+		else if(!GrcBoxServerApplication.getConfig().isDebug()){
+			String ruleStr; 
+			ruleStr = rmRuleToCommand(rule);
+			LOG.info("A rule has been removed from System:\n"+ ruleStr);
 			try {
 				Process proc = Runtime.getRuntime().exec(ruleStr);
 				proc.waitFor();
