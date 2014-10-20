@@ -178,6 +178,83 @@ public class GrcBoxRule {
 		this.type = type;
 	}
 	
+	public String getMcastPlugin() {
+		return mcastPlugin;
+	}
+
+	public void setMcastPlugin(String mcastPlugin) {
+		this.mcastPlugin = mcastPlugin;
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + appid;
+		result = prime * result + ((dstAddr == null) ? 0 : dstAddr.hashCode());
+		result = prime * result
+				+ ((dstFwdAddr == null) ? 0 : dstFwdAddr.hashCode());
+		result = prime * result + dstFwdPort;
+		result = prime * result + dstPort;
+		result = prime * result + ((ifName == null) ? 0 : ifName.hashCode());
+		result = prime * result
+				+ ((mcastPlugin == null) ? 0 : mcastPlugin.hashCode());
+		result = prime * result + ((proto == null) ? 0 : proto.hashCode());
+		result = prime * result + ((srcAddr == null) ? 0 : srcAddr.hashCode());
+		result = prime * result + srcPort;
+		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		GrcBoxRule other = (GrcBoxRule) obj;
+		if (appid != other.appid)
+			return false;
+		if (dstAddr == null) {
+			if (other.dstAddr != null)
+				return false;
+		} else if (!dstAddr.equals(other.dstAddr))
+			return false;
+		if (dstFwdAddr == null) {
+			if (other.dstFwdAddr != null)
+				return false;
+		} else if (!dstFwdAddr.equals(other.dstFwdAddr))
+			return false;
+		if (dstFwdPort != other.dstFwdPort)
+			return false;
+		if (dstPort != other.dstPort)
+			return false;
+		if (ifName == null) {
+			if (other.ifName != null)
+				return false;
+		} else if (!ifName.equals(other.ifName))
+			return false;
+		if (mcastPlugin == null) {
+			if (other.mcastPlugin != null)
+				return false;
+		} else if (!mcastPlugin.equals(other.mcastPlugin))
+			return false;
+		if (proto != other.proto)
+			return false;
+		if (srcAddr == null) {
+			if (other.srcAddr != null)
+				return false;
+		} else if (!srcAddr.equals(other.srcAddr))
+			return false;
+		if (srcPort != other.srcPort)
+			return false;
+		if (type != other.type)
+			return false;
+		return true;
+	};
+	
 	@Override
 	public String toString(){
 		String value = null;
