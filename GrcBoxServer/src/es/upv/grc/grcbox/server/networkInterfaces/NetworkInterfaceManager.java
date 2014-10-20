@@ -357,8 +357,6 @@ public class NetworkInterfaceManager {
 			Map<String, Variant> propsMap = props.GetAll(_DEVICE_IFACE);
 			if(propsMap.get("Interface") != null) 
 				device.setIface((String) propsMap.get("Interface").getValue());
-			if(propsMap.get("Ip4Address") != null) 
-				device.setIfaceIpAddress((UInt32) propsMap.get("Ip4Address").getValue());
 			if(propsMap.get("Capabilities") != null) 
 				device.setCapabilities((UInt32) propsMap.get("Capabilities").getValue());
 			if(propsMap.get("State") != null) 
@@ -371,6 +369,14 @@ public class NetworkInterfaceManager {
 				device.setManaged((Boolean)propsMap.get("Managed").getValue());
 			if(propsMap.get("DeviceType") != null) 
 				device.setType((UInt32)propsMap.get("DeviceType").getValue());
+			
+			if(device.getState().equals(NM_DEVICE_STATE.ACTIVATED)){
+				Properties ip4Prop = (Properties) conn.getRemoteObject(_NM_IFACE, device.getIp4Config(),  Properties.class);
+				Vector<Vector<UInt32>> addresses = ip4Prop.Get(_IP4CONFIG_IFACE, "Addresses");
+				UInt32 ip = addresses.get(0).get(0);
+				device.setIfaceIpAddress(ip);
+				LOG.info("iface IP " + ip);
+			}
 		}
 		return device;
 	}
@@ -455,9 +461,13 @@ public class NetworkInterfaceManager {
 	}
 	
 	/*
-	 * Returns the ip address associate to interface iface
+	 * Convert from long to ipv4 String
 	 */
 	private String int2Ip(long addr) {
+		LOG.info("Long " + addr + " to String" );
+		if(addr == 0){
+			return "0.0.0.0";
+		}
 		byte [] gwByte = new byte[4];
 		byte [] temp =  (BigInteger.valueOf(addr)).toByteArray();
 		gwByte[0] = temp[3];
