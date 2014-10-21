@@ -1,6 +1,5 @@
 package es.upv.grc.grcbox.android.dialogs;
 
-import android.R;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -45,13 +44,13 @@ public class TextDialog extends DialogFragment {
 		builder.setMessage(question)
 		.setTitle(title)
 		.setView(text)
-		.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+		.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 mListener.onOkClick(text.getText().toString());
                 dialog.dismiss();
             }
         })
-		.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+		.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int id) {
 				dialog.cancel();
 			}
