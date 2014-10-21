@@ -1,6 +1,7 @@
 package es.upv.grc.grcbox.server.multicastProxy;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
@@ -138,8 +139,7 @@ public class MulticastProxy implements Runnable{
 						rcvdPacket.setIPHeaderLength(rcvdPacket.getIPHeaderLength());
 
 						int offset = rcvdPacket.getCombinedHeaderByteLength();
-						int length = rcvdPacket.getIPPacketLength();
-						byte[] payload = Arrays.copyOfRange(rcvdBuf, offset, length);
+						byte[] payload = Arrays.copyOfRange(rcvdBuf, offset, rcvdPacket.getIPPacketLength());
 						String dstIp = rcvdPacket.getDestinationAsInetAddress().getHostAddress();
 						
 						int dstPort = rcvdPacket.getDestinationPort();
@@ -159,6 +159,7 @@ public class MulticastProxy implements Runnable{
 									" SrcPort " + rcvdPacket.getSourcePort() +
 									" DstPort " + dstPort+
 									" Combined Header Length " + rcvdPacket.getCombinedHeaderByteLength()+
+									" Payload Length " + payload.length +
 									" Payload " + (new String(payload, 0, payload.length)) );
 							
 							byte [] newHeader = Arrays.copyOf(rcvdBuf, rcvdPacket.getCombinedHeaderByteLength());
@@ -172,8 +173,9 @@ public class MulticastProxy implements Runnable{
 							byte [] newData = outBuff.array();
 							UDPPacket newPacket = new UDPPacket(newData.length);
 							newPacket.setData(newData);
-							newPacket.setUDPDataByteLength(newPayload.length);
-							
+							newPacket.setUDPPacketLength(newPayload.length+UDPPacket.LENGTH_UDP_HEADER);
+							newPacket.setIPPacketLength(newPayload.length+UDPPacket.LENGTH_UDP_HEADER+newPacket.getIPHeaderByteLength());
+
 							if(outgoing){
 								byte [] srcAddr = outAddr.getAddress();
 								int newSrc = (srcAddr[0]<<24)&0xff000000|
@@ -182,6 +184,8 @@ public class MulticastProxy implements Runnable{
 										(srcAddr[3]<< 0)&0x000000ff;
 								newPacket.setSourceAsWord(newSrc);
 							}
+							newPacket.setIdentification(newPacket.getIdentification()+1);
+							
 							newPacket.computeUDPChecksum();
 							newPacket.computeIPChecksum();
 							LOG.info("Fordwarding packet to " + outerIface +" with address " + outAddr.getHostName() );
@@ -196,21 +200,36 @@ public class MulticastProxy implements Runnable{
 									" SrcPort " + newPacket.getSourcePort() +
 									" DstPort " + newPacket.getDestinationPort()+
 									" Combined Header Length " + newPacket.getCombinedHeaderByteLength()+
+									" UDP Packet Size" + newPacket.getUDPPacketLength() +
 									" Payload " + (new String(newPayload, 0, newPayload.length)) );
 							if(sent.size() > SENT_SIZE ){
 								sent.remove(0);
 							}
 							sent.add(newPacket.getIPChecksum());
-							if(outgoing){
-								rawOutSock.write(InetAddress.getByName(subscribeAddr), newData, 0, newData.length);
+							try{
+								if(outgoing){
+									rawOutSock.write(InetAddress.getByName(subscribeAddr), newData, 0, newData.length);
+								}
+								else{
+									rawInSock.write(InetAddress.getByName(subscribeAddr), newData, 0, newData.length);
+								}
 							}
-							else{
-								rawInSock.write(InetAddress.getByName(subscribeAddr), newData, 0, newData.length);
+							catch(Exception e){
+								LOG.severe("ERROR FORWARDING A PACKET");
+								e.printStackTrace();
 							}
 						}
 					}
 				}
+				catch (InterruptedIOException e){
+					/*
+					 * Ignore interrupted IOException.
+					 * We need to set up a timeout in the socket to be able to
+					 * stop the proxy, rawSockets are not interrupted when closed :(
+					 */
+				}
 				catch (IOException e) {
+					e.printStackTrace();
 				}
 			}
 		} catch (IOException e) {
