@@ -9,8 +9,10 @@ import java.net.NetworkInterface;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Logger;
 
 import org.savarese.vserv.tcpip.UDPPacket;
@@ -26,8 +28,6 @@ import com.savarese.rocksaw.net.RawSocket;
  */
 public class MulticastProxy implements Runnable{
 	protected static final Logger LOG = Logger.getLogger(MulticastProxy.class.getName());
-	
-	private static final int SENT_SIZE = 10;
 	/*
 	 * Instance variables
 	 */
@@ -48,8 +48,8 @@ public class MulticastProxy implements Runnable{
 	private InetAddress inAddr;
 	private MulticastSocket multiSck;
 	volatile boolean running = false;
-	private List<Integer> sent = new LinkedList<Integer>();
-
+	
+	private HashSet<Integer> sent = new HashSet<>();
 	
 	public MulticastProxy(int appId, String innerIface, String outerIface, String clientAddr, 
 			String subscribeAddr, int listenPort) {
@@ -73,7 +73,6 @@ public class MulticastProxy implements Runnable{
 	public void run() {
 		try {
 			LOG.info("Initializing Multicast proxy: Interfaces "+ innerIface + "," + outerIface+", Address: " + subscribeAddr+  " Port:"+ listenPort);
-
 			/*
 			 * Create a multicast socket in the innerInterface for listening for multicast packets.
 			 */
@@ -135,7 +134,7 @@ public class MulticastProxy implements Runnable{
 					rawListenSock.read(rcvdBuf);
 					String srcIp = rcvdPacket.getSourceAsInetAddress().getHostAddress();
 					if(!srcIp.equals(outAddr.getHostAddress()) && 
-							!sent.contains(rcvdPacket.getIPChecksum()) ){
+							!sent.contains(rcvdPacket.getIPChecksum())){
 						rcvdPacket.setIPHeaderLength(rcvdPacket.getIPHeaderLength());
 
 						int offset = rcvdPacket.getCombinedHeaderByteLength();
@@ -184,7 +183,7 @@ public class MulticastProxy implements Runnable{
 										(srcAddr[3]<< 0)&0x000000ff;
 								newPacket.setSourceAsWord(newSrc);
 							}
-							newPacket.setIdentification(newPacket.getIdentification()+1);
+							newPacket.setIdentification(newPacket.getIdentification()-100);
 							
 							newPacket.computeUDPChecksum();
 							newPacket.computeIPChecksum();
@@ -202,9 +201,6 @@ public class MulticastProxy implements Runnable{
 									" Combined Header Length " + newPacket.getCombinedHeaderByteLength()+
 									" UDP Packet Size" + newPacket.getUDPPacketLength() +
 									" Payload " + (new String(newPayload, 0, newPayload.length)) );
-							if(sent.size() > SENT_SIZE ){
-								sent.remove(0);
-							}
 							sent.add(newPacket.getIPChecksum());
 							try{
 								if(outgoing){
@@ -218,6 +214,9 @@ public class MulticastProxy implements Runnable{
 								LOG.severe("ERROR FORWARDING A PACKET");
 								e.printStackTrace();
 							}
+						}
+						else{
+							sent.remove(rcvdPacket.getIPChecksum());
 						}
 					}
 				}
