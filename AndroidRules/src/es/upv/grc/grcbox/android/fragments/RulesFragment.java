@@ -106,7 +106,9 @@ public class RulesFragment extends ListFragment implements MultiChoiceModeListen
 			MainActivity mActivity = (MainActivity)getActivity();
 			if(mActivity.isBound()){
 				GrcBoxClientService service = mActivity.getService();
-				service.removeRule(params[0]);
+				if(service.isRegistered()){
+					service.removeRule(params[0]);
+				}
 			}
 			return null;
 		}
@@ -137,6 +139,7 @@ public class RulesFragment extends ListFragment implements MultiChoiceModeListen
 
 	/*
 	 * Save selected rules with the provided name
+	 * TODO
 	 * @see es.upv.grc.grcbox.android.dialogs.TextDialog.TextDialogListener#onOkClick(java.lang.String)
 	 */
 	@Override
@@ -156,9 +159,11 @@ public class RulesFragment extends ListFragment implements MultiChoiceModeListen
 			}
 			if(mActivity.isBound()){
 				GrcBoxClientService service = mActivity.getService();
-				Collection<GrcBoxRule> rules = service.getRules();
-				for (GrcBoxRule grcBoxRule : rules) {
-					displayList.add(new DisplayGrcBoxRule( grcBoxRule, ruleIdName.get( grcBoxRule.getId()) ) );
+				if(service.isRegistered()){
+					Collection<GrcBoxRule> rules = service.getRules();
+					for (GrcBoxRule grcBoxRule : rules) {
+						displayList.add(new DisplayGrcBoxRule(grcBoxRule, ruleIdName.get( grcBoxRule.getId()) ) );
+					}
 				}
 				return displayList;
 			}

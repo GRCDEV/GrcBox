@@ -245,6 +245,7 @@ public class GrcBoxMulticasSocket extends MulticastSocket {
 		socket.joinGroup(groupAddr);
 	}
 	/**
+	 * TODO Register a new multicast rule
 	 * @param groupAddress
 	 * @param netInterface
 	 * @throws IOException
@@ -255,6 +256,7 @@ public class GrcBoxMulticasSocket extends MulticastSocket {
 		socket.joinGroup(groupAddress, netInterface);
 	}
 	/**
+	 * TODO Remove the previously registered rule
 	 * @param groupAddr
 	 * @throws IOException
 	 * @see java.net.MulticastSocket#leaveGroup(java.net.InetAddress)
@@ -263,6 +265,7 @@ public class GrcBoxMulticasSocket extends MulticastSocket {
 		socket.leaveGroup(groupAddr);
 	}
 	/**
+	 * TODO Remove the previously registered rule
 	 * @param groupAddress
 	 * @param netInterface
 	 * @throws IOException

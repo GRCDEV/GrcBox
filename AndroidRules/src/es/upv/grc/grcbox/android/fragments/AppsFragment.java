@@ -35,11 +35,12 @@ public class AppsFragment extends ListFragment {
 			MainActivity mActivity = (MainActivity)getActivity();
 			if(mActivity.isBound()){
 				GrcBoxClientService service = mActivity.getService();
-				return service.getApps();
+				if(service.isRegistered()){
+					return service.getApps();
+				}
 			}
-			else{
-				return new ArrayList<GrcBoxApp>();
-			}
+			return new ArrayList<GrcBoxApp>();
+			
 		}
 
 		@Override

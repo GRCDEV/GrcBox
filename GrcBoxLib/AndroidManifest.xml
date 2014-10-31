@@ -2,7 +2,7 @@
     package="es.upv.grc.grcbox.androlib"
     android:versionCode="1"
     android:versionName="1.0" >
-
+    
     <uses-sdk
         android:minSdkVersion="8"
         android:targetSdkVersion="18" />
@@ -14,5 +14,5 @@
         android:theme="@style/AppTheme" >
     </application>
 
-    <service android:name="es.upv.grc.grcbox.androlib.GrcBoxClienService" />
+    <service android:name="es.upv.grc.grcbox.androlib.GrcBoxClientService" />
 </manifest>

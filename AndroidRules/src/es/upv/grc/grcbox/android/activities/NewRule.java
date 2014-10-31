@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import es.upv.grc.grcbox.android.R;
-import es.upv.grc.grcbox.android.activities.MainActivity.RegisterTask;
 import es.upv.grc.grcbox.androlib.GrcBoxClientService;
 import es.upv.grc.grcbox.androlib.GrcBoxClientService.GrcBoxBinder;
 import es.upv.grc.grcbox.common.GrcBoxInterface;
@@ -21,7 +20,6 @@ import android.content.ServiceConnection;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;

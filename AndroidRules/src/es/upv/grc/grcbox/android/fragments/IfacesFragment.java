@@ -46,11 +46,11 @@ public class IfacesFragment extends ListFragment {
 			MainActivity mActivity = (MainActivity)getActivity();
 			if(mActivity.isBound()){
 				GrcBoxClientService service = mActivity.getService();
-				return service.getInterfaces();
+				if(service.isRegistered()){
+					return service.getInterfaces();
+				}
 			}
-			else{
-				return new ArrayList<GrcBoxInterface>();
-			}
+			return new ArrayList<GrcBoxInterface>();
 		}
 
 		@Override

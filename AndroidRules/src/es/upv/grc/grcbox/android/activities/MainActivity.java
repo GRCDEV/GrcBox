@@ -2,14 +2,14 @@ package es.upv.grc.grcbox.android.activities;
 
 
 import java.util.HashMap;
+import java.util.LinkedList;
+
 
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.ActionBar.Tab;
 import android.app.Activity;
-import android.app.Fragment;
 import android.app.FragmentTransaction;
-import android.app.ListFragment;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -26,12 +26,13 @@ import es.upv.grc.grcbox.android.fragments.IfacesFragment;
 import es.upv.grc.grcbox.android.fragments.RulesFragment;
 import es.upv.grc.grcbox.androlib.GrcBoxClientService;
 import es.upv.grc.grcbox.androlib.GrcBoxClientService.GrcBoxBinder;
+import es.upv.grc.grcbox.androlib.GrcBoxClientService.OnRegisteredChangedListener;
 import es.upv.grc.grcbox.common.GrcBoxRule;
 import es.upv.grc.grcbox.common.GrcBoxRule.Protocol;
 import es.upv.grc.grcbox.common.GrcBoxRule.RuleType;
 
 @SuppressLint("UseSparseArrays")
-public class MainActivity extends Activity implements ActionBar.TabListener{
+public class MainActivity extends Activity implements ActionBar.TabListener, OnRegisteredChangedListener{
 	private static final String RULES_TAG= "rules";
 	private static final String APPS_TAG= "apps";
 	private static final String IFACES_TAG = "ifaces";
@@ -48,6 +49,8 @@ public class MainActivity extends Activity implements ActionBar.TabListener{
 	private boolean mBound = false;
 	private Menu mMenu;
 	private String selectedTab;
+	
+	private LinkedList<GrcBoxRule>  pendingRules = new LinkedList<GrcBoxRule>();
 	
     @SuppressWarnings("unchecked")
 	@Override
@@ -94,6 +97,7 @@ public class MainActivity extends Activity implements ActionBar.TabListener{
 
     @Override
 	protected void onDestroy() {
+    	grcBoxCli.unSubscribeRegisteredChangedListener(this);
     	unbindService(mConnection);
 		super.onDestroy();
 	}
@@ -120,9 +124,12 @@ public class MainActivity extends Activity implements ActionBar.TabListener{
             mBound = true;
     		
     		if(!grcBoxCli.isRegistered()){
-    			new RegisterTask().execute(getResources().getString(R.string.app_name));
+    			grcBoxCli.register(getResources().getString(R.string.app_name));
     		}
-    		refresh();
+			for(GrcBoxRule rule: pendingRules){
+				new NewRuleTask("").execute(rule);
+			}
+			pendingRules.clear();
         }
 
         @Override
@@ -130,21 +137,6 @@ public class MainActivity extends Activity implements ActionBar.TabListener{
             mBound = false;
         }
     };
-    
-    public class RegisterTask extends AsyncTask<String, Void, Void>{
-
-		@Override
-		protected Void doInBackground(String... name) {
-			grcBoxCli.register(name[0]);
-			return null;
-		}
-
-		@Override
-		protected void onPostExecute(Void result) {
-			rulesFragment.refresh();
-			super.onPostExecute(result);
-		}
-    }
 
     @Override
 	protected void onSaveInstanceState(Bundle outState) {
@@ -193,8 +185,13 @@ public class MainActivity extends Activity implements ActionBar.TabListener{
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_add) {
-        	Intent intent = new Intent(this, NewRule.class);
-        	startActivityForResult(intent, NEW_RULE_ACTION);
+        	if(grcBoxCli.isRegistered()){
+        		Intent intent = new Intent(this, NewRule.class);
+        		startActivityForResult(intent, NEW_RULE_ACTION);
+        	}
+        	else{
+    			Toast.makeText(MainActivity.this, "You are not connected to a GRCBOX you can't create new rules", Toast.LENGTH_SHORT).show();
+        	}
         }
         else if(id == R.id.action_refresh){
         	refresh();
@@ -292,19 +289,24 @@ public class MainActivity extends Activity implements ActionBar.TabListener{
 
 		@Override
 		protected GrcBoxRule doInBackground(GrcBoxRule... rule) {
-			GrcBoxRule registeredRule = grcBoxCli.registerNewRule(rule[0]);
+			GrcBoxRule registeredRule = null;
+			if(isBound() && grcBoxCli.isRegistered()){
+				 registeredRule = grcBoxCli.registerNewRule(rule[0]);
+			}
+			else{
+				pendingRules.add(rule[0]);
+			}
 			return registeredRule;
 		}
 
 		@Override
 		protected void onPostExecute(GrcBoxRule result) {
-			/*
-			 * check that the new rule is in the list
-			 */
-			rulesFragment.addRule(result.getId(), name);
-			rulesFragment.refresh();
+			if(result != null){
+				rulesFragment.addRule(result.getId(), name);
+				rulesFragment.refresh();
+				Toast.makeText(MainActivity.this, "A new rule has been created", Toast.LENGTH_SHORT).show();
+			}
 			super.onPostExecute(result);
-			Toast.makeText(MainActivity.this, "A new rule has been created", Toast.LENGTH_SHORT).show();
 		}
     }
 	
@@ -313,7 +315,6 @@ public class MainActivity extends Activity implements ActionBar.TabListener{
 		// TODO Auto-generated method stub
 		
 	}
-
 
 	@Override
 	public void onTabSelected(Tab tab, FragmentTransaction ft) {
@@ -351,5 +352,12 @@ public class MainActivity extends Activity implements ActionBar.TabListener{
 
 	@Override
 	public void onTabUnselected(Tab tab, FragmentTransaction ft) {
+	}
+
+	@Override
+	public void onRegisteredChanged(boolean newValue) {
+		if(newValue){
+			refresh();
+		}
 	}
 }
