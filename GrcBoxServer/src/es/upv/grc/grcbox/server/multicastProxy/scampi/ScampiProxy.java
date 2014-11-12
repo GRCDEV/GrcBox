@@ -43,8 +43,11 @@ public class ScampiProxy extends MulticastProxy {
 			LOG.info("Create New Rule");
 			for (int i = 0; i < advert.cl_ports.length; i++) {
 				if(advert.cl_types[i].equals("tcpcl")){
-					GrcBoxRule rule = new GrcBoxRule(0, Protocol.TCP, RuleType.OUTGOING, getAppId(), getOuterIface(), 0, -1, advert.cl_ports[i], getClientAddr(), advert.ip, -1, null);
-					addRule(rule);
+					/*
+					 * Do not create outgoing rule, it is one hop don't need it
+					 */
+					//GrcBoxRule rule = new GrcBoxRule(0, Protocol.TCP, RuleType.OUTGOING, getAppId(), getOuterIface(), 0, -1, advert.cl_ports[i], getClientAddr(), advert.ip, -1, null);
+					//addRule(rule);
 				}
 			}
 		} catch (IOException e) {

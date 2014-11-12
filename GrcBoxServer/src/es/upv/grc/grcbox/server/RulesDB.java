@@ -38,6 +38,7 @@ public class RulesDB {
 	private static volatile Map<Integer, Map<Integer, GrcBoxRule>> rulesMap = new HashMap<>();
 	private static volatile HashMap<String, Integer> nameIndex = new HashMap<>();
 	private static volatile HashMap<Integer, MulticastProxy> proxies = new HashMap<>();
+	private static volatile HashSet<Integer> activeRules = new HashSet<>();
 	private static volatile LinkedList<String> innerInterfaces;
 	private static volatile NetworkInterfaceManager nm;
 
@@ -144,6 +145,7 @@ public class RulesDB {
 		String gateway = nm.getGateway(iface.getName());
 		
 		removeOutIface(iface);
+		
 		if(gateway != null){
 				iproute += " via " + gateway;
 		}
@@ -168,9 +170,44 @@ public class RulesDB {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		/*
+		 * Update rules with the new information and activate them again.
+		 */
+		for (Integer client: rulesMap.keySet()) {
+			@SuppressWarnings("unchecked")
+			Set<Integer> rules = new HashSet<Integer>(rulesMap.get(client).keySet());
+			for(Integer ruleId: rules){
+				GrcBoxRule rule= rulesMap.get(client).get(ruleId);
+				if(rule != null && !activeRules.contains(rule.getId())){
+					if(rule.getIfName().equals(iface.getName())){
+						LOG.info("Updating and activating cached rules:"+ iface.getName());
+						addRuleToSystem(rule);
+					}
+				}
+			}
+		}
 	}
 	
 	private synchronized static void removeOutIface(GrcBoxInterface iface){
+		/*
+		 * First, remove all the rules from the system. They will be restored in initializeOutIface
+		 */
+		for (Integer client: rulesMap.keySet()) {
+			@SuppressWarnings("unchecked")
+			Set<Integer> rules = new HashSet<Integer>(rulesMap.get(client).keySet());
+			LOG.info("Removing" + rules.size() +" in "+ iface.getName() + " from system");
+			for(Integer ruleId: rules){
+				GrcBoxRule rule= rulesMap.get(client).get(ruleId);
+				if(rule != null && activeRules.contains(rule.getId())){
+					LOG.info("Rule " + rule + "removed");
+					if(rule.getIfName().equals(iface.getName())){
+						rmRuleFromSystem(rule);
+					}
+				}
+			}
+		}
+		
 		/*
 		 * Remove iprule
 		 */
@@ -385,6 +422,7 @@ public class RulesDB {
 				}
 			}
 		}
+		activeRules.add(rule.getId());
 	}
 	
 	private static String newRuleToCommand(GrcBoxRule rule) {
@@ -464,6 +502,7 @@ public class RulesDB {
 				e.printStackTrace();
 			}
 		}
+		activeRules.remove(rule.getId());
 	}
 
 
