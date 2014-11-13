@@ -34,6 +34,7 @@ import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.IBinder;
+import android.text.GetChars;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -58,6 +59,7 @@ import es.upv.grc.grcbox.common.resources.RulesResource;
  * TODO Check if the application is registered an throw an exception if not in all the methods. 
  */
 public class GrcBoxClientService extends Service {
+	private final String TAG = this.getClass().getSimpleName(); 
 	private static final String SERVER_URL = "http://grcbox:8080";
 
     private final IBinder mBinder = new GrcBoxBinder();
@@ -72,7 +74,7 @@ public class GrcBoxClientService extends Service {
 	volatile private static ScheduledFuture<?> keepAliveMonitor;
 	private static LinkedList<OnRegisteredChangedListener> regListener = new LinkedList<GrcBoxClientService.OnRegisteredChangedListener>();
 	private LinkedList<GrcBoxRule> rulesCached = new LinkedList<GrcBoxRule>();
-	private BroadcastReceiver wifiReceiver = new WifiReceiver();
+	private BroadcastReceiver wifiReceiver;
 	volatile private boolean mustRegister = false;
 	
 	public class GrcBoxBinder extends Binder {
@@ -90,13 +92,18 @@ public class GrcBoxClientService extends Service {
 	
 	@Override
 	public void onCreate() {
+		Log.v(TAG, "OnCreate");
 		// The service is being created
 		Engine.getInstance().getRegisteredConverters().add(new JacksonConverter());
+		IntentFilter wifiFilter = new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+		wifiReceiver = new WifiReceiver();
+        registerReceiver(wifiReceiver, wifiFilter);
 		Toast.makeText(this, "New Service Created", Toast.LENGTH_LONG).show();
 	}
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+    	Log.v(TAG, "OnStart");
         return START_STICKY;
     }
 
@@ -115,8 +122,11 @@ public class GrcBoxClientService extends Service {
     @Override
     public void onDestroy() {
         // The service is no longer used and is being destroyed
-    	clientResource.release();
-    	keepAliveMonitor.cancel(true);
+    	Log.v(TAG,"OnDestroy");
+		if(wifiReceiver != null){
+			Log.v(TAG, "Unregister Wifi Monitor");
+			unregisterReceiver(wifiReceiver);
+		}
 		Toast.makeText(this, "GRCBOX Service Destroyed !!", Toast.LENGTH_LONG).show();
     }
 
@@ -124,7 +134,6 @@ public class GrcBoxClientService extends Service {
 	private final Runnable sendKeepAlive = new Runnable() {
 		@Override
 		public void run() {
-			Log.v("KEEPALIVE", "Keep alive App "+app.getAppId());
 			try{
 				appResource.keepAlive();
 				setRegistered(true);
@@ -132,11 +141,17 @@ public class GrcBoxClientService extends Service {
 			catch(ResourceException e){
 				parseResourceException(e);
 			}
+			Log.v("KEEPALIVE", "Keep alive App "+app.getAppId());
 		}
 	};
 
 
-
+	private void cancelKeepAlive(){
+		Log.v(TAG,"Canceling Keep alive");
+		if(keepAliveMonitor != null){
+			keepAliveMonitor.cancel(true);
+		}
+	}
 
 	
 	//=========================================================================//
@@ -146,14 +161,17 @@ public class GrcBoxClientService extends Service {
         @Override
         public void onReceive(Context context, Intent intent) {
             if(intent.getAction().equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)){
+            	Log.v(TAG, "Wifi State Changed");
                 NetworkInfo networkInfo =
                         intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
                 if(networkInfo != null){
                     if(networkInfo.isConnected()){
+                    	Log.v(TAG,"Wifi is connected");
                     	if(mustRegister && app == null){
                     		scheduler.schedule(registrator, 0, TimeUnit.MICROSECONDS);
                     	}
                     	else if( app != null && keepAliveMonitor.isCancelled()){
+                    		Log.v(TAG, "AfterError:Starting Keep Alive: time " +keepAliveTime);
                     		keepAliveMonitor = scheduler.scheduleAtFixedRate(
                 				sendKeepAlive, 0, 
                 				keepAliveTime/3,
@@ -161,9 +179,8 @@ public class GrcBoxClientService extends Service {
                     	}
                     }
                     else{
-                    	if(keepAliveMonitor != null){
-                    		keepAliveMonitor.cancel(false);
-                    	}
+                    	Log.v(TAG,"Wifi is disconected");
+                    	cancelKeepAlive();
                     }
                 }
             }
@@ -177,12 +194,11 @@ public class GrcBoxClientService extends Service {
      * In any other case throw exception.
      */
     synchronized private void parseResourceException(ResourceException e){
+    	Log.v(TAG, "Error connecting to Server:"+e.toString());
+		cancelKeepAlive();
+		setRegistered(false);
     	if(e.getCause() instanceof UnknownHostException){
-			if(keepAliveMonitor != null){
-				keepAliveMonitor.cancel(false);
-			}
-			setRegistered(false);
-			return;
+    		return;
 		}
 		else{
 			Status status = e.getStatus();
@@ -191,10 +207,6 @@ public class GrcBoxClientService extends Service {
 			 * Register again NOW.
 			 */
 			if(status.equals(Status.CLIENT_ERROR_FORBIDDEN)){
-				if(keepAliveMonitor != null){
-					keepAliveMonitor.cancel(false);
-				}
-				setRegistered(false);
 				scheduler.schedule(registrator, 0, TimeUnit.MICROSECONDS);
 				return;
 			}
@@ -226,8 +238,7 @@ public class GrcBoxClientService extends Service {
 	};
 	
 	synchronized private void doRegister(){
-		IntentFilter wifiFilter = new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION);
-        registerReceiver(wifiReceiver, wifiFilter);
+		Log.v(TAG, "doRegister");
 		if(appName == null || !mustRegister || registered){
 			return;
 		}
@@ -262,6 +273,7 @@ public class GrcBoxClientService extends Service {
 
 		clientResource.setChallengeResponse(authentication);
 		appResource = clientResource.getChild("/apps/"+app.getAppId(), AppResource.class);
+		Log.v(TAG, "Register:Starting Keep Alive: time " +keepAliveTime);
 		keepAliveMonitor = scheduler.scheduleAtFixedRate(
 				sendKeepAlive, keepAliveTime/3, 
 				keepAliveTime/3,
@@ -274,7 +286,6 @@ public class GrcBoxClientService extends Service {
 	
 	synchronized public void deregister(){
 		setRegistered(false);
-    	unregisterReceiver(wifiReceiver);
 		try{
 			appResource.rm();
 			clientResource.release();
@@ -282,8 +293,7 @@ public class GrcBoxClientService extends Service {
 		catch(ResourceException e){
 			parseResourceException(e);
 		}
-		Log.v("CANCEL", "Cancel the Keep Alive Monitor");
-		keepAliveMonitor.cancel(true);
+		cancelKeepAlive();
 	}
 	
 	synchronized private void setRegistered(boolean newValue){

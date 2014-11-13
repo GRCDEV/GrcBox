@@ -199,8 +199,8 @@ public class MainActivity extends Activity implements ActionBar.TabListener, OnR
         else if(id == R.id.action_close){
         	
             final Intent intent = new Intent(this, GrcBoxClientService.class);
-            stopService(intent);
             new DeRegisterTask().execute();
+            stopService(intent);
         	finish();
         }
         return super.onOptionsItemSelected(item);
