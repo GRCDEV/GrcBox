@@ -74,7 +74,7 @@ public class MulticastProxy implements Runnable{
 		try {
 			LOG.info("Initializing Multicast proxy: Interfaces "+ innerIface + "," + outerIface+", Address: " + subscribeAddr+  " Port:"+ listenPort);
 			/*
-			 * Create a multicast socket in the innerInterface for listening for multicast packets.
+			 * find the Ipv4 of the innerIface
 			 */
 			inAddr = null;
 			Enumeration<InetAddress> addrs = NetworkInterface.getByName(innerIface).getInetAddresses();
@@ -84,9 +84,9 @@ public class MulticastProxy implements Runnable{
 					break;
 				}
 			}
-
+			
 			/*
-			 * Create a multicast socket in the outInterface for listening for multicast packets.
+			 * find the ipv4 of the innerIface
 			 */
 			addrs = NetworkInterface.getByName(outerIface).getInetAddresses();
 			outAddr = null;
