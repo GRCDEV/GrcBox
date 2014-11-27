@@ -35,8 +35,6 @@ public class MulticastProxy implements Runnable{
 	private String outerIface;
 	private String innerIface;
 	private String subscribeAddr;
-	
-
 	private String clientAddr;
 
 	int listenPort;
@@ -72,7 +70,13 @@ public class MulticastProxy implements Runnable{
 
 	public void run() {
 		try {
-			LOG.info("Initializing Multicast proxy: Interfaces "+ innerIface + "," + outerIface+", Address: " + subscribeAddr+  " Port:"+ listenPort);
+			/*
+			 * Convert clientAddr and subscribe address to integer
+			 */
+			byte[] clientAddrByte = InetAddress.getByName(clientAddr).getAddress();
+			int clientAddrInt = byteArray2int(clientAddrByte);
+			byte[] subscribeAddrByte = InetAddress.getByName(subscribeAddr).getAddress();
+			int subscribeAddrInt = byteArray2int(subscribeAddrByte);
 			/*
 			 * find the Ipv4 of the innerIface
 			 */
@@ -84,7 +88,8 @@ public class MulticastProxy implements Runnable{
 					break;
 				}
 			}
-			
+			byte[] inAddrByte = inAddr.getAddress();
+			int inAddrInt = byteArray2int(inAddrByte);
 			/*
 			 * find the ipv4 of the innerIface
 			 */
@@ -96,7 +101,14 @@ public class MulticastProxy implements Runnable{
 					break;
 				}
 			}
-			
+			byte[] outAddrByte = outAddr.getAddress();
+			int outAddrInt = byteArray2int(outAddrByte);
+			LOG.info("Initializing Multicast proxy: Interfaces "+ innerIface + "," + outerIface+
+					", Address: " + subscribeAddr+  " Port:"+ listenPort +
+					"\n outAddrInt " + outAddrInt +
+					"\n inAddrInt " +inAddrInt
+					);
+
 			/*
 			 * Multicast packets are not processed if there is no application subscribed to the group
 			 */
@@ -132,21 +144,26 @@ public class MulticastProxy implements Runnable{
 					UDPPacket rcvdPacket = new UDPPacket(size);
 					rcvdPacket.setData(rcvdBuf);
 					rawListenSock.read(rcvdBuf);
-					String srcIp = rcvdPacket.getSourceAsInetAddress().getHostAddress();
-					if(!srcIp.equals(outAddr.getHostAddress()) && 
+					int srcIp = rcvdPacket.getSourceAsWord();
+					/*
+					 * Check if the message is my own sent message
+					 */
+					if( srcIp != outAddrInt && 
 							!sent.contains(rcvdPacket.getIPChecksum())){
+						
 						rcvdPacket.setIPHeaderLength(rcvdPacket.getIPHeaderLength());
-
+						int dstIp = rcvdPacket.getDestinationAsWord();
+						int dstPort = rcvdPacket.getDestinationPort();
+						
 						int offset = rcvdPacket.getCombinedHeaderByteLength();
 						byte[] payload = Arrays.copyOfRange(rcvdBuf, offset, rcvdPacket.getIPPacketLength());
-						String dstIp = rcvdPacket.getDestinationAsInetAddress().getHostAddress();
 						
-						int dstPort = rcvdPacket.getDestinationPort();
-						boolean outgoing = srcIp.equals(clientAddr);
+						boolean outgoing = srcIp == clientAddrInt;
 						String type = outgoing?"outgoing":"incomming";
 			
-						if(dstIp.equals(subscribeAddr) && 
+						if(dstIp == subscribeAddrInt &&
 								dstPort == listenPort){
+							LOG.info("Time " + System.currentTimeMillis());
 							LOG.info("An "+ type + " Raw UDP packet has been received " +
 									" Source " +  srcIp +
 									" Checksum " +rcvdPacket.getIPChecksum() +
@@ -176,12 +193,7 @@ public class MulticastProxy implements Runnable{
 							newPacket.setIPPacketLength(newPayload.length+UDPPacket.LENGTH_UDP_HEADER+newPacket.getIPHeaderByteLength());
 
 							if(outgoing){
-								byte [] srcAddr = outAddr.getAddress();
-								int newSrc = (srcAddr[0]<<24)&0xff000000|
-										(srcAddr[1]<<16)&0x00ff0000|
-										(srcAddr[2]<< 8)&0x0000ff00|
-										(srcAddr[3]<< 0)&0x000000ff;
-								newPacket.setSourceAsWord(newSrc);
+								newPacket.setSourceAsWord(outAddrInt);
 							}
 							newPacket.setIdentification(newPacket.getIdentification()-100);
 							
@@ -285,5 +297,14 @@ public class MulticastProxy implements Runnable{
 
 	public void setListenPort(int listenPort) {
 		this.listenPort = listenPort;
+	}
+
+	private int byteArray2int(byte[] array){
+		int result = 0;
+		for (byte b: array)  
+		{  
+		    result = result << 8 | (b & 0xFF);  
+		}
+		return result; 
 	}
 }
