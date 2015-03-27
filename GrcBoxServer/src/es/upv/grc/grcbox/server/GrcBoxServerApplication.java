@@ -52,7 +52,6 @@ import org.restlet.Restlet;
 import org.restlet.Server;
 import org.restlet.data.ChallengeScheme;
 import org.restlet.data.Method;
-import org.restlet.data.Parameter;
 import org.restlet.data.Protocol;
 import org.restlet.resource.ServerResource;
 import org.restlet.routing.Filter;
@@ -60,7 +59,6 @@ import org.restlet.routing.Router;
 import org.restlet.security.ChallengeAuthenticator;
 import org.restlet.security.MapVerifier;
 import org.restlet.security.MethodAuthorizer;
-import org.restlet.util.Series;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

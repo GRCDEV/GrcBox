@@ -12,7 +12,6 @@ import es.upv.grc.grcbox.common.GrcBoxRule;
 import es.upv.grc.grcbox.common.GrcBoxRule.RuleType;
 import es.upv.grc.grcbox.common.GrcBoxRuleList;
 import es.upv.grc.grcbox.common.resources.RulesResource;
-import es.upv.grc.grcbox.server.GrcBoxServerApplication;
 import es.upv.grc.grcbox.server.RulesDB;
 
 /**
@@ -22,13 +21,12 @@ import es.upv.grc.grcbox.server.RulesDB;
 public class RulesServerResource extends ServerResource implements RulesResource {
 
 	private int appId;
-	private RulesDB db;
 	private String clientIp;
 	
 	@Override
 	public GrcBoxRuleList getList() {
 		GrcBoxRuleList list = new GrcBoxRuleList();
-		list.setList(db.getRulesByApp(appId));
+		list.setList(RulesDB.getRulesByApp(appId));
 		return list;
 	}
 

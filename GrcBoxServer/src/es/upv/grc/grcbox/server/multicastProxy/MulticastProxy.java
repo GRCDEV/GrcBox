@@ -4,15 +4,14 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.InterfaceAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 import java.util.logging.Logger;
 
 import org.savarese.vserv.tcpip.UDPPacket;
@@ -36,7 +35,7 @@ public class MulticastProxy implements Runnable{
 	private String innerIface;
 	private String subscribeAddr;
 	private String clientAddr;
-
+	private int inNetMaskLength;
 	int listenPort;
 	
 	private RawSocket rawListenSock;
@@ -81,28 +80,31 @@ public class MulticastProxy implements Runnable{
 			 * find the Ipv4 of the innerIface
 			 */
 			inAddr = null;
-			Enumeration<InetAddress> addrs = NetworkInterface.getByName(innerIface).getInetAddresses();
-			while( addrs.hasMoreElements()) {
-				inAddr = addrs.nextElement();
+			List<InterfaceAddress> addrs = NetworkInterface.getByName(innerIface).getInterfaceAddresses();
+			for (InterfaceAddress interfaceAddress : addrs) {
+				inNetMaskLength = interfaceAddress.getNetworkPrefixLength();
+				inAddr = interfaceAddress.getAddress();
 				if(inAddr instanceof Inet4Address){
 					break;
 				}
 			}
+			
 			byte[] inAddrByte = inAddr.getAddress();
 			int inAddrInt = byteArray2int(inAddrByte);
 			/*
-			 * find the ipv4 of the innerIface
+			 * find the ipv4 of the outerIface
 			 */
-			addrs = NetworkInterface.getByName(outerIface).getInetAddresses();
+			addrs = NetworkInterface.getByName(outerIface).getInterfaceAddresses();
 			outAddr = null;
-			while( addrs.hasMoreElements()) {
-				outAddr = addrs.nextElement();
+			for (InterfaceAddress addr : addrs) {
+				outAddr = addr.getAddress();
 				if(outAddr instanceof Inet4Address){
 					break;
 				}
 			}
 			byte[] outAddrByte = outAddr.getAddress();
 			int outAddrInt = byteArray2int(outAddrByte);
+			
 			LOG.info("Initializing Multicast proxy: Interfaces "+ innerIface + "," + outerIface+
 					", Address: " + subscribeAddr+  " Port:"+ listenPort +
 					"\n outAddrInt " + outAddrInt +
@@ -145,22 +147,29 @@ public class MulticastProxy implements Runnable{
 					rcvdPacket.setData(rcvdBuf);
 					rawListenSock.read(rcvdBuf);
 					int srcIp = rcvdPacket.getSourceAsWord();
+
 					/*
-					 * Check if the message is my own sent message
+					 * If the plugin have sent the message, ignore it
 					 */
-					if( srcIp != outAddrInt && 
-							!sent.contains(rcvdPacket.getIPChecksum())){
-						
+					if( srcIp == outAddrInt || sent.contains(rcvdPacket.getIPChecksum())){
+					}
+					/*
+					 * If the src address is inside the inner network, but it is not the owner of the rule, ignore the packet
+					 */
+					else if(equalSubnet(srcIp, clientAddrInt, inNetMaskLength) && srcIp != clientAddrInt){
+						continue;
+					}
+					else{
 						rcvdPacket.setIPHeaderLength(rcvdPacket.getIPHeaderLength());
 						int dstIp = rcvdPacket.getDestinationAsWord();
 						int dstPort = rcvdPacket.getDestinationPort();
-						
+
 						int offset = rcvdPacket.getCombinedHeaderByteLength();
 						byte[] payload = Arrays.copyOfRange(rcvdBuf, offset, rcvdPacket.getIPPacketLength());
-						
+
 						boolean outgoing = srcIp == clientAddrInt;
 						String type = outgoing?"outgoing":"incomming";
-			
+
 						if(dstIp == subscribeAddrInt &&
 								dstPort == listenPort){
 							LOG.info("Time " + System.currentTimeMillis());
@@ -177,15 +186,15 @@ public class MulticastProxy implements Runnable{
 									" Combined Header Length " + rcvdPacket.getCombinedHeaderByteLength()+
 									" Payload Length " + payload.length +
 									" Payload " + (new String(payload, 0, payload.length)) );
-							
+
 							byte [] newHeader = Arrays.copyOf(rcvdBuf, rcvdPacket.getCombinedHeaderByteLength());
-							
+
 							byte [] newPayload = outgoing?processPayloadOutgoing(payload):processPayloadIncomming(payload);
-							
+
 							ByteBuffer outBuff = ByteBuffer.allocate(newHeader.length+newPayload.length);
 							outBuff.put(newHeader);
 							outBuff.put(newPayload);
-							
+
 							byte [] newData = outBuff.array();
 							UDPPacket newPacket = new UDPPacket(newData.length);
 							newPacket.setData(newData);
@@ -196,7 +205,7 @@ public class MulticastProxy implements Runnable{
 								newPacket.setSourceAsWord(outAddrInt);
 							}
 							newPacket.setIdentification(newPacket.getIdentification()-100);
-							
+
 							newPacket.computeUDPChecksum();
 							newPacket.computeIPChecksum();
 							LOG.info("Fordwarding packet to " + outerIface +" with address " + outAddr.getHostName() );
@@ -232,6 +241,7 @@ public class MulticastProxy implements Runnable{
 						}
 					}
 				}
+
 				catch (InterruptedIOException e){
 					/*
 					 * Ignore interrupted IOException.
@@ -247,6 +257,14 @@ public class MulticastProxy implements Runnable{
 			stop();
 			e.printStackTrace();
 		}
+	}
+
+	private boolean equalSubnet(int srcIp, int clientAddrInt,
+			int inNetMaskLength2) {
+		int mask = 0xffffffff << (32 - inNetMaskLength2);
+		int srcNet = srcIp & mask;
+		int clientNet = clientAddrInt & mask;
+		return (srcNet == clientNet);
 	}
 
 	public void stop(){

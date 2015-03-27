@@ -2,8 +2,6 @@ package es.upv.grc.grcbox.common;
 
 import java.util.Collection;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
 public class StringList {
 	Collection<String> list;
 	

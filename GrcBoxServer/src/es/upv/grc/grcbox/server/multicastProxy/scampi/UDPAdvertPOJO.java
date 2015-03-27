@@ -1,8 +1,5 @@
 package es.upv.grc.grcbox.server.multicastProxy.scampi;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.BitSet;
 
 /**
  * Advertisement to use with UDPDiscovery. Gets turned into JSON.

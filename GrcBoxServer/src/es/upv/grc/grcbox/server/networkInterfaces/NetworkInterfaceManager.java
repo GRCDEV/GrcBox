@@ -2,10 +2,8 @@ package es.upv.grc.grcbox.server.networkInterfaces;
 
 import java.math.BigInteger;
 import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;

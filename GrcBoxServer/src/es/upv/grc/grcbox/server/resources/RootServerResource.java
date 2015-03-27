@@ -35,7 +35,6 @@ package es.upv.grc.grcbox.server.resources;
 
 
 
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 

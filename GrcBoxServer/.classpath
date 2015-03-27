@@ -20,5 +20,8 @@
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="Libs/rocksaw-1.1.0/lib"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/usr/share/java/unix.jar"/>
+	<classpathentry kind="lib" path="/usr/share/java/dbus.jar"/>
+	<classpathentry kind="lib" path="/usr/share/java/hexdump.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
