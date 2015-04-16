@@ -8,6 +8,18 @@ import org.freedesktop.dbus.exceptions.*;
 @DBusInterfaceName("org.freedesktop.NetworkManager") 
 public interface NetworkManagerIface extends DBusInterface
 {
+   public static final String _WIRELESS_IFACE = "org.freedesktop.NetworkManager.Device.Wireless";
+   public static final String _WIRED_IFACE = "org.freedesktop.NetworkManager.Device.Wired";
+   public static final String _DEVICE_IFACE = "org.freedesktop.NetworkManager.Device";
+   public static final String _IP4CONFIG_IFACE = "org.freedesktop.NetworkManager.IP4Config";
+   public static final String _ACTIVE_IFACE = "org.freedesktop.NetworkManager.Connection.Active";
+   public static final String _AP_IFACE = "org.freedesktop.NetworkManager.AccessPoint";
+   public static final String _CONNECTION_IFACE = "org.freedesktop.NetworkManager.Settings.Connection";
+   public static final String _SETTINGS_IFACE = "org.freedesktop.NetworkManager.Settings";
+   public static final String _NM_IFACE = "org.freedesktop.NetworkManager";
+   
+   public static final String _NM_PATH = "/org/freedesktop/NetworkManager";
+	
    public static class DeviceRemoved extends DBusSignal
    {
       public final DBusInterface a;

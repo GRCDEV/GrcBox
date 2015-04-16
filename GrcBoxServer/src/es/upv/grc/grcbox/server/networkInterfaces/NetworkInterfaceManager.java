@@ -57,13 +57,8 @@ public class NetworkInterfaceManager {
 	 * Constants
 	 */
 	private static final String _VERSION_SUPPORTED= "0.9.10.0";
-	private static final String _WIRELESS_IFACE = "org.freedesktop.NetworkManager.Device.Wireless";
-	private static final String _WIRED_IFACE = "org.freedesktop.NetworkManager.Device.Wired";
-	private static final String _DEVICE_IFACE = "org.freedesktop.NetworkManager.Device";
-	private static final String _IP4CONFIG_IFACE = "org.freedesktop.NetworkManager.IP4Config";
-	private static final String _ACTIVE_IFACE = "org.freedesktop.NetworkManager.Connection.Active";
-	private static final String _NM_IFACE = "org.freedesktop.NetworkManager";
-	private static final String _NM_PATH = "/org/freedesktop/NetworkManager";
+	
+	
 
 	/*
 	 * Handlers for NM signals
@@ -85,8 +80,8 @@ public class NetworkInterfaceManager {
 					LOG.info("There is a new device");
 					for (ObjectPath devPath : devList) {
 						try {
-							Properties props = conn.getRemoteObject("org.freedesktop.NetworkManager", devPath.getPath(),  Properties.class);
-							Map<String, Variant> propsMap = props.GetAll(_DEVICE_IFACE);
+							Properties props = conn.getRemoteObject(NetworkManagerIface._NM_IFACE, devPath.getPath(),  Properties.class);
+							Map<String, Variant> propsMap = props.GetAll(NetworkManagerIface._DEVICE_IFACE);
 							String iface = (String)propsMap.get("Interface").getValue();
 							if(!devices.containsKey(iface)){
 								LOG.info("New Device found "+ iface);
@@ -115,7 +110,7 @@ public class NetworkInterfaceManager {
 							Properties props;
 							try {
 								props = (Properties) conn.getRemoteObject("org.freedesktop.NetworkManager", devPath.getPath(),  Properties.class);
-								Map<String, Variant> propsMap = props.GetAll(_DEVICE_IFACE);
+								Map<String, Variant> propsMap = props.GetAll(NetworkManagerIface._DEVICE_IFACE);
 								String iface2 = (String)propsMap.get("Interface").getValue();
 								if(iface2.equals(iface)){
 									exists = true;
@@ -235,7 +230,7 @@ public class NetworkInterfaceManager {
 	private GrcBoxInterface device2grcBoxIface(Device dev) throws DBusException, ExecutionException{
 		LOG.entering(this.getClass().getName(), "device2GrcBoxIface");
 		GrcBoxInterface iface = new GrcBoxInterface();
-		Properties devProp = (Properties) conn.getRemoteObject(_NM_IFACE, dev.getDbusPath(),  Properties.class);
+		Properties devProp = (Properties) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, dev.getDbusPath(),  Properties.class);
 		iface.setName(dev.getIface());
 		
 
@@ -245,7 +240,7 @@ public class NetworkInterfaceManager {
 		 * Get the interface Type
 		 */
 		if(dev.getType().equals(NM_DEVICE_TYPE.WIFI)){
-			UInt32 wifiMode = devProp.Get(_WIRELESS_IFACE, "Mode");
+			UInt32 wifiMode = devProp.Get(NetworkManagerIface._WIRELESS_IFACE, "Mode");
 			if(wifiMode.equals(NM_802_11_MODE.ADHOC)){
 				type = Type.WIFIAH;
 			}
@@ -280,26 +275,26 @@ public class NetworkInterfaceManager {
 
 		
 		if(isUp){
-			if((boolean) devProp.Get(_DEVICE_IFACE, "Managed")){
+			if((boolean) devProp.Get(NetworkManagerIface._DEVICE_IFACE, "Managed")){
 				String ipAddr = getIpAddress(iface.getName());
 				iface.setAddress(ipAddr);
-				Path activeConnPath = (Path) devProp.Get(_DEVICE_IFACE, "ActiveConnection");
-				Properties actConnProp = (Properties) conn.getRemoteObject(_NM_IFACE, activeConnPath.getPath(),  Properties.class);
-				Path connPath = actConnProp.Get(_ACTIVE_IFACE, "Connection");
-				Connection connIface = (Connection) conn.getRemoteObject(_NM_IFACE, connPath.getPath(),  Connection.class);
+				Path activeConnPath = (Path) devProp.Get(NetworkManagerIface._DEVICE_IFACE, "ActiveConnection");
+				Properties actConnProp = (Properties) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, activeConnPath.getPath(),  Properties.class);
+				Path connPath = actConnProp.Get(NetworkManagerIface._ACTIVE_IFACE, "Connection");
+				Connection connIface = (Connection) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, connPath.getPath(),  Connection.class);
 				Map<String,Map<String,Variant>> settings = connIface.GetSettings();
 				String connection = (String)settings.get("connection").get("id").getValue();
 				iface.setConnection(connection);
 				
-				Boolean isDefault = actConnProp.Get(_ACTIVE_IFACE, "Default");
+				Boolean isDefault = actConnProp.Get(NetworkManagerIface._ACTIVE_IFACE, "Default");
 				iface.setDefault(isDefault);
 				
 				/*
 				 * We assume that devices are connected to Internet when a gateway is defined.
 				 */
-				Path ip4Path = (Path) devProp.Get(_DEVICE_IFACE, "Ip4Config");
-				Properties ip4Prop = (Properties) conn.getRemoteObject(_NM_IFACE, ip4Path.getPath(),  Properties.class);
-				Vector<Vector<UInt32>> addresses = ip4Prop.Get(_IP4CONFIG_IFACE, "Addresses");
+				Path ip4Path = (Path) devProp.Get(NetworkManagerIface._DEVICE_IFACE, "Ip4Config");
+				Properties ip4Prop = (Properties) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, ip4Path.getPath(),  Properties.class);
+				Vector<Vector<UInt32>> addresses = ip4Prop.Get(NetworkManagerIface._IP4CONFIG_IFACE, "Addresses");
 				UInt32 gw = addresses.get(0).get(2);
 				iface.setHasinternet(gw.intValue() != 0);
 			}
@@ -313,7 +308,7 @@ public class NetworkInterfaceManager {
 			UInt32 speed;
 			switch (iface.getType()){
 			case ETHERNET:
-				speed = devProp.Get(_WIRED_IFACE, "Speed");
+				speed = devProp.Get(NetworkManagerIface._WIRED_IFACE, "Speed");
 				iface.setRate(speed.doubleValue());
 				break;
 			case WIFISTA:
@@ -348,11 +343,11 @@ public class NetworkInterfaceManager {
 
 	private Device readDeviceFromDbus(String path) throws DBusException{
 		Device device = new Device();
-		Properties props = (Properties) conn.getRemoteObject(_NM_IFACE, path,  Properties.class);
+		Properties props = (Properties) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, path,  Properties.class);
 		device.setDbusPath(path);
 		if(props instanceof Properties){
 			
-			Map<String, Variant> propsMap = props.GetAll(_DEVICE_IFACE);
+			Map<String, Variant> propsMap = props.GetAll(NetworkManagerIface._DEVICE_IFACE);
 			if(propsMap.get("Interface") != null) 
 				device.setIface((String) propsMap.get("Interface").getValue());
 			if(propsMap.get("Capabilities") != null) 
@@ -369,8 +364,8 @@ public class NetworkInterfaceManager {
 				device.setType((UInt32)propsMap.get("DeviceType").getValue());
 			
 			if(device.getState().equals(NM_DEVICE_STATE.ACTIVATED)){
-				Properties ip4Prop = (Properties) conn.getRemoteObject(_NM_IFACE, device.getIp4Config(),  Properties.class);
-				Vector<Vector<UInt32>> addresses = ip4Prop.Get(_IP4CONFIG_IFACE, "Addresses");
+				Properties ip4Prop = (Properties) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, device.getIp4Config(),  Properties.class);
+				Vector<Vector<UInt32>> addresses = ip4Prop.Get(NetworkManagerIface._IP4CONFIG_IFACE, "Addresses");
 				UInt32 ip = addresses.get(0).get(0);
 				device.setIfaceIpAddress(ip);
 				LOG.info("iface IP " + ip);
@@ -383,14 +378,14 @@ public class NetworkInterfaceManager {
 		try {
 			conn = DBusConnection.getConnection(DBusConnection.SYSTEM);
 
-			nmProp = (Properties)conn.getRemoteObject(_NM_IFACE, 
-					_NM_PATH, 
+			nmProp = (Properties)conn.getRemoteObject(NetworkManagerIface._NM_IFACE, 
+					NetworkManagerIface._NM_PATH, 
 					Properties.class);
-			nm = (NetworkManagerIface)conn.getRemoteObject(_NM_IFACE, 
-					_NM_PATH, 
+			nm = (NetworkManagerIface)conn.getRemoteObject(NetworkManagerIface._NM_IFACE, 
+					NetworkManagerIface._NM_PATH, 
 					NetworkManagerIface.class);
 
-			String version = nmProp.Get( _NM_IFACE, "Version");
+			String version = nmProp.Get( NetworkManagerIface._NM_IFACE, "Version");
 			if(!version.equals(_VERSION_SUPPORTED)){
 				LOG.severe("NM version not supported "+ version);
 				throw new ExecutionException("Unsupported NetworkManager version", new Throwable());
@@ -442,10 +437,10 @@ public class NetworkInterfaceManager {
 		String gwStr = null;
 		if(dev.getState().equals(NM_DEVICE_STATE.ACTIVATED)){
 			try {
-				prop = (Properties) conn.getRemoteObject(_NM_IFACE, dev.getDbusPath(),  Properties.class);
-				Path ip4Path = (Path) prop.Get(_DEVICE_IFACE, "Ip4Config");
-				Properties ip4Prop = (Properties) conn.getRemoteObject(_NM_IFACE, ip4Path.getPath(),  Properties.class);
-				Vector<Vector<UInt32>> addresses = ip4Prop.Get(_IP4CONFIG_IFACE, "Addresses");
+				prop = (Properties) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, dev.getDbusPath(),  Properties.class);
+				Path ip4Path = (Path) prop.Get(NetworkManagerIface._DEVICE_IFACE, "Ip4Config");
+				Properties ip4Prop = (Properties) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, ip4Path.getPath(),  Properties.class);
+				Vector<Vector<UInt32>> addresses = ip4Prop.Get(NetworkManagerIface._IP4CONFIG_IFACE, "Addresses");
 				UInt32 gw = addresses.get(0).get(2);
 				if(gw.doubleValue() == 0.0)
 					return null;
