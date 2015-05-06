@@ -2,7 +2,6 @@ package es.upv.grc.grcbox.androlib;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.DatagramSocketImpl;
 import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;

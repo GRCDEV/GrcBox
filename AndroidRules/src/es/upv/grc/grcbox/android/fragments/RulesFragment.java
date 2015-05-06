@@ -13,12 +13,9 @@ import es.upv.grc.grcbox.androlib.GrcBoxClientService;
 import es.upv.grc.grcbox.common.GrcBoxRule;
 
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
 import android.app.ListFragment;
-import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.SparseArray;
 import android.util.SparseBooleanArray;
 import android.view.ActionMode;
 import android.view.Menu;

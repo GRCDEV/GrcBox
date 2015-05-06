@@ -62,6 +62,8 @@ import org.restlet.security.MethodAuthorizer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import es.upv.grc.grcbox.common.resources.SsidResource;
+import es.upv.grc.grcbox.common.resources.SsidsResource;
 import es.upv.grc.grcbox.server.networkInterfaces.NetworkInterfaceManager;
 import es.upv.grc.grcbox.server.resources.AppServerResource;
 import es.upv.grc.grcbox.server.resources.AppsServerResource;
@@ -70,6 +72,8 @@ import es.upv.grc.grcbox.server.resources.IfacesServerResource;
 import es.upv.grc.grcbox.server.resources.RootServerResource;
 import es.upv.grc.grcbox.server.resources.RuleServerResource;
 import es.upv.grc.grcbox.server.resources.RulesServerResource;
+import es.upv.grc.grcbox.server.resources.SsidServerResource;
+import es.upv.grc.grcbox.server.resources.SsidsServerResource;
 
 
 /**
@@ -180,7 +184,9 @@ public class GrcBoxServerApplication extends Application {
 		router.attach("/", RootServerResource.class);
 		router.attach("/apps", AppsServerResource.class);
 		router.attach("/ifaces", IfacesServerResource.class);
-		router.attach("/ifaces/{ifaceId}", IfaceServerResource.class);
+		router.attach("/ifaces/{ifaceName}", IfaceServerResource.class);
+		router.attach("/ifaces/{ifaceName}/ssids", SsidsServerResource.class);
+		router.attach("/ifaces/{ifaceName}/ssids/{ssid}", SsidServerResource.class);
 		router.attach("/apps/{appId}", authenticated(AppServerResource.class));
 		router.attach("/apps/{appId}/rules", authenticated(RulesServerResource.class));
 		router.attach("/apps/{appId}/rules/{ruleId}", authenticated(RuleServerResource.class));

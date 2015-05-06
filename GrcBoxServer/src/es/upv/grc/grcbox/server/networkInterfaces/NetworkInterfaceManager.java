@@ -15,10 +15,13 @@ import java.util.logging.Logger;
 
 import org.freedesktop.DBus.Properties;
 import org.freedesktop.NetworkManagerIface;
+import org.freedesktop.NetworkManager.AccessPoint;
 import org.freedesktop.NetworkManager.DeviceInterface.StateChanged;
 import org.freedesktop.NetworkManager.Constants.NM_802_11_MODE;
 import org.freedesktop.NetworkManager.Constants.NM_DEVICE_STATE;
 import org.freedesktop.NetworkManager.Constants.NM_DEVICE_TYPE;
+import org.freedesktop.NetworkManager.Device.Wireless.AccessPointAdded;
+import org.freedesktop.NetworkManager.Device.Wireless.AccessPointRemoved;
 import org.freedesktop.NetworkManager.Settings.Connection;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSigHandler;
@@ -30,6 +33,7 @@ import org.freedesktop.dbus.exceptions.DBusException;
 
 import es.upv.grc.grcbox.common.GrcBoxInterface;
 import es.upv.grc.grcbox.common.GrcBoxInterface.Type;
+import es.upv.grc.grcbox.common.GrcBoxSsid;
 
 
 public class NetworkInterfaceManager {
@@ -38,8 +42,15 @@ public class NetworkInterfaceManager {
 	 * A map name, GrcBoxInterfaces to cache info from NetworkManager
 	 */
 	private static volatile Map<String, GrcBoxInterface> cachedInterfaces = new HashMap<>();
+	/*
+	 * Internal devices to store info directly from NetworkManager
+	 */
 	private static volatile Map<String, Device> devices = new HashMap<>();
-
+	/*
+	 * Map to cache available the APs DbusPath by interface name
+	 */
+	private static volatile Map<String, List<GrcBoxConnection> > connections = new HashMap<>();
+	
 	/*
 	 * List of signal listeners
 	 */
@@ -51,19 +62,14 @@ public class NetworkInterfaceManager {
 
 	private static volatile Boolean initialized = false;
 
-
-
-	/*
-	 * Constants
-	 */
+	
 	private static final String _VERSION_SUPPORTED= "0.9.10.0";
 	
 	
-
+	
 	/*
 	 * Handlers for NM signals
 	 */
-
 	private class PropertiesChangedHandler implements DBusSigHandler<org.freedesktop.NetworkManagerIface.PropertiesChanged>{
 		/*
 		 * Network Manager Properties Handler
@@ -85,16 +91,9 @@ public class NetworkInterfaceManager {
 							String iface = (String)propsMap.get("Interface").getValue();
 							if(!devices.containsKey(iface)){
 								LOG.info("New Device found "+ iface);
-								Device device = readDeviceFromDbus(devPath.getPath());
-								devices.put(iface, device);
-								GrcBoxInterface grcIface = device2grcBoxIface(device);
-								cachedInterfaces.put(iface, grcIface);
-								informInterfaceAdded(grcIface);
+								addDevice(devPath.getPath());
 							}
 						} catch (DBusException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						} catch (ExecutionException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
@@ -137,7 +136,7 @@ public class NetworkInterfaceManager {
 					LOG.warning("Devices Properties changed but no device was added or removed");
 				}
 			}
-			LOG.entering(this.getClass().getName(), "handleProp", signal);
+			LOG.exiting(this.getClass().getName(), "handleProp", signal);
 		}
 	}
 
@@ -153,26 +152,88 @@ public class NetworkInterfaceManager {
 				   signal.a.equals(NM_DEVICE_STATE.UNMANAGED) ) &&
 				  (signal.a.equals(NM_DEVICE_STATE.ACTIVATED) || 
 				   signal.b.equals(NM_DEVICE_STATE.ACTIVATED))
-					){
-				updateDevStatus(signal.getPath());
+					)
+			{
+				try {
+					Device dev = updateDevStatus(signal.getPath());
+					informInterfaceChanged(cachedInterfaces.get(dev.getIface()));
+				} catch (DBusException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			LOG.exiting(this.getClass().getName(), "stateChanged");
 		}
 	}
 	
-	private void updateDevStatus(String path) {
-		try {
-			Device dev = readDeviceFromDbus(path);
-			devices.put(dev.getIface(), dev);
-			GrcBoxInterface iface = device2grcBoxIface(dev);
-			cachedInterfaces.put(dev.getIface(), iface);
-			LOG.info("Device "+ dev.getIface() + " has been updated");
-			informInterfaceChanged(iface);
-		} catch (DBusException e) {
-			LOG.severe(e.toString());
-		} catch (ExecutionException e) {
-			LOG.severe(e.toString());
+	/*
+	 * When an AP is removed, update the device's APs list
+	 */
+	private class AccessPointRemovedHandler 
+		implements DBusSigHandler<org.freedesktop.NetworkManager.Device.Wireless.AccessPointRemoved>{
+		
+		private String device;
+		
+		public AccessPointRemovedHandler(String device) {
+			this.device = device;
 		}
+		
+		@Override
+		public void handle(AccessPointRemoved arg0) {
+			LOG.info("Access Point was removed\nIface"+ device + "\nSSID:");
+		}
+	}
+	
+	private class AccessPointAddedHandler
+		implements DBusSigHandler<org.freedesktop.NetworkManager.Device.Wireless.AccessPointAdded>{
+		
+		private String device;
+		
+		public AccessPointAddedHandler(String device) {
+			this.device = device;
+		}
+		
+		@Override
+		public void handle(AccessPointAdded arg0) {
+			// TODO Auto-generated method stub
+			AccessPoint ap = (AccessPoint) arg0.a;
+			Properties apProps = (Properties) arg0.a;
+			Map<String, Variant> apMapProps = apProps.GetAll(NetworkManagerIface._AP_IFACE);
+			byte[] ssidByteName =  (byte[]) apMapProps.get("Ssid").getValue();
+			String ssidName =new String(ssidByteName);
+			LOG.info("New Access Point found\nIface"+ device + "\nSSID:" + ssidName);
+		}
+	}
+	
+	private Device addDevice(String path) throws DBusException{
+		Device device = updateDevStatus(path);
+		GrcBoxInterface grcIface = cachedInterfaces.get(device.getIface());
+		informInterfaceAdded(grcIface);
+		LOG.info("New Device Added:"+device.getIface());
+		/*
+		 * If it is a wifi device, subscribe for AP updates
+		 * and request a 
+		 */
+		if(device.getType().equals(NM_DEVICE_TYPE.WIFI) ){
+			subscribeToApSignals(device.getIface());
+		}
+		return device;
+	}
+	
+
+	private Device updateDevStatus(String path) throws DBusException {
+		Device dev = readDeviceFromDbus(path);
+		devices.put(dev.getIface(), dev);
+		if(dev.isManaged()){
+			try{
+				GrcBoxInterface iface = device2grcBoxIface(dev);
+				cachedInterfaces.put(dev.getIface(), iface);
+				LOG.info("Device "+ dev.getIface() + " has been updated");
+			} catch (ExecutionException e) {
+				LOG.log(Level.WARNING,"Error processing interface "+dev.getIface(),e);
+			}
+		}
+		return dev;
 	}
 	
 	/*
@@ -202,6 +263,14 @@ public class NetworkInterfaceManager {
 	}
 
 	/*
+	 * Subscribe to AP signals to monito AP list 
+	 */
+	private void subscribeToApSignals(String device) throws DBusException {
+		conn.addSigHandler(org.freedesktop.NetworkManager.Device.Wireless.AccessPointAdded.class, new AccessPointAddedHandler(device));
+		conn.addSigHandler(org.freedesktop.NetworkManager.Device.Wireless.AccessPointRemoved.class, new AccessPointRemovedHandler(device));
+	}
+	
+	/*
 	 * Read the information from the NetworkManager and stores it in
 	 * devices, also populate the cachedInterfaces map;
 	 */
@@ -209,17 +278,10 @@ public class NetworkInterfaceManager {
 		LOG.entering(this.getClass().getName(),"readDevicesInfo");
 		List<Path> devList = nm.GetDevices();
 		for (Path devInterface : devList) {
-			Device dev = readDeviceFromDbus(devInterface.getPath());
-			devices.put(dev.getIface(), dev);
-			LOG.info("Processing interface "+ dev.getIface());
-			if(dev.isManaged()){
-				try {
-					GrcBoxInterface grcIface = device2grcBoxIface(dev);
-					cachedInterfaces.put(grcIface.getName(), grcIface);
-				} catch (ExecutionException e) {
-					LOG.log(Level.WARNING,"Error processing interface "+dev.getIface(),e);
-				}
-			}
+			/*
+			 * TODO read and add all the devices
+			 */
+			addDevice(devInterface.getPath());
 		}
 		LOG.exiting(this.getClass().getName(), "readdevicesInfo");;
 	}
@@ -401,7 +463,7 @@ public class NetworkInterfaceManager {
 		return ifaceSubscribers.size();
 	}
 	
-	public synchronized void unsubscribeInterfaces(int index){
+	public synchronized void unSubscribeInterfaces(int index){
 		ifaceSubscribers.remove(index);
 	}
 	
@@ -428,7 +490,7 @@ public class NetworkInterfaceManager {
 	}
 
 	/*
-	 * Returns the gateway associate to interface iface
+	 * Returns the gateway associated to interface iface
 	 */
 	public String getGateway(String iface) {
 		LOG.entering(this.getClass().getName(), "getGw");

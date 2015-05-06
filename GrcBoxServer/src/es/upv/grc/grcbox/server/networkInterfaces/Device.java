@@ -6,7 +6,7 @@ import org.freedesktop.dbus.UInt32;
 class Device {
 	private String dbusPath;
 	private String iface; //Name of the interface
-	private UInt32 ifaceIpAddress; // Ip Adress of the interface
+	private UInt32 ifaceIpAddress; // Ip Address of the interface
 	private UInt32 capabilities; //Capabilities according to NM_DEVICE_CAP
 	private UInt32 state; // State of the device NM_DEVICE_STATE
 	private String activeConnection; //Active connection of the device

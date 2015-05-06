@@ -336,6 +336,9 @@ public class RulesDB {
 			if(!rulesMap.containsKey(appId)){
 				rulesMap.put(appId, new HashMap<Integer, GrcBoxRule>());
 			}
+			/*
+			 * TODO Check Conflicts
+			 */
 			rulesMap.get(appId).put(rule.getId(),rule);
 			addRuleToSystem(rule);
 			return rule;
@@ -356,10 +359,6 @@ public class RulesDB {
 	}
 	
 	private synchronized static  void addRuleToSystem(GrcBoxRule rule){
-		/*
-		 * TODO
-		 * It must check multicast rules based on IP and throw an exception until supported
-		 */
 		String ruleStr = "";
 		if(rule.getType().equals(RuleType.MULTICAST)){
 			InetAddress dstAddr;
@@ -403,7 +402,6 @@ public class RulesDB {
 				proxies.put(rule.getId(), proxy);
 			}
 		}
-		
 		else{
 			ruleStr = newRuleToCommand(rule);
 			LOG.info("A new rule is going to be excuted \n" + ruleStr);
