@@ -6,6 +6,7 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -133,7 +134,8 @@ public class MulticastTest {
          */
 		RulesResource rulesResource = clientResource.getChild("/apps/"+myIdSecret.getAppId()+"/rules", RulesResource.class);
 		GrcBoxRule rule = new GrcBoxRule(-1, GrcBoxRule.Protocol.UDP, RuleType.MULTICAST, myIdSecret.getAppId(), iface.getName(), 0, -1, port, null, dstAddr, -1, null);
-		rule = rulesResource.newRule(rule);
+		List<GrcBoxRule> list = rulesResource.newRule(rule).getList();
+		rule =  list.get(list.size());
 		ruleId = rule.getId();
 		RuleResource ruleResource = clientResource.getChild("/apps/"+appid+"/rules/"+ruleId, RuleResource.class);
 		int receive = Integer.parseInt(args[2]);

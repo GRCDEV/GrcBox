@@ -1,5 +1,6 @@
 package es.upv.grc.grcbox.common;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, include=JsonTypeInfo.As.PROPERTY, property="@class")
@@ -19,7 +20,7 @@ public class GrcBoxRule {
 	protected Protocol proto;	//Protocol
 	protected RuleType type;
 	protected int appid;	//AppId of the owner app
-	protected String ifName; // Outgoing or incomming interface
+	protected String ifName; // Outgoing or incoming interface
 	protected long expireDate;
 	protected int srcPort;
 	protected int dstPort;
@@ -32,6 +33,10 @@ public class GrcBoxRule {
 	protected int dstFwdPort;
 	protected String dstFwdAddr;
 
+	public GrcBoxRule(){
+		
+	}
+	
 	/*
 	 * Common constructor used for incomming or outgoing flows.
 	 * If incomming is false dstFwdPort and dstFwdAddr must be -1 and will be ignored.
@@ -77,115 +82,126 @@ public class GrcBoxRule {
 		this.dstFwdAddr = dstFwdAddr;
 		this.mcastPlugin = mcastPlugin;
 	}
-	
-	public GrcBoxRule(){
-		
-	}
-	
-	public int getAppid() {
-		return appid;
-	}
-
-	public void setAppid(int appid) {
-		this.appid = appid;
-	}
-
-	public String getIfName() {
-		return ifName;
-	}
-
-	public void setIfName(String ifName) {
-		this.ifName = ifName;
-	}
-
-	public long getExpire() {
-		return expireDate;
-	}
-
-	public void setExpire(long expire) {
-		this.expireDate = expire;
-	}
-
-	public int getSrcPort() {
-		return srcPort;
-	}
-
-	public void setSrcPort(int srcPort) {
-		this.srcPort = srcPort;
-	}
-
-	public int getDstPort() {
-		return dstPort;
-	}
-
-	public void setDstPort(int dstPort) {
-		this.dstPort = dstPort;
-	}
-
-	public String getSrcAddr() {
-		return srcAddr;
-	}
-
-	public void setSrcAddr(String srcAddr) {
-		this.srcAddr = srcAddr;
-	}
-
-	public String getDstAddr() {
-		return dstAddr;
-	}
-
-	public void setDstAddr(String dstAddr) {
-		this.dstAddr = dstAddr;
-	}
-
-	public int getDstFwdPort() {
-		return dstFwdPort;
-	}
-
-	public void setDstFwdPort(int dstFwdPort) {
-		this.dstFwdPort = dstFwdPort;
-	}
-
-	public String getDstFwdAddr() {
-		return dstFwdAddr;
-	}
-
-	public void setDstFwdAddr(String dstFwdAddr) {
-		this.dstFwdAddr = dstFwdAddr;
-	}
-
+	/**
+	 * @return the id
+	 */
 	public int getId() {
 		return id;
 	}
 
+	/**
+	 * @param id the id to set
+	 */
 	public void setId(int id) {
 		this.id = id;
 	}
 
+	/**
+	 * @return the proto
+	 */
 	public Protocol getProto() {
 		return proto;
 	}
 
-	public void setProto(Protocol proto) {
-		this.proto = proto;
-	}
-
+	/**
+	 * @return the type
+	 */
 	public RuleType getType() {
 		return type;
 	}
 
-	public void setType(RuleType type) {
-		this.type = type;
+
+	/**
+	 * @return the appid
+	 */
+	public int getAppid() {
+		return appid;
 	}
-	
+
+	/**
+	 * @param appid the appid to set
+	 */
+	public void setAppid(int appid) {
+		this.appid = appid;
+	}
+
+	/**
+	 * @return the ifName
+	 */
+	public String getIfName() {
+		return ifName;
+	}
+
+	/**
+	 * @return the expireDate
+	 */
+	public long getExpireDate() {
+		return expireDate;
+	}
+
+	/**
+	 * @return the srcPort
+	 */
+	public int getSrcPort() {
+		return srcPort;
+	}
+
+	/**
+	 * @return the dstPort
+	 */
+	public int getDstPort() {
+		return dstPort;
+	}
+
+	/**
+	 * @return the srcAddr
+	 */
+	public String getSrcAddr() {
+		return srcAddr;
+	}
+
+	/**
+	 * @param srcAddr the srcAddr to set
+	 */
+	public void setSrcAddr(String srcAddr) {
+		this.srcAddr = srcAddr;
+	}
+
+	/**
+	 * @return the dstAddr
+	 */
+	public String getDstAddr() {
+		return dstAddr;
+	}
+
+	/**
+	 * @return the mcastPlugin
+	 */
 	public String getMcastPlugin() {
 		return mcastPlugin;
 	}
 
-	public void setMcastPlugin(String mcastPlugin) {
-		this.mcastPlugin = mcastPlugin;
+	/**
+	 * @return the dstFwdPort
+	 */
+	public int getDstFwdPort() {
+		return dstFwdPort;
 	}
-	
+
+	/**
+	 * @return the dstFwdAddr
+	 */
+	public String getDstFwdAddr() {
+		return dstFwdAddr;
+	}
+
+	/**
+	 * @param dstFwdAddr the dstFwdAddr to set
+	 */
+	public void setDstFwdAddr(String dstFwdAddr) {
+		this.dstFwdAddr = dstFwdAddr;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -271,5 +287,117 @@ public class GrcBoxRule {
 					" Port: " + getDstPort();
 		}
 		return value;
+	}
+	
+	/*
+	 * return the number of defined fields
+	 */
+	@JsonIgnore
+	public int ipTablesSize(){
+		int ipTablesLength = 0;
+		if(srcPort != -1){
+			ipTablesLength++;
+		}
+		if(dstPort != -1){
+			ipTablesLength++;
+		}
+		if(srcAddr != null){
+			ipTablesLength++;
+		}
+		if(dstAddr != null){
+			ipTablesLength++;
+		}
+		return ipTablesLength;
+	}
+	
+	/*
+	 * return true if this rule includes the given rule
+	 */
+	@JsonIgnore
+	public boolean includes(GrcBoxRule other){
+		if(type != other.type){
+			return false;
+		}
+		if(proto != other.proto){
+			return false;
+		}
+		if(srcPort != -1){
+			if(srcPort != other.srcPort){
+				return false;
+			}
+		}
+		if(dstPort != -1){
+			if(dstPort != other.dstPort){
+				return false;
+			}
+		}
+		if(srcAddr != null){
+			if(!srcAddr.equals(other.srcAddr)){
+				return false;
+			}
+		}
+		if(dstAddr != null){
+			if(!dstAddr.equals(other.dstAddr)){
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	/*
+	 * return true if this rule includes the given rule
+	 */
+	@JsonIgnore
+	public boolean conflicts(GrcBoxRule other){
+		if(type != other.type){
+			return false;
+		}
+		if(proto != other.proto){
+			return false;
+		}
+		if(srcPort != other.srcPort){
+			return false;
+		}
+		if(dstPort != other.dstPort){
+			return false;
+		}
+		if(srcAddr != null){
+			if(other.srcAddr != null){
+				if(!srcAddr.equals(other.srcAddr)){
+					return false;
+				}
+			}
+		}
+		if(dstAddr != null){
+			if(other.dstAddr != null){
+				if(!dstAddr.equals(other.dstAddr)){
+					return false;
+				}
+			}
+		}
+		
+		/*
+		 * If the rules are the same, check their targets
+		 */
+		if(type.equals(GrcBoxRule.RuleType.INCOMING)){
+			if(dstFwdAddr != null){
+				if(dstFwdAddr.equals(other.dstFwdAddr)){
+					if(dstFwdPort == other.dstFwdPort){
+						return false;
+					}
+				}
+			}
+		}
+		else if(type.equals(GrcBoxRule.RuleType.OUTGOING)){
+			if(ifName != null){
+				if( ifName.equals(other.ifName) ){
+					return false;
+				}
+			}
+		}
+		else if(type.equals(GrcBoxRule.RuleType.MULTICAST) ){
+			
+		}
+		return true;
 	}
 }

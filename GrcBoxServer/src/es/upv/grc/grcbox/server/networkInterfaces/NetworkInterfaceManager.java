@@ -56,7 +56,7 @@ public class NetworkInterfaceManager {
 	/*
 	 * Constants
 	 */
-	private static final String _VERSION_SUPPORTED= "0.9.10.0";
+	private static final String _VERSION_SUPPORTED= "1.0.2";
 	
 	
 

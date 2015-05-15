@@ -53,6 +53,8 @@ import org.restlet.Server;
 import org.restlet.data.ChallengeScheme;
 import org.restlet.data.Method;
 import org.restlet.data.Protocol;
+import org.restlet.engine.Engine;
+import org.restlet.ext.jackson.JacksonConverter;
 import org.restlet.resource.ServerResource;
 import org.restlet.routing.Filter;
 import org.restlet.routing.Router;
@@ -109,6 +111,7 @@ public class GrcBoxServerApplication extends Application {
 		//Load Config File
 		LOG.info("Working Directory = " + System.getProperty("user.dir"));
 		File file = new File("./config.json");
+		Engine.getInstance().getRegisteredConverters().add(new JacksonConverter());
 		ObjectMapper mapper = new ObjectMapper();
 		config = mapper.readValue(file, GrcBoxConfig.class);
 		if(!Collections.disjoint(config.getInnerInterfaces(), config.getOuterInterfaces())){
@@ -168,6 +171,7 @@ public class GrcBoxServerApplication extends Application {
 					+ "\nIP address: " + request.getClientInfo().getAddress()
 					+ "\nAgent name: " + request.getClientInfo().getAgentName()
 					+ "\nAgent version: " + request.getClientInfo().getAgentVersion()
+					+ "\nContent: " + request.getEntityAsText()
 					);
 			return super.beforeHandle(request, response);
 		}

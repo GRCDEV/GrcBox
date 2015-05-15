@@ -14,7 +14,6 @@
 	<classpathentry kind="lib" path="/Libs/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.jaxb.jar"/>
 	<classpathentry kind="lib" path="/Libs/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.smile.jar"/>
 	<classpathentry kind="lib" path="/Libs/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.xml.jar"/>
-	<classpathentry kind="lib" path="/Libs/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.yaml.jar"/>
 	<classpathentry kind="lib" path="/Libs/rocksaw-1.1.0/lib/rocksaw-1.1.0.jar">
 		<attributes>
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="Libs/rocksaw-1.1.0/lib"/>

@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -194,7 +195,8 @@ public class TestClient {
 				long t1rule = System.currentTimeMillis();
 				RulesResource rulesResource = clientResource.getChild("/apps/"+myIdSecret.getAppId()+"/rules", RulesResource.class);
 	    		GrcBoxRule rule = new GrcBoxRule(-1, GrcBoxRule.Protocol.TCP, RuleType.OUTGOING, myIdSecret.getAppId(), iface.getName(), 0, -1, port, null, addr.getHostAddress(), port, null);
-	    		rule = rulesResource.newRule(rule);
+	    		List<GrcBoxRule> list =rulesResource.newRule(rule).getList(); 
+	    		rule = list.get(list.size()); 
 	    		ruleId = rule.getId();
 	    		long t2rule = System.currentTimeMillis();	    		
 	    		logger.info("Rule " +t2rule+" "+ (t2rule - t1rule)); 

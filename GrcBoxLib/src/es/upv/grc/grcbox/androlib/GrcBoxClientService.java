@@ -11,6 +11,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -385,7 +386,9 @@ public class GrcBoxClientService extends Service {
 		rulesCached.add(rule);
 		try{
 			RulesResource rulesRes = clientResource.getChild("/apps/"+app.getAppId()+"/rules", RulesResource.class);
-			rule = rulesRes.newRule(rule);
+			List<GrcBoxRule> list = rulesRes.newRule(rule).getList();
+			rule = list.get(list.size());
+			return rule;
 		}
 		catch(ResourceException e ){
 			parseResourceException(e);

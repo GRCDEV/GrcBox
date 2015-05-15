@@ -3,6 +3,7 @@ package es.upv.grc.grcbox.server.multicastProxy.scampi;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -94,7 +95,8 @@ public class ScampiProxy extends MulticastProxy {
 	private void addRule(GrcBoxRule rule) {
 		boolean ret = rules.add(rule);
 		if(ret){
-			rule = RulesDB.addRule(getAppId(), rule);
+			List<GrcBoxRule> ruleList = RulesDB.addRule(getAppId(), rule); 
+			rule = ruleList.get(ruleList.size());
 			rulesIds.add(rule.getId());
 		}
 	}

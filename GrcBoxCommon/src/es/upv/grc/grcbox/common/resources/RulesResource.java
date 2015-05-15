@@ -33,11 +33,9 @@
 
 package es.upv.grc.grcbox.common.resources;
 
-import org.restlet.resource.Get;
-import org.restlet.resource.Post;
+import org.restlet.resource.*;
 
-import es.upv.grc.grcbox.common.GrcBoxRule;
-import es.upv.grc.grcbox.common.GrcBoxRuleList;
+import es.upv.grc.grcbox.common.*;
 
 /**
  * Annotated box resource interface
@@ -52,8 +50,10 @@ public interface RulesResource {
     
     /*
      * Create a new rule associated to this app
-     * return rule ID
+	 * Returns a list of the previously defined rules that are
+	 * included in the given rule and may interfere with it and
+	 * the defined rule as last element.
      */
-    @Post("json")
-    public GrcBoxRule newRule(GrcBoxRule rule);
+    @Post
+    public GrcBoxRuleList newRule(GrcBoxRule rule);
 }

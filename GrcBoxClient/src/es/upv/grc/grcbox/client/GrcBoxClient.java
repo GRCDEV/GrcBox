@@ -66,7 +66,7 @@ public class GrcBoxClient {
 		private static IdSecret myIdSecret;
     public static void main(String[] args) throws Exception {
     	Engine.getInstance().getRegisteredConverters().add(new JacksonConverter());
-        ClientResource clientResource = new ClientResource("http://grcbox:8080");
+        ClientResource clientResource = new ClientResource("http://192.168.2.1:8080");
         /*
          * Get the status of the server
          */
@@ -155,18 +155,21 @@ public class GrcBoxClient {
         appResource.keepAlive();
     	for(int i = 0; i < 4; i++){
     		int port = 20+i;
-    		ruleIn = new GrcBoxRule(-1, GrcBoxRule.Protocol.TCP, RuleType.INCOMING, 12, "wlan0", System.currentTimeMillis()+200, 1648, port, null, null, port, null);
+    		ruleIn = new GrcBoxRule(-1, GrcBoxRule.Protocol.TCP, RuleType.INCOMING, 12, "wlan0", System.currentTimeMillis()+200, 1648, port, "", "", port, "","");
     		ruleOut = new GrcBoxRule(-1, GrcBoxRule.Protocol.TCP, RuleType.OUTGOING, 12, "wlan0", System.currentTimeMillis()+200, 1648, port, null, null, port, null);
     		try{
     			/*
     			 * Create a new rule
     			 */
-    			ruleIn = rulesResource.newRule(ruleIn);
-    			ruleOut = rulesResource.newRule(ruleOut);
+    			GrcBoxRuleList list = rulesResource.newRule(ruleIn);
+    			ruleIn = list.getList().get(1);
+    			list = rulesResource.newRule(ruleOut);
+    			ruleOut = list.getList().get(1);
     		}
     		catch(ResourceException re){
     			if(re.getStatus().equals(Status.CONNECTOR_ERROR_COMMUNICATION)){
-    				ruleIn = rulesResource.newRule(ruleIn);
+    				GrcBoxRuleList list = rulesResource.newRule(ruleIn);
+    				ruleIn = list.getList().get(1);
     			}
     			else{
     				throw re;

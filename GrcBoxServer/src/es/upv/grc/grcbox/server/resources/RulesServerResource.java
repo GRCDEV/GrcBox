@@ -3,6 +3,8 @@
  */
 package es.upv.grc.grcbox.server.resources;
 
+import java.util.ArrayList;
+
 import org.restlet.Request;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.ServerResource;
@@ -33,14 +35,16 @@ public class RulesServerResource extends ServerResource implements RulesResource
 
 
 	@Override
-	public GrcBoxRule newRule(GrcBoxRule rule) {
+	public GrcBoxRuleList newRule(GrcBoxRule rule) {
 		if(rule.getType() == RuleType.INCOMING){
 			rule.setDstFwdAddr(clientIp);
 		}
 		else {
 			rule.setSrcAddr(clientIp);
 		}
-		return RulesDB.addRule(appId, rule);
+		GrcBoxRuleList list = new GrcBoxRuleList();
+		list.setList(new ArrayList<GrcBoxRule>(RulesDB.addRule(appId, rule)));
+		return  list;
 	}
 
 	@Override
