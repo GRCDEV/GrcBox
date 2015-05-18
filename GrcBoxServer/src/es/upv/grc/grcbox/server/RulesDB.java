@@ -133,6 +133,15 @@ public class RulesDB {
 		
 		long time = GrcBoxServerApplication.getConfig().getKeepAliveTime();
 		final ScheduledFuture<?> monitorHandle = scheduler.scheduleAtFixedRate(dbMonitor, time, time, TimeUnit.MILLISECONDS);
+		
+		/*
+		 * TODO Testing Add a silly application and a rule
+		 */
+		int tempId = addApp("Silly");
+		GrcBoxRule rule = new GrcBoxRule(0, GrcBoxRule.Protocol.TCP, 
+				GrcBoxRule.RuleType.INCOMING, tempId, "wlan1", 0, 1854, 245, null, 
+				null, 1854, "192.168.2.2");
+		addRule(tempId, rule);
 	}
 	
 	private synchronized static void initializeOutIface(GrcBoxInterface iface){

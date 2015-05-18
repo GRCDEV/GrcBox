@@ -54,6 +54,6 @@ public interface RulesResource {
 	 * included in the given rule and may interfere with it and
 	 * the defined rule as last element.
      */
-    @Post
+    @Post("json:json")
     public GrcBoxRuleList newRule(GrcBoxRule rule);
 }

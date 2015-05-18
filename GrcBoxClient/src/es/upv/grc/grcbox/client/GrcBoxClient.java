@@ -65,7 +65,6 @@ import es.upv.grc.grcbox.common.resources.AppsResource.IdSecret;
 public class GrcBoxClient {
 		private static IdSecret myIdSecret;
     public static void main(String[] args) throws Exception {
-    	Engine.getInstance().getRegisteredConverters().add(new JacksonConverter());
         ClientResource clientResource = new ClientResource("http://192.168.2.1:8080");
         /*
          * Get the status of the server
@@ -146,6 +145,10 @@ public class GrcBoxClient {
        		 ChallengeScheme.HTTP_BASIC, Integer.toString(myIdSecret.getAppId()), Integer.toString(myIdSecret.getSecret()).toCharArray());
         clientResource.setChallengeResponse(authentication2);
         
+        RulesResource rulesResource2 = clientResource.getChild("/apps/0/rules", RulesResource.class);
+        GrcBoxRuleList rulesList2 =rulesResource2.getList();
+        RuleResource ruleResource2 = clientResource.getChild("/apps/0/rules/0", RuleResource.class);
+        GrcBoxRule rule2 = ruleResource2.retrieve();
         RulesResource rulesResource = clientResource.getChild("/apps/"+myIdSecret.getAppId()+"/rules", RulesResource.class);
         
         GrcBoxRuleList rulesList =rulesResource.getList();
@@ -183,7 +186,7 @@ public class GrcBoxClient {
          * Check that the new rule exists
          */
         RuleResource ruleResource = clientResource.getChild("/apps/"+myIdSecret.getAppId()+"/rules/"+ruleIn.getId(),RuleResource.class);
-        GrcBoxRule rule2 = ruleResource.retrieve();
+        GrcBoxRule rule = ruleResource.retrieve();
         
         /*
          * remove the rule

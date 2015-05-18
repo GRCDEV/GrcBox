@@ -3,11 +3,16 @@
  */
 package es.upv.grc.grcbox.server.resources;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import org.restlet.Request;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.ServerResource;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import es.upv.grc.grcbox.common.GrcBoxApp;
 import es.upv.grc.grcbox.common.GrcBoxRule;
@@ -36,6 +41,23 @@ public class RulesServerResource extends ServerResource implements RulesResource
 
 	@Override
 	public GrcBoxRuleList newRule(GrcBoxRule rule) {
+		Request request = this.getRequest();
+		String jsonreq = request.getEntityAsText();
+		ObjectMapper mapper = new ObjectMapper();
+		GrcBoxRule rule2;
+		try {
+			rule2 = mapper.readValue(jsonreq, GrcBoxRule.class);
+		} catch (JsonParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JsonMappingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		if(rule.getType() == RuleType.INCOMING){
 			rule.setDstFwdAddr(clientIp);
 		}
