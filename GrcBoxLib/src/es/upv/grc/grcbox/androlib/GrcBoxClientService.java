@@ -387,7 +387,7 @@ public class GrcBoxClientService extends Service {
 		try{
 			RulesResource rulesRes = clientResource.getChild("/apps/"+app.getAppId()+"/rules", RulesResource.class);
 			List<GrcBoxRule> list = rulesRes.newRule(rule).getList();
-			rule = list.get(list.size());
+			rule = list.get(list.size()-1);
 			return rule;
 		}
 		catch(ResourceException e ){

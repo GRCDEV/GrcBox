@@ -36,9 +36,22 @@ public class RulesDB {
 	private static volatile Integer _ruleId = 0;
 	private static int 	tableId = 7;
 	private static volatile Map<Integer, GrcBoxApp> appMap = new HashMap<>();
+	/*
+	 * App, ruleId, Rule
+	 * This map may contain not active rules
+	 */
 	private static volatile Map<Integer, Map<Integer, GrcBoxRule>> rulesMap = new HashMap<>();
+	/*
+	 * ifaceName, index
+	 */
 	private static volatile HashMap<String, Integer> nameIndex = new HashMap<>();
+	/*
+	 * ruleId, Proxy
+	 */
 	private static volatile HashMap<Integer, MulticastProxy> proxies = new HashMap<>();
+	/*
+	 * Only contains active rules
+	 */
 	private static volatile RulesSortedList activeRules = new RulesSortedList();
 	private static volatile LinkedList<String> innerInterfaces;
 	private static volatile LinkedList<String> natLines = new LinkedList<String>();
@@ -78,7 +91,7 @@ public class RulesDB {
 		@Override
 		public void interfaceRemoved(GrcBoxInterface iface) {
 			removeOutIface(iface);
-			LOG.info("Interface have been removed " + iface.getName());
+			LOG.info("Interface has been removed " + iface.getName());
 		}
 
 		@Override
@@ -86,7 +99,7 @@ public class RulesDB {
 			if(iface.isUp()){
 				initializeOutIface(iface);
 			}
-			LOG.info("Interface have been added " + iface.getName());
+			LOG.info("Interface has been added " + iface.getName());
 		}
 
 		@Override
@@ -99,7 +112,7 @@ public class RulesDB {
 				removeOutIface(iface);
 			}
 			
-			LOG.info("Interface have changed " + iface.getName());
+			LOG.info("Interface has changed " + iface.getName());
 		}
 	}
 	
@@ -156,7 +169,7 @@ public class RulesDB {
 			Process proc;
 			if(!GrcBoxServerApplication.getConfig().isDebug()){
 				natLines.add(ipnat);
-				ipTables.commitNatRule(ipnat);
+				//ipTables.commitNatRule(ipnat);
 				proc = Runtime.getRuntime().exec(iprule);
 				proc.waitFor();
 				proc = Runtime.getRuntime().exec(iproute);
@@ -169,23 +182,21 @@ public class RulesDB {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
 		/*
-		 * Update rules with the new information and activate them again.
+		 * First, . 
 		 */
 		for (Integer client: rulesMap.keySet()) {
 			@SuppressWarnings("unchecked")
 			Set<Integer> rules = new HashSet<Integer>(rulesMap.get(client).keySet());
+			LOG.info("Removing" + rules.size() +" in "+ iface.getName() + " from system");
 			for(Integer ruleId: rules){
 				GrcBoxRule rule= rulesMap.get(client).get(ruleId);
-				if(rule != null && !activeRules.contains(rule.getId())){
-					if(rule.getIfName().equals(iface.getName())){
-						LOG.info("Updating and activating cached rules:"+ iface.getName());
-						addRuleToSystem(rule);
-					}
-				}
+				LOG.info("Reactivate rule" +rule.getId()+ " in "+ iface.getName() + " to system");
+				activeRules.add(rule);
 			}
 		}
+		
+		updateRules();
 	}
 	
 	private synchronized static void removeOutIface(GrcBoxInterface iface){
@@ -198,9 +209,9 @@ public class RulesDB {
 			LOG.info("Removing" + rules.size() +" in "+ iface.getName() + " from system");
 			for(Integer ruleId: rules){
 				GrcBoxRule rule= rulesMap.get(client).get(ruleId);
-				if(rule != null && activeRules.contains(rule.getId())){
-					LOG.info("Rule " + rule + "removed");
-					if(rule.getIfName().equals(iface.getName())){
+				if(rule != null){
+					if(rule.getIfName().equals(iface.getName()) && activeRules.contains(rule)){
+						LOG.info("Rule " + rule + "removed");
 						rmRuleFromSystem(rule);
 					}
 				}
@@ -312,11 +323,12 @@ public class RulesDB {
 			rule.setAppid(appId);
 			
 			/*
-			 * Check if rule conflicts with any other rule
+			 * Check if rule conflicts with any other active rule
 			 */
 			for (GrcBoxRule oldRule : activeRules.getSet()) {
-				rule.conflicts(oldRule);
-				throw new ResourceException(409);
+				if(rule.conflicts(oldRule)){
+					throw new ResourceException(409);
+				}
 			}
 			
 			/*
@@ -329,7 +341,7 @@ public class RulesDB {
 			activeRules.add(rule);
 			/*
 			 * Get the set of preceding rules to check if
-			 * any of them may interfere this rule 
+			 * any of them may interfere with this rule 
 			 */
 			SortedSet<GrcBoxRule> sortedList = activeRules.subSet(activeRules.first(), rule);
 			List<GrcBoxRule> includedRules = new ArrayList<GrcBoxRule>();
@@ -341,7 +353,16 @@ public class RulesDB {
 			/*
 			 * TODO migrate to updateRules
 			 */
-			addRuleToSystem(rule);
+			if(rule.getType().equals(RuleType.MULTICAST)){
+				startMulticastProxy(rule);
+			}
+			else{
+				updateRules();
+			}
+			/*
+			 * Add the rule itself to the list
+			 */
+			includedRules.add(rule);
 			/*
 			 * List of preceding included rules
 			 */
@@ -362,168 +383,154 @@ public class RulesDB {
 		}
 	}
 	
-	private synchronized static  void addRuleToSystem(GrcBoxRule rule){
-		String ruleStr = "";
-		if(rule.getType().equals(RuleType.MULTICAST)){
-			InetAddress dstAddr;
-			try {
-				dstAddr = InetAddress.getByName(rule.getDstAddr());
-			} catch (UnknownHostException e) {
-				e.printStackTrace();
-				throw new ResourceException(409, e);
-			} 			
-			if(rule.getProto() != Protocol.UDP || !dstAddr.isMulticastAddress()){
-				throw new ResourceException(409);
-			}
-			MulticastProxy proxy = null;
-			if(rule.getMcastPlugin().equals(MulticastSupportedPlugins.SCAMPI.toString())){
-				proxy = new ScampiProxy(rule.getAppid(), 
-						innerInterfaces.get(0), 
-						rule.getIfName(), 
-						rule.getSrcAddr(), 
-						rule.getDstAddr(), 
-						rule.getDstPort(),
-						nm.getIpAddress(rule.getIfName())
-						);
-			}
-			else if(rule.getMcastPlugin().equals(MulticastSupportedPlugins.NONE.toString())){
-				proxy = new MulticastProxy(rule.getAppid(), 
-						innerInterfaces.get(0), 
-						rule.getIfName(), 
-						rule.getSrcAddr(), 
-						rule.getDstAddr(), 
-						rule.getDstPort()
-						);
-			}
-			else{
-				throw new ResourceException(400);
-			}
-			
-			if(proxy != null){
-				Thread proxyThread = new Thread(proxy);
-				proxyThread.setName("MulticastProxy" + rule.getId());
-				proxyThread.start();
-				proxies.put(rule.getId(), proxy);
-			}
+	private synchronized static void startMulticastProxy(GrcBoxRule rule){
+		InetAddress dstAddr;
+		try {
+			dstAddr = InetAddress.getByName(rule.getDstAddr());
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+			throw new ResourceException(409, e);
+		} 			
+		if(rule.getProto() != Protocol.UDP || !dstAddr.isMulticastAddress()){
+			throw new ResourceException(409);
+		}
+		MulticastProxy proxy = null;
+		if(rule.getMcastPlugin().equals(MulticastSupportedPlugins.SCAMPI.toString())){
+			proxy = new ScampiProxy(rule.getAppid(), 
+					innerInterfaces.get(0), 
+					rule.getIfName(), 
+					rule.getSrcAddr(), 
+					rule.getDstAddr(), 
+					rule.getDstPort(),
+					nm.getIpAddress(rule.getIfName())
+					);
+		}
+		else if(rule.getMcastPlugin().equals(MulticastSupportedPlugins.NONE.toString())){
+			proxy = new MulticastProxy(rule.getAppid(), 
+					innerInterfaces.get(0), 
+					rule.getIfName(), 
+					rule.getSrcAddr(), 
+					rule.getDstAddr(), 
+					rule.getDstPort()
+					);
+		}
+		else{
+			throw new ResourceException(400);
 		}
 		
-		else{
-			/*
-			 * TODO define place according to priorities
-			 */
-			ruleStr = newRuleToCommand(true, rule);
-			LOG.info("A new rule is going to be excuted \n" + ruleStr);
-			if(!GrcBoxServerApplication.getConfig().isDebug()){
-				try {
-					Process proc = Runtime.getRuntime().exec(ruleStr);
-					if(proc.waitFor()!=0){
-						LOG.severe("Rule cannot be added.");
-					}
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
+		if(proxy != null){
+			Thread proxyThread = new Thread(proxy);
+			proxyThread.setName("MulticastProxy" + rule.getId());
+			proxyThread.start();
+			proxies.put(rule.getId(), proxy);
 		}
 	}
 	
-	private static String newRuleToCommand(boolean top, GrcBoxRule rule) {
-		String ruleStr = "";
-		String place = top?"-I":"-A";
-		if(rule.getType() == RuleType.INCOMING){
-			ruleStr = "iptables -t nat " + place + " PREROUTING -i " 
-					+ rule.getIfName() + " -p " 
-					+ rule.getProto().toString().toLowerCase();
-			
-			if(rule.getDstPort() == -1){
-				throw new ResourceException(412);
-			}
-			ruleStr += " --dport " + rule.getDstPort();
-			
-			if(rule.getSrcPort() != -1)
-				ruleStr += " --sport "+ rule.getSrcPort();
-			
-			if(rule.getSrcAddr() != null)
-				ruleStr += " --s " + rule.getSrcAddr();
-			
-			if(rule.getDstFwdPort() == -1 || rule.getDstFwdAddr() == null){
-				throw new ResourceException(412);
-			}
-			ruleStr += " -j DNAT --to-destination " 
-					+ rule.getDstFwdAddr() + ":" 
-					+ rule.getDstFwdPort();
+	private synchronized static void stopMulticastProxy(GrcBoxRule rule){
+		InetAddress dstAddr;
+		try {
+			dstAddr = InetAddress.getByName(rule.getDstAddr());
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+			throw new ResourceException(409, e);
+		} 			
+		if(rule.getProto() != Protocol.UDP || !dstAddr.isMulticastAddress()){
+			throw new ResourceException(409);
 		}
-		else if(rule.getType() == RuleType.OUTGOING){
-			ruleStr += "iptables -t mangle " + place + " PREROUTING -i "
-					+ innerInterfaces.get(0) + " -p " 
-					+ rule.getProto().toString().toLowerCase();
-
-			if(rule.getDstPort() != -1 )
-				ruleStr += " --dport " + rule.getDstPort();
-
-			if(rule.getDstAddr() != null)
-				ruleStr +=  " -d "+ rule.getDstAddr();
-
-			if(rule.getSrcPort() != -1 )
-				ruleStr += " --sport " + rule.getSrcPort();
-
-			if(rule.getSrcAddr() != null)
-				ruleStr += " -s " + rule.getSrcAddr();
-
-			Integer mark = nameIndex.get(rule.getIfName());
-			if(mark == null){
-				throw new ResourceException(412);
-			}
-			ruleStr += " -j MARK --set-mark " + mark;
-		}
-		return ruleStr;
+		MulticastProxy proxy = proxies.get(rule.getId());
+		proxy.stop();
+		proxies.remove(rule.getId());
+		LOG.info("A multicast proxy was stopped");
 	}
+	
+	private synchronized static void updateRules(){
+		/*
+		 * activeRules are assumed to be sorted
+		 * Outgoing rules go to mangle table
+		 * Incoming rules go to nat table
+		 */
+		List<GrcBoxRule> list = activeRules.getSortedList();
+		LinkedList<String> natRules = new LinkedList<String>();
+		LinkedList<String> mangleRules = new LinkedList<String>();
+		natRules.add("*nat");
+		mangleRules.add("*mangle");
+		for (GrcBoxRule rule : list) {
+			if(rule.getType().equals(GrcBoxRule.RuleType.INCOMING)){
+				String ruleStr = "";
+				ruleStr =  "-A PREROUTING -i " 
+						+ rule.getIfName() + " -p " 
+						+ rule.getProto().toString().toLowerCase();
+				
+				if(rule.getDstPort() == -1){
+					throw new ResourceException(412);
+				}
+				ruleStr += " --dport " + rule.getDstPort();
+				
+				if(rule.getSrcPort() != -1)
+					ruleStr += " --sport "+ rule.getSrcPort();
+				
+				if(rule.getSrcAddr() != null)
+					ruleStr += " --s " + rule.getSrcAddr();
+				
+				if(rule.getDstFwdPort() == -1 || rule.getDstFwdAddr() == null){
+					throw new ResourceException(412);
+				}
+				ruleStr += " -j DNAT --to-destination " 
+						+ rule.getDstFwdAddr() + ":" 
+						+ rule.getDstFwdPort();
+				natRules.add(ruleStr);
+			}
+			else if(rule.getType().equals(GrcBoxRule.RuleType.OUTGOING)){
+				String ruleStr = "";
+				ruleStr += "-A PREROUTING -i "
+						+ innerInterfaces.get(0) + " -p " 
+						+ rule.getProto().toString().toLowerCase();
 
+				if(rule.getDstPort() != -1 )
+					ruleStr += " --dport " + rule.getDstPort();
+
+				if(rule.getDstAddr() != null)
+					ruleStr +=  " -d "+ rule.getDstAddr();
+
+				if(rule.getSrcPort() != -1 )
+					ruleStr += " --sport " + rule.getSrcPort();
+
+				if(rule.getSrcAddr() != null)
+					ruleStr += " -s " + rule.getSrcAddr();
+
+				Integer mark = nameIndex.get(rule.getIfName());
+				if(mark == null){
+					throw new ResourceException(412);
+				}
+				ruleStr += " -j MARK --set-mark " + mark;
+				mangleRules.add(ruleStr);
+			}
+		}
+		/*
+		 * Commit
+		 */
+		mangleRules.add(IpTablesManager.COMMIT);
+		natRules.add(IpTablesManager.COMMIT);
+		ipTables.commitLines(mangleRules, true);
+		ipTables.commitLines(natRules, true);
+		/*
+		 * Commit natLines without flushing
+		 */
+		for (String line : natLines) {
+			ipTables.commitNatRule(line);
+		}
+	}
+	
 	/*
 	 * TODO migrate to iptables-restore
 	 */
 	private synchronized static  void rmRuleFromSystem(GrcBoxRule rule){
 		if(rule.getType().equals(RuleType.MULTICAST)){
-			InetAddress dstAddr;
-			try {
-				dstAddr = InetAddress.getByName(rule.getDstAddr());
-			} catch (UnknownHostException e) {
-				e.printStackTrace();
-				throw new ResourceException(409, e);
-			} 			
-			if(rule.getProto() != Protocol.UDP || !dstAddr.isMulticastAddress()){
-				throw new ResourceException(409);
-			}
-			MulticastProxy proxy = proxies.get(rule.getId());
-			proxy.stop();
-			proxies.remove(rule.getId());
-			LOG.info("A multicast proxy was stopped");
+			stopMulticastProxy(rule);
 		}
-		else if(!GrcBoxServerApplication.getConfig().isDebug()){
-			String ruleStr; 
-			ruleStr = rmRuleToCommand(rule);
-			LOG.info("A rule has been removed from System:\n"+ ruleStr);
-			try {
-				Process proc = Runtime.getRuntime().exec(ruleStr);
-				proc.waitFor();
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		activeRules.remove(rule);
-	}
-
-
-	private static String rmRuleToCommand(GrcBoxRule rule) {
-		String ruleStr = "";
-		if(rule.getType() == RuleType.INCOMING){
-			ruleStr = "iptables -t nat -D PREROUTING -i " + rule.getIfName() + " -p " + rule.getProto().toString().toLowerCase();
+		else if(rule.getType().equals(RuleType.INCOMING)){
+			String ruleStr = "-D PREROUTING -i " + rule.getIfName() + " -p " 
+					+ rule.getProto().toString().toLowerCase();
 			if(rule.getDstPort() == -1){
 				throw new ResourceException(412);
 			}
@@ -535,10 +542,13 @@ public class RulesDB {
 			if(rule.getSrcAddr() != null){
 				ruleStr += " --s " + rule.getSrcAddr();
 			}
-			ruleStr += " -j DNAT --to-destination " +rule.getDstFwdAddr() + ":" + rule.getDstFwdPort();
+			ruleStr += " -j DNAT --to-destination " +rule.getDstFwdAddr() + ":" 
+					+ rule.getDstFwdPort();
+			ipTables.commitNatRule(ruleStr);
 		}
-		else if(rule.getType() == RuleType.OUTGOING){
-			ruleStr += "iptables -t mangle -D PREROUTING -i " + innerInterfaces.get(0) + " -p " + rule.getProto().toString().toLowerCase();
+		else{
+			String ruleStr = "-D PREROUTING -i " + innerInterfaces.get(0) + " -p " 
+					+ rule.getProto().toString().toLowerCase();
 
 			if(rule.getDstPort() != -1 )
 				ruleStr += " --dport " + rule.getDstPort();
@@ -553,8 +563,9 @@ public class RulesDB {
 				ruleStr += " -s " + rule.getSrcAddr();
 			
 			ruleStr += " -j MARK --set-mark "+ nameIndex.get(rule.getIfName());
+			ipTables.commitMangleRule(ruleStr);
 		}
-		return ruleStr;
+		activeRules.remove(rule);
 	}
 
 	public synchronized static GrcBoxAppInfo getAppInfo(int appId) {
@@ -592,7 +603,6 @@ public class RulesDB {
 		}
 		return list;
 	}
-	
 	
 	public synchronized static void setInnerInterfaces(LinkedList<String> innerInterfaces) {
 		RulesDB.innerInterfaces = innerInterfaces;

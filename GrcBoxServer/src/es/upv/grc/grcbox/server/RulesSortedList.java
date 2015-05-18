@@ -16,18 +16,16 @@ public class RulesSortedList {
 	private class GrcBoxRuleComp implements Comparator<GrcBoxRule>{
 			@Override
 			public int compare(GrcBoxRule r1, GrcBoxRule r2){
-				int l1 =r1.ipTablesSize();
+				int l1 = r1.ipTablesSize();
 				int l2 = r2.ipTablesSize();
-				if( l1 == l2){
-					if(r1.includes(r2)){
-						return r1.getId() - r2.getId();
-					}
-					else{
-						return 0;
-					}
+				if(l1 < l2){
+					return 1;
 				}
-				else{
-					return l2-l1;
+				else if(l1 > l2){
+					return -1;
+				}
+				else {
+					return r1.getId() < r2.getId() ? -1:r1.getId() == r2.getId() ? 0 : 1;
 				}
 			}
 	}
@@ -63,7 +61,7 @@ public class RulesSortedList {
 	 * @return
 	 * @see java.util.Set#contains(java.lang.Object)
 	 */
-	public boolean contains(Object o) {
+	public boolean contains(GrcBoxRule o) {
 		return sortedSet.contains(o);
 	}
 

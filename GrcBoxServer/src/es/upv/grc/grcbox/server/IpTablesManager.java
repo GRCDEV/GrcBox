@@ -88,6 +88,17 @@ public class IpTablesManager {
 		commitLines(lines, false);
 	}
 	
+	/*
+	 * Write a new mangle rule without flushing
+	 */
+	public void commitMangleRule(String line){
+		LinkedList<String> lines = new LinkedList<String>();
+		lines.add(IpTablesManager.MANGLE_TABLE);
+		lines.add(line);
+		lines.add(IpTablesManager.COMMIT);
+		commitLines(lines, false);
+	}
+	
 	public void flushAll(){
 		LinkedList<String> lines = new LinkedList<String>();
 		lines.add(NAT_TABLE);
