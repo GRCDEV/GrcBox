@@ -88,8 +88,9 @@ public class RulesFragment extends ListFragment implements MultiChoiceModeListen
 		else if( item.getItemId() == R.id.action_remove){
 			SparseBooleanArray selectedItems = getListView().getCheckedItemPositions();
 			for (int i = 0; i < selectedItems.size(); i++) {
-				if(selectedItems.get(i)){
-					GrcBoxRule rule = mAdapter.getItem(i).getRule();
+				int key = selectedItems.keyAt(i);
+				if(selectedItems.get(key)){
+					GrcBoxRule rule = mAdapter.getItem(key).getRule();
 					Toast.makeText(getActivity(), "Rule removed "+ rule, Toast.LENGTH_SHORT).show();
 					new RemoveRuleTask().execute(rule);
 				}
