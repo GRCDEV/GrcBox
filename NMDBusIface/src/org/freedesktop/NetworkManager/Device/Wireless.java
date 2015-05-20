@@ -36,6 +36,7 @@ public interface Wireless extends DBusInterface
    }
 
   public void RequestScan(Map<String,Variant> options);
+  public List<DBusInterface> GetAllAccessPoints();
   public List<DBusInterface> GetAccessPoints();
 
 }
