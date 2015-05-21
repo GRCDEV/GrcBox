@@ -3,11 +3,14 @@ package es.upv.grc.grcbox.server.networkInterfaces;
 import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
@@ -17,13 +20,16 @@ import org.freedesktop.DBus.Properties;
 import org.freedesktop.NetworkManagerIface;
 import org.freedesktop.NetworkManager.AccessPoint;
 import org.freedesktop.NetworkManager.DeviceInterface.StateChanged;
+import org.freedesktop.NetworkManager.Constants.NM_802_11_AP_FLAGS;
 import org.freedesktop.NetworkManager.Constants.NM_802_11_MODE;
 import org.freedesktop.NetworkManager.Constants.NM_DEVICE_STATE;
 import org.freedesktop.NetworkManager.Constants.NM_DEVICE_TYPE;
+import org.freedesktop.NetworkManager.Device.Wireless;
 import org.freedesktop.NetworkManager.Device.Wireless.AccessPointAdded;
 import org.freedesktop.NetworkManager.Device.Wireless.AccessPointRemoved;
 import org.freedesktop.NetworkManager.Settings.Connection;
 import org.freedesktop.dbus.DBusConnection;
+import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.ObjectPath;
 import org.freedesktop.dbus.Path;
@@ -31,9 +37,11 @@ import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
 
+import sun.org.mozilla.javascript.UintMap;
 import es.upv.grc.grcbox.common.GrcBoxInterface;
 import es.upv.grc.grcbox.common.GrcBoxInterface.Type;
 import es.upv.grc.grcbox.common.GrcBoxSsid;
+import es.upv.grc.grcbox.common.GrcBoxSsid.MODE;
 
 
 public class NetworkInterfaceManager {
@@ -49,8 +57,12 @@ public class NetworkInterfaceManager {
 	/*
 	 * Map to cache available the APs DbusPath by interface name
 	 */
-	private static volatile Map<String, List<GrcBoxConnection> > connections = new HashMap<>();
+	private static volatile Map<String, List<GrcBoxSsid> > connections = new HashMap<>();
 	
+	/*
+	 * A map containing configured connections indexed by ssid
+	 */
+	private static volatile Map<String, GrcBoxConnection> confConnections = new HashMap<String, GrcBoxConnection>();
 	/*
 	 * List of signal listeners
 	 */
@@ -63,7 +75,7 @@ public class NetworkInterfaceManager {
 	private static volatile Boolean initialized = false;
 
 	
-	private static final String _VERSION_SUPPORTED= "0.9.10.0";
+	private static final String _VERSION_SUPPORTED= "1.0.2";
 	
 	
 	
@@ -180,8 +192,11 @@ public class NetworkInterfaceManager {
 		
 		@Override
 		public void handle(AccessPointRemoved arg0) {
-			LOG.info("Access Point was removed\nIface"+ device + "\nSSID:");
+			DBusInterface ap = arg0.a;
+			removeAccessPoint(ap, device);
 		}
+
+
 	}
 	
 	private class AccessPointAddedHandler
@@ -195,32 +210,96 @@ public class NetworkInterfaceManager {
 		
 		@Override
 		public void handle(AccessPointAdded arg0) {
-			// TODO Auto-generated method stub
-			AccessPoint ap = (AccessPoint) arg0.a;
-			Properties apProps = (Properties) arg0.a;
-			Map<String, Variant> apMapProps = apProps.GetAll(NetworkManagerIface._AP_IFACE);
-			byte[] ssidByteName =  (byte[]) apMapProps.get("Ssid").getValue();
-			String ssidName =new String(ssidByteName);
-			LOG.info("New Access Point found\nIface"+ device + "\nSSID:" + ssidName);
+			DBusInterface ap = arg0.a;
+			addAccessPoint(ap, device);
 		}
 	}
+
+	private void addAccessPoint(DBusInterface dBusInterface, String iface) {
+		Properties apProps = (Properties) dBusInterface;
+		Map<String, Variant> apMapProps = apProps.GetAll(NetworkManagerIface._AP_IFACE);
+		byte[] ssidByteName =  (byte[]) apMapProps.get("Ssid").getValue();
+		String ssid = new String(ssidByteName);
+		UInt32 freq = (UInt32) apMapProps.get("Frequency").getValue();
+		UInt32 maxBitrate = (UInt32) apMapProps.get("MaxBitrate").getValue();
+		Byte strength = (Byte) apMapProps.get("Strength").getValue();
+		UInt32 wpaFlags = (UInt32) apMapProps.get("WpaFlags").getValue();
+		UInt32 flags = (UInt32) apMapProps.get("Flags").getValue();
+		UInt32 nmMode = (UInt32) apMapProps.get("Mode").getValue();
+		GrcBoxSsid.MODE mode = nmMode.equals(NM_802_11_MODE.ADHOC)? 
+				MODE.AD_HOC: MODE.INFRASTRUCTURE;
+		boolean security = flags.equals(NM_802_11_AP_FLAGS.PRIVACY);
+		boolean configured = confConnections.containsKey(ssid);
+		boolean autoConnect = false;
+		if(configured){
+			/*
+			 * If this connection has been configured, update the dynamic values
+			 */
+			autoConnect = confConnections.get(ssid).isAutoConnect();
+			GrcBoxSsid grcBoxSsid = new GrcBoxSsid(ssid, freq.intValue(), mode,
+					maxBitrate.intValue(), strength, security, configured, autoConnect);
+			/*
+			 * Add this ssid to the ssids map.
+			 * update the Configured connection
+			 */
+			connections.get(iface).add(grcBoxSsid);
+			String password = confConnections.get(ssid).getPassword();
+			confConnections.put(ssid, new GrcBoxConnection(grcBoxSsid, dBusInterface, password));
+		}
+		else{
+			GrcBoxSsid grcBoxSsid = new GrcBoxSsid(ssid, freq.intValue(), mode,
+					maxBitrate.intValue(), strength, security, configured, autoConnect);
+			connections.get(iface).add(grcBoxSsid);
+		}
+	}
+
+	private void removeAccessPoint(DBusInterface ap, String iface) {
+		Properties apProps = (Properties) ap;
+		Map<String, Variant> apMapProps = apProps.GetAll(NetworkManagerIface._AP_IFACE);
+		byte[] ssidByteName =  (byte[]) apMapProps.get("Ssid").getValue();
+		String ssid = new String(ssidByteName);
+		UInt32 freq = (UInt32) apMapProps.get("Frequency").getValue();
+		UInt32 maxBitrate = (UInt32) apMapProps.get("MaxBitrate").getValue();
+		Byte strength = (Byte) apMapProps.get("Strength").getValue();
+		UInt32 wpaFlags = (UInt32) apMapProps.get("WpaFlags").getValue();
+		UInt32 flags = (UInt32) apMapProps.get("Flags").getValue();
+		UInt32 nmMode = (UInt32) apMapProps.get("Mode").getValue();
+		GrcBoxSsid.MODE mode = nmMode.equals(NM_802_11_MODE.ADHOC)? 
+				MODE.AD_HOC: MODE.INFRASTRUCTURE;
+		boolean security = flags.equals(NM_802_11_AP_FLAGS.PRIVACY);
+		connections.get(iface).remove(new GrcBoxSsid(ssid, freq.intValue(), mode, maxBitrate.intValue(), 
+				strength, security, false, false));
+	}
+	
 	
 	private Device addDevice(String path) throws DBusException{
 		Device device = updateDevStatus(path);
-		GrcBoxInterface grcIface = cachedInterfaces.get(device.getIface());
-		informInterfaceAdded(grcIface);
-		LOG.info("New Device Added:"+device.getIface());
-		/*
-		 * If it is a wifi device, subscribe for AP updates
-		 * and request a 
-		 */
-		if(device.getType().equals(NM_DEVICE_TYPE.WIFI) ){
-			subscribeToApSignals(device.getIface());
+		if(device.isManaged()){
+			GrcBoxInterface grcIface = cachedInterfaces.get(device.getIface());
+
+			LOG.info("New Device Added:"+device.getIface());
+			/*
+			 * If it is a wifi device, subscribe for AP updates
+			 * and request a list of the available APs
+			 */
+			if(device.getType().equals(NM_DEVICE_TYPE.WIFI) ){
+				connections.put(device.getIface(), new ArrayList<GrcBoxSsid>());
+				Wireless wirelessObj = (Wireless) conn.getRemoteObject(
+						NetworkManagerIface._NM_IFACE, device.getDbusPath(),  Wireless.class);
+				List<DBusInterface> apList = wirelessObj.GetAllAccessPoints();
+				for (DBusInterface dBusInterface : apList) {
+					addAccessPoint(dBusInterface, grcIface.getName());
+				}
+				subscribeToApSignals(device.getIface());
+			}
+			informInterfaceAdded(grcIface);
 		}
 		return device;
 	}
 	
 
+
+	
 	private Device updateDevStatus(String path) throws DBusException {
 		Device dev = readDeviceFromDbus(path);
 		devices.put(dev.getIface(), dev);
@@ -263,7 +342,7 @@ public class NetworkInterfaceManager {
 	}
 
 	/*
-	 * Subscribe to AP signals to monito AP list 
+	 * Subscribe to AP signals to monitor AP list 
 	 */
 	private void subscribeToApSignals(String device) throws DBusException {
 		conn.addSigHandler(org.freedesktop.NetworkManager.Device.Wireless.AccessPointAdded.class, new AccessPointAddedHandler(device));
