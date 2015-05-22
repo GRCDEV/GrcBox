@@ -80,7 +80,7 @@ import es.upv.grc.grcbox.server.resources.SsidsServerResource;
  * Routing to annotated server resources.
  */
 public class GrcBoxServerApplication extends Application {
-	private static final Logger LOG = Logger.getLogger(NetworkInterfaceManager.class.getName()); 
+	private static final Logger LOG = Logger.getLogger(GrcBoxServerApplication.class.getName()); 
 
 	private static final String configFile = "config.json";
 	private static GrcBoxConfig config;

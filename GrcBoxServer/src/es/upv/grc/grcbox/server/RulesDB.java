@@ -21,6 +21,7 @@ import es.upv.grc.grcbox.common.GrcBoxInterface;
 import es.upv.grc.grcbox.common.GrcBoxRule;
 import es.upv.grc.grcbox.common.GrcBoxRule.Protocol;
 import es.upv.grc.grcbox.common.GrcBoxRule.RuleType;
+import es.upv.grc.grcbox.common.GrcBoxSsid;
 import es.upv.grc.grcbox.server.multicastProxy.MulticastProxy;
 import es.upv.grc.grcbox.server.multicastProxy.MulticastSupportedPlugins;
 import es.upv.grc.grcbox.server.multicastProxy.scampi.ScampiProxy;
@@ -29,7 +30,7 @@ import es.upv.grc.grcbox.server.networkInterfaces.NetworkManagerListener;
 
 
 public class RulesDB {
-	private static final Logger LOG = Logger.getLogger(NetworkInterfaceManager.class.getName()); 
+	private static final Logger LOG = Logger.getLogger(RulesDB.class.getName()); 
 
 	private static volatile Integer _appId = 0;
 	private static volatile Integer _ruleId = 0;
@@ -590,5 +591,9 @@ public class RulesDB {
 			}
 		}
 		return list;
+	}
+	
+	public static List<GrcBoxSsid> getAps(String iface){
+		return nm.getAps(iface);
 	}
 }

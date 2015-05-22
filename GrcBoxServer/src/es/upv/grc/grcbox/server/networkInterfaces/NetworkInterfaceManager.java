@@ -57,8 +57,8 @@ public class NetworkInterfaceManager {
 	/*
 	 * Map to cache available the APs DbusPath by interface name
 	 */
-	private static volatile Map<String, List<GrcBoxSsid> > connections = new HashMap<>();
-	
+	private static volatile Map<String, Set<GrcBoxSsid> > connections = new HashMap<>();
+
 	/*
 	 * A map containing configured connections indexed by ssid
 	 */
@@ -74,11 +74,11 @@ public class NetworkInterfaceManager {
 
 	private static volatile Boolean initialized = false;
 
-	
+
 	private static final String _VERSION_SUPPORTED= "1.0.2";
-	
-	
-	
+
+
+
 	/*
 	 * Handlers for NM signals
 	 */
@@ -161,9 +161,9 @@ public class NetworkInterfaceManager {
 			 * Only update the device information if the old or the new states are "ACTIVATED"
 			 */
 			if( !( signal.a.equals(NM_DEVICE_STATE.UNAVAILABLE) || 
-				   signal.a.equals(NM_DEVICE_STATE.UNMANAGED) ) &&
-				  (signal.a.equals(NM_DEVICE_STATE.ACTIVATED) || 
-				   signal.b.equals(NM_DEVICE_STATE.ACTIVATED))
+					signal.a.equals(NM_DEVICE_STATE.UNMANAGED) ) &&
+					(signal.a.equals(NM_DEVICE_STATE.ACTIVATED) || 
+							signal.b.equals(NM_DEVICE_STATE.ACTIVATED))
 					)
 			{
 				try {
@@ -177,19 +177,19 @@ public class NetworkInterfaceManager {
 			LOG.exiting(this.getClass().getName(), "stateChanged");
 		}
 	}
-	
+
 	/*
 	 * When an AP is removed, update the device's APs list
 	 */
 	private class AccessPointRemovedHandler 
-		implements DBusSigHandler<org.freedesktop.NetworkManager.Device.Wireless.AccessPointRemoved>{
-		
+	implements DBusSigHandler<org.freedesktop.NetworkManager.Device.Wireless.AccessPointRemoved>{
+
 		private String device;
-		
+
 		public AccessPointRemovedHandler(String device) {
 			this.device = device;
 		}
-		
+
 		@Override
 		public void handle(AccessPointRemoved arg0) {
 			DBusInterface ap = arg0.a;
@@ -198,16 +198,16 @@ public class NetworkInterfaceManager {
 
 
 	}
-	
+
 	private class AccessPointAddedHandler
-		implements DBusSigHandler<org.freedesktop.NetworkManager.Device.Wireless.AccessPointAdded>{
-		
+	implements DBusSigHandler<org.freedesktop.NetworkManager.Device.Wireless.AccessPointAdded>{
+
 		private String device;
-		
+
 		public AccessPointAddedHandler(String device) {
 			this.device = device;
 		}
-		
+
 		@Override
 		public void handle(AccessPointAdded arg0) {
 			DBusInterface ap = arg0.a;
@@ -270,8 +270,7 @@ public class NetworkInterfaceManager {
 		connections.get(iface).remove(new GrcBoxSsid(ssid, freq.intValue(), mode, maxBitrate.intValue(), 
 				strength, security, false, false));
 	}
-	
-	
+
 	private Device addDevice(String path) throws DBusException{
 		Device device = updateDevStatus(path);
 		if(device.isManaged()){
@@ -283,7 +282,7 @@ public class NetworkInterfaceManager {
 			 * and request a list of the available APs
 			 */
 			if(device.getType().equals(NM_DEVICE_TYPE.WIFI) ){
-				connections.put(device.getIface(), new ArrayList<GrcBoxSsid>());
+				connections.put(device.getIface(), new HashSet<GrcBoxSsid>());
 				Wireless wirelessObj = (Wireless) conn.getRemoteObject(
 						NetworkManagerIface._NM_IFACE, device.getDbusPath(),  Wireless.class);
 				List<DBusInterface> apList = wirelessObj.GetAllAccessPoints();
@@ -296,10 +295,7 @@ public class NetworkInterfaceManager {
 		}
 		return device;
 	}
-	
 
-
-	
 	private Device updateDevStatus(String path) throws DBusException {
 		Device dev = readDeviceFromDbus(path);
 		devices.put(dev.getIface(), dev);
@@ -313,24 +309,6 @@ public class NetworkInterfaceManager {
 			}
 		}
 		return dev;
-	}
-	
-	/*
-	 * Return a list with all the managed interfaces
-	 */
-	public Collection<GrcBoxInterface> getInterfaces(){
-		return cachedInterfaces.values();
-	}
-
-	public synchronized boolean initialize() throws DBusException, ExecutionException{
-		LOG.entering(this.getClass().getName(), "initialize");
-		if(isNMAvailable()){
-			readDevicesInfo();
-			subscribeToNMSignals();
-			initialized = true;
-			return true;
-		}
-		return false;
 	}
 
 	/*
@@ -348,7 +326,7 @@ public class NetworkInterfaceManager {
 		conn.addSigHandler(org.freedesktop.NetworkManager.Device.Wireless.AccessPointAdded.class, new AccessPointAddedHandler(device));
 		conn.addSigHandler(org.freedesktop.NetworkManager.Device.Wireless.AccessPointRemoved.class, new AccessPointRemovedHandler(device));
 	}
-	
+
 	/*
 	 * Read the information from the NetworkManager and stores it in
 	 * devices, also populate the cachedInterfaces map;
@@ -364,7 +342,7 @@ public class NetworkInterfaceManager {
 		}
 		LOG.exiting(this.getClass().getName(), "readdevicesInfo");;
 	}
-	
+
 	/*
 	 * Convert a Device object into a GrcBoxInterface object
 	 */
@@ -373,7 +351,7 @@ public class NetworkInterfaceManager {
 		GrcBoxInterface iface = new GrcBoxInterface();
 		Properties devProp = (Properties) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, dev.getDbusPath(),  Properties.class);
 		iface.setName(dev.getIface());
-		
+
 
 		GrcBoxInterface.Type type;
 
@@ -414,7 +392,7 @@ public class NetworkInterfaceManager {
 		 * Find the used Connection and other values only if the device is up
 		 */
 
-		
+
 		if(isUp){
 			if((boolean) devProp.Get(NetworkManagerIface._DEVICE_IFACE, "Managed")){
 				String ipAddr = getIpAddress(iface.getName());
@@ -426,10 +404,10 @@ public class NetworkInterfaceManager {
 				Map<String,Map<String,Variant>> settings = connIface.GetSettings();
 				String connection = (String)settings.get("connection").get("id").getValue();
 				iface.setConnection(connection);
-				
+
 				Boolean isDefault = actConnProp.Get(NetworkManagerIface._ACTIVE_IFACE, "Default");
 				iface.setDefault(isDefault);
-				
+
 				/*
 				 * We assume that devices are connected to Internet when a gateway is defined.
 				 */
@@ -442,7 +420,7 @@ public class NetworkInterfaceManager {
 			else{
 				iface.setConnection(null);
 			}
-			
+
 			/*
 			 * TODO Add support for other kind of interfaces.
 			 */
@@ -487,7 +465,7 @@ public class NetworkInterfaceManager {
 		Properties props = (Properties) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, path,  Properties.class);
 		device.setDbusPath(path);
 		if(props instanceof Properties){
-			
+
 			Map<String, Variant> propsMap = props.GetAll(NetworkManagerIface._DEVICE_IFACE);
 			if(propsMap.get("Interface") != null) 
 				device.setIface((String) propsMap.get("Interface").getValue());
@@ -503,7 +481,7 @@ public class NetworkInterfaceManager {
 				device.setManaged((Boolean)propsMap.get("Managed").getValue());
 			if(propsMap.get("DeviceType") != null) 
 				device.setType((UInt32)propsMap.get("DeviceType").getValue());
-			
+
 			if(device.getState().equals(NM_DEVICE_STATE.ACTIVATED)){
 				Properties ip4Prop = (Properties) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, device.getIp4Config(),  Properties.class);
 				Vector<Vector<UInt32>> addresses = ip4Prop.Get(NetworkManagerIface._IP4CONFIG_IFACE, "Addresses");
@@ -537,31 +515,56 @@ public class NetworkInterfaceManager {
 		return true;
 	}
 
-	public synchronized int subscribeInterfaces(NetworkManagerListener object){
-		ifaceSubscribers.add(object);
-		return ifaceSubscribers.size();
-	}
-	
-	public synchronized void unSubscribeInterfaces(int index){
-		ifaceSubscribers.remove(index);
-	}
-	
-	public synchronized void informInterfaceAdded(GrcBoxInterface iface){
+
+	private synchronized void informInterfaceAdded(GrcBoxInterface iface){
 		for (NetworkManagerListener networkManagerListener : ifaceSubscribers) {
 			networkManagerListener.interfaceAdded(iface);
 		}
 	}
 
-	public synchronized void informInterfaceRemoved(GrcBoxInterface iface){
+	private synchronized void informInterfaceRemoved(GrcBoxInterface iface){
 		for (NetworkManagerListener networkManagerListener : ifaceSubscribers) {
 			networkManagerListener.interfaceRemoved(iface);
 		}
 	}
 
-	public synchronized void informInterfaceChanged(GrcBoxInterface iface){
+	private synchronized void informInterfaceChanged(GrcBoxInterface iface){
 		for (NetworkManagerListener networkManagerListener : ifaceSubscribers) {
 			networkManagerListener.interfaceChanged(iface);
 		}
+	}
+
+
+	/*
+	 * Return a list with all the managed interfaces
+	 */
+	public Collection<GrcBoxInterface> getInterfaces(){
+		return cachedInterfaces.values();
+	}
+
+	public synchronized boolean initialize() throws DBusException, ExecutionException{
+		LOG.entering(this.getClass().getName(), "initialize");
+		if(isNMAvailable()){
+			readDevicesInfo();
+			subscribeToNMSignals();
+			initialized = true;
+			return true;
+		}
+		return false;
+	}
+
+	public List<GrcBoxSsid> getAps(String iface){
+		ArrayList<GrcBoxSsid> list = new ArrayList<GrcBoxSsid>(connections.get(iface));
+		return list;
+	}
+
+	public synchronized int subscribeInterfaces(NetworkManagerListener object){
+		ifaceSubscribers.add(object);
+		return ifaceSubscribers.size();
+	}
+
+	public synchronized void unSubscribeInterfaces(int index){
+		ifaceSubscribers.remove(index);
 	}
 
 	public synchronized boolean isInitialized() {
@@ -593,7 +596,7 @@ public class NetworkInterfaceManager {
 		}
 		return gwStr;
 	}
-	
+
 	/*
 	 * Convert from long to ipv4 String
 	 */
