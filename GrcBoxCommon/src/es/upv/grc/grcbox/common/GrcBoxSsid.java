@@ -100,7 +100,6 @@ public class GrcBoxSsid {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (autoConnect ? 1231 : 1237);
 		result = prime * result + ((mode == null) ? 0 : mode.hashCode());
 		result = prime * result + (security ? 1231 : 1237);
 		result = prime * result + ((ssid == null) ? 0 : ssid.hashCode());
