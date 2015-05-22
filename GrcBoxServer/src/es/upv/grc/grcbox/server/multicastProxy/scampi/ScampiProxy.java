@@ -96,7 +96,7 @@ public class ScampiProxy extends MulticastProxy {
 		boolean ret = rules.add(rule);
 		if(ret){
 			List<GrcBoxRule> ruleList = RulesDB.addRule(getAppId(), rule); 
-			rule = ruleList.get(ruleList.size());
+			rule = ruleList.get(ruleList.size()-1);
 			rulesIds.add(rule.getId());
 		}
 	}
