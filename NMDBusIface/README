@@ -1,0 +1,2 @@
+This library is used to interact with the NetworkManager service from a Java Application, 
+it has been generated using CreateInterface from the dbus-java package.
