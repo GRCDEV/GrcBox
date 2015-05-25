@@ -62,9 +62,6 @@ import org.restlet.security.MethodAuthorizer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import es.upv.grc.grcbox.common.resources.SsidResource;
-import es.upv.grc.grcbox.common.resources.SsidsResource;
-import es.upv.grc.grcbox.server.networkInterfaces.NetworkInterfaceManager;
 import es.upv.grc.grcbox.server.resources.AppServerResource;
 import es.upv.grc.grcbox.server.resources.AppsServerResource;
 import es.upv.grc.grcbox.server.resources.IfaceServerResource;

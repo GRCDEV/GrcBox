@@ -4,6 +4,7 @@ import org.restlet.resource.Delete;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 
+import es.upv.grc.grcbox.common.ApAuth;
 import es.upv.grc.grcbox.common.GrcBoxSsid;
 
 public interface SsidResource {
@@ -17,7 +18,7 @@ public interface SsidResource {
 	 * Connect to the AP pointed by the resource
 	 */
 	@Post("json")
-	public void connect(String password, boolean autoConnect);
+	public void connect(ApAuth authInfo);
 	
 	/*
 	 * If a connection is associated to this AP, remove it
