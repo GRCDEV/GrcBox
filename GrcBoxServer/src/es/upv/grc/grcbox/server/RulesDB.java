@@ -596,4 +596,26 @@ public class RulesDB {
 	public static List<GrcBoxSsid> getAps(String iface){
 		return nm.getAps(iface);
 	}
+	
+	public static GrcBoxSsid getApInIface(String ssid, String iface){
+		List<GrcBoxSsid> list = nm.getAps(iface);
+		if(list == null){
+			return null;
+		}
+		for (GrcBoxSsid grcBoxSsid : list) {
+			if(grcBoxSsid != null){
+				if(grcBoxSsid.getSsid().equals(ssid)){
+					return grcBoxSsid;
+				}
+			}
+		}
+		return null;
+	}
+
+	public static void connect(String password, boolean autoConnect, String iface,
+			String ssid) throws DBusException {
+		nm.connectToAp(ssid, iface, autoConnect, password);
+	}
+	
+	
 }

@@ -19,6 +19,8 @@ import java.util.logging.Logger;
 import org.freedesktop.DBus.Properties;
 import org.freedesktop.NetworkManagerIface;
 import org.freedesktop.NetworkManager.AccessPoint;
+import org.freedesktop.NetworkManager.DeviceInterface;
+import org.freedesktop.NetworkManager.Utility;
 import org.freedesktop.NetworkManager.DeviceInterface.StateChanged;
 import org.freedesktop.NetworkManager.Constants.NM_802_11_AP_FLAGS;
 import org.freedesktop.NetworkManager.Constants.NM_802_11_MODE;
@@ -36,6 +38,7 @@ import org.freedesktop.dbus.Path;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.restlet.resource.ResourceException;
 
 import sun.org.mozilla.javascript.UintMap;
 import es.upv.grc.grcbox.common.GrcBoxInterface;
@@ -55,9 +58,10 @@ public class NetworkInterfaceManager {
 	 */
 	private static volatile Map<String, Device> devices = new HashMap<>();
 	/*
-	 * Map to cache available the APs DbusPath by interface name
+	 * Map to cache available the APs DbusPath by interface name, indexed by 
+	 * their iface+ssid
 	 */
-	private static volatile Map<String, Set<GrcBoxSsid> > connections = new HashMap<>();
+	private static volatile Map<String, Map<String, GrcBoxConnection> > connections = new HashMap<>();
 
 	/*
 	 * A map containing configured connections indexed by ssid
@@ -235,21 +239,26 @@ public class NetworkInterfaceManager {
 			/*
 			 * If this connection has been configured, update the dynamic values
 			 */
-			autoConnect = confConnections.get(ssid).isAutoConnect();
+			GrcBoxConnection oldConn = confConnections.get(ssid);
+			autoConnect = oldConn.isAutoConnect();
 			GrcBoxSsid grcBoxSsid = new GrcBoxSsid(ssid, freq.intValue(), mode,
 					maxBitrate.intValue(), strength, security, configured, autoConnect);
 			/*
 			 * Add this ssid to the ssids map.
 			 * update the Configured connection
 			 */
-			connections.get(iface).add(grcBoxSsid);
+			GrcBoxConnection newConn = new GrcBoxConnection(grcBoxSsid, dBusInterface, oldConn.getPassword() );
+			connections.get(iface).put(ssid,newConn);
 			String password = confConnections.get(ssid).getPassword();
 			confConnections.put(ssid, new GrcBoxConnection(grcBoxSsid, dBusInterface, password));
 		}
 		else{
+
+
 			GrcBoxSsid grcBoxSsid = new GrcBoxSsid(ssid, freq.intValue(), mode,
 					maxBitrate.intValue(), strength, security, configured, autoConnect);
-			connections.get(iface).add(grcBoxSsid);
+			GrcBoxConnection newConn = new GrcBoxConnection(grcBoxSsid, dBusInterface, null);
+			connections.get(iface).put(ssid, newConn);
 		}
 	}
 
@@ -282,7 +291,7 @@ public class NetworkInterfaceManager {
 			 * and request a list of the available APs
 			 */
 			if(device.getType().equals(NM_DEVICE_TYPE.WIFI) ){
-				connections.put(device.getIface(), new HashSet<GrcBoxSsid>());
+				connections.put(device.getIface(), new HashMap<String, GrcBoxConnection>());
 				Wireless wirelessObj = (Wireless) conn.getRemoteObject(
 						NetworkManagerIface._NM_IFACE, device.getDbusPath(),  Wireless.class);
 				List<DBusInterface> apList = wirelessObj.GetAllAccessPoints();
@@ -536,10 +545,27 @@ public class NetworkInterfaceManager {
 
 
 	/*
-	 * Return a list with all the managed interfaces
+	 * Convert from long to ipv4 String
 	 */
-	public Collection<GrcBoxInterface> getInterfaces(){
-		return cachedInterfaces.values();
+	private String int2Ip(long addr) {
+		LOG.info("Long " + addr + " to String" );
+		if(addr == 0){
+			return "0.0.0.0";
+		}
+		byte [] gwByte = new byte[4];
+		byte [] temp =  (BigInteger.valueOf(addr)).toByteArray();
+		gwByte[0] = temp[3];
+		gwByte[1] = temp[2];
+		gwByte[2] = temp[1];
+		gwByte[3] = temp[0];
+		String ip = null;
+		try {
+			ip= Inet4Address.getByAddress(gwByte).getHostAddress();
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return ip;
 	}
 
 	public synchronized boolean initialize() throws DBusException, ExecutionException{
@@ -553,9 +579,15 @@ public class NetworkInterfaceManager {
 		return false;
 	}
 
-	public List<GrcBoxSsid> getAps(String iface){
-		ArrayList<GrcBoxSsid> list = new ArrayList<GrcBoxSsid>(connections.get(iface));
-		return list;
+	public synchronized boolean isInitialized() {
+		return initialized.booleanValue();
+	}
+
+	/*
+	 * Return a list with all the managed interfaces
+	 */
+	public Collection<GrcBoxInterface> getInterfaces(){
+		return cachedInterfaces.values();
 	}
 
 	public synchronized int subscribeInterfaces(NetworkManagerListener object){
@@ -565,10 +597,6 @@ public class NetworkInterfaceManager {
 
 	public synchronized void unSubscribeInterfaces(int index){
 		ifaceSubscribers.remove(index);
-	}
-
-	public synchronized boolean isInitialized() {
-		return initialized.booleanValue();
 	}
 
 	/*
@@ -597,32 +625,65 @@ public class NetworkInterfaceManager {
 		return gwStr;
 	}
 
-	/*
-	 * Convert from long to ipv4 String
-	 */
-	private String int2Ip(long addr) {
-		LOG.info("Long " + addr + " to String" );
-		if(addr == 0){
-			return "0.0.0.0";
-		}
-		byte [] gwByte = new byte[4];
-		byte [] temp =  (BigInteger.valueOf(addr)).toByteArray();
-		gwByte[0] = temp[3];
-		gwByte[1] = temp[2];
-		gwByte[2] = temp[1];
-		gwByte[3] = temp[0];
-		String ip = null;
-		try {
-			ip= Inet4Address.getByAddress(gwByte).getHostAddress();
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return ip;
-	}
-
 	public String getIpAddress(String iface) {
 		Device dev = devices.get(iface);
 		return int2Ip(dev.getIfaceIpAddress().longValue());
+	}
+
+	public List<GrcBoxSsid> getAps(String iface){
+		ArrayList<GrcBoxSsid> list = new ArrayList<GrcBoxSsid>(connections.get(iface).values());
+		return list;
+	}
+	
+	public void connectToAp(String ssid, String iface, boolean autoconnect, String password) throws DBusException{
+		GrcBoxConnection grcBoxConnection = connections.get(iface).get(ssid);
+		
+		if(grcBoxConnection == null){
+			throw new ResourceException(404);
+		}
+		
+		if(autoconnect){
+			GrcBoxConnection newConnection = new GrcBoxConnection(grcBoxConnection, 
+					grcBoxConnection.getDbusInterface(), password);
+			confConnections.put(iface+ssid, newConnection);
+		}
+		
+		Map<String, Variant> wirelessMap = new HashMap<String, Variant>();
+		wirelessMap.put("ssid", new Variant<byte[]>(ssid.getBytes()));
+		
+		String mode;
+		if(grcBoxConnection.getMode().equals(GrcBoxSsid.MODE.INFRASTRUCTURE)){
+			mode = "ifrastructure";
+		}
+		else{
+			mode = "ad-hoc";
+		}
+		wirelessMap.put("mode", new Variant<String>("infrastructure"));
+		Map<String, Variant> connectionMap = new HashMap<String, Variant>();
+		String connectionName = "GrcBox"+ssid+iface;
+		connectionMap.put("id", new Variant<String>(connectionName));
+		connectionMap.put("type", new Variant<String>("802-11-wireless"));
+		
+		/*
+		 * autoconnect is managed by the GRCBox
+		 */
+		connectionMap.put("autoconnect", new Variant<Boolean>(false));
+		connectionMap.put("uuid", new Variant<String>(Utility.generateUuid(connectionName+System.currentTimeMillis())));
+		Map<String, Variant> ipv4Map = new HashMap<String, Variant>();
+		ipv4Map.put("method", new Variant<String>("auto"));
+		Map<String, Map<String,Variant> > newConnection = new HashMap<String, Map<String,Variant> >();				
+		newConnection.put("connection", connectionMap);
+		newConnection.put("802-11-wireless", wirelessMap);
+		newConnection.put("ipv4", ipv4Map);
+		
+		if(grcBoxConnection.isSecurity()){
+			Map<String, Variant> wifiSecMap = new HashMap<String, Variant>();
+			wifiSecMap.put("psk", new Variant<String>(password));
+			newConnection.put("802-11-wireless-security", wifiSecMap);
+		}
+		
+		NetworkManagerIface netMngIface = (NetworkManagerIface) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, NetworkManagerIface._NM_PATH,  NetworkManagerIface.class);
+		DeviceInterface ifaceDbusDevice = (DeviceInterface) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, devices.get(iface).getDbusPath(),  DeviceInterface.class);
+		netMngIface.AddAndActivateConnection(newConnection, ifaceDbusDevice, grcBoxConnection.getDbusInterface());
 	}
 }
