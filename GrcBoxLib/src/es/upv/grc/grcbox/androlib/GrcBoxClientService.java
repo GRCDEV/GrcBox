@@ -17,7 +17,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-
 import org.restlet.data.ChallengeResponse;
 import org.restlet.data.ChallengeScheme;
 import org.restlet.data.Status;
@@ -38,12 +37,12 @@ import android.os.IBinder;
 import android.text.GetChars;
 import android.util.Log;
 import android.widget.Toast;
-
 import es.upv.grc.grcbox.common.resources.AppResource;
 import es.upv.grc.grcbox.common.resources.AppsResource;
 import es.upv.grc.grcbox.common.resources.AppsResource.IdSecret;
 import es.upv.grc.grcbox.common.GrcBoxApp;
-import es.upv.grc.grcbox.common.GrcBoxAppList;
+import es.upv.grc.grcbox.common.GrcBoxAppInfo;
+import es.upv.grc.grcbox.common.GrcBoxAppInfoList;
 import es.upv.grc.grcbox.common.GrcBoxInterface;
 import es.upv.grc.grcbox.common.GrcBoxInterfaceList;
 import es.upv.grc.grcbox.common.GrcBoxRule;
@@ -350,9 +349,9 @@ public class GrcBoxClientService extends Service {
 	/*
 	 * get a list of the available interfaces from the server
 	 */
-	public Collection<GrcBoxApp> getApps(){
+	public Collection<GrcBoxAppInfo> getApps(){
 		AppsResource apps = clientResource.getChild("/apps", AppsResource.class);
-		Collection<GrcBoxApp> list = new LinkedList<GrcBoxApp>();
+		Collection<GrcBoxAppInfo> list = new LinkedList<GrcBoxAppInfo>();
 		try{
 			list = apps.getList().getList();
 		}

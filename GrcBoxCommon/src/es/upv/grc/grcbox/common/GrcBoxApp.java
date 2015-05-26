@@ -1,54 +1,36 @@
 package es.upv.grc.grcbox.common;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+
 @JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, include=JsonTypeInfo.As.PROPERTY, property="@class")
-public class GrcBoxApp {
-	private int appId;
+public class GrcBoxApp extends GrcBoxAppInfo {
 	private int secret;
-	private String name;
 	private long lastKeepAlive;
 		
 	
 	public GrcBoxApp() {
 	}
 	
-	public GrcBoxApp(int appId, String name, long lastKeepAlive) {
-		super();
-		this.appId = appId;
-		this.name = name;
-		this.lastKeepAlive = lastKeepAlive;
+	public GrcBoxApp(int id, String name, long lastUpdate) {
+		super(id,name,-1);
 	}
-	
-	public int getAppId() {
-		return appId;
-	}
-	public void setAppId(int appId) {
-		this.appId = appId;
-	}
+
+	@JsonIgnore
 	public int getSecret() {
 		return secret;
 	}
+	@JsonIgnore
 	public void setSecret(int secret) {
 		this.secret = secret;
 	}
-	public String getName() {
-		return name;
-	}
-	public void setName(String name) {
-		this.name = name;
-	}
+	@JsonIgnore
 	public long getLastKeepAlive() {
 		return lastKeepAlive;
 	}
+	@JsonIgnore
 	public void setLastKeepAlive(long lastKeepAlive) {
 		this.lastKeepAlive = lastKeepAlive;
 	}
-
-	@Override
-	public String toString() {
-		return "Id:"+appId+ " Name:" + name;
-	}
-	
-	
 }

@@ -36,7 +36,7 @@ package es.upv.grc.grcbox.common.resources;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 
-import es.upv.grc.grcbox.common.GrcBoxAppList;
+import es.upv.grc.grcbox.common.GrcBoxAppInfoList;
 
 /**
  * Annotated box resource interface
@@ -70,7 +70,7 @@ public interface AppsResource {
 	}
 	
     @Get("json")
-    public GrcBoxAppList getList();
+    public GrcBoxAppInfoList getList();
     
     @Post
     public IdSecret newApp(String name);

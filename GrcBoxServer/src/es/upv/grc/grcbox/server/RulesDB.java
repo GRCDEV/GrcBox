@@ -266,6 +266,13 @@ public class RulesDB {
 	}
 	
 	/*
+	 * Return a list of Apps registered in the system
+	 */
+	public synchronized static List<GrcBoxAppInfo> getAppInfos() {
+		return new LinkedList<GrcBoxAppInfo>(appMap.values());
+	}
+	
+	/*
 	 * Returns the rule maped to a certain ID or null
 	 */
 	public synchronized static GrcBoxRule getRule(Integer appId, Integer ruleId){
