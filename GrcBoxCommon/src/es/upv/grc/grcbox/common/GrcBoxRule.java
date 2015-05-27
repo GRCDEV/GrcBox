@@ -3,6 +3,11 @@ package es.upv.grc.grcbox.common;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+/*
+ * This class represents a GRCBox rule
+ * GRCBox rules directly maps to Iptables rules
+ * Currently only TCP and UDP protocols are supported.
+ */
 @JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, include=JsonTypeInfo.As.PROPERTY, property="@class")
 public class GrcBoxRule {
 	public enum Protocol{
