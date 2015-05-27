@@ -38,18 +38,20 @@ import org.restlet.resource.*;
 import es.upv.grc.grcbox.common.GrcBoxRule;
 
 /**
- * Annotated box resource interface
+ * Annotated box resource interface.
  */
 public interface RuleResource {
 
-	/*
-	 * Return rule information
+    /**
+	 * Retrieve rule information
+	 *
+	 * @return the grc box rule
 	 */
-    @Get("json")
+	@Get("json")
     public GrcBoxRule retrieve();
 
-    /*
-     * Remove rule
+    /**
+     * Removes the rule from the DB
      */
     @Delete("json")
     public void remove();

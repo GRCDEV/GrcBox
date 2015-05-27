@@ -38,21 +38,29 @@ import org.restlet.resource.*;
 import es.upv.grc.grcbox.common.*;
 
 /**
- * Annotated box resource interface
+ * This resource defines available methods related to rules
  */
 public interface RulesResource {
 
-	/*
+	/**
 	 * return a list of rules associated to an app
+	 *
+	 * @return the list
 	 */
-    @Get("json")
+	@Get("json")
     public GrcBoxRuleList getList();
     
     /*
+     * 
+     */
+    /**
      * Create a new rule associated to this app
 	 * Returns a list of the previously defined rules that are
 	 * included in the given rule and may interfere with it and
 	 * the defined rule as last element.
+     *
+     * @param rule the rule
+     * @return the grc box rule list
      */
     @Post
     public GrcBoxRuleList newRule(GrcBoxRule rule);

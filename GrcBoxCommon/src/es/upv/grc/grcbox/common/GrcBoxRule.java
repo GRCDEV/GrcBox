@@ -3,48 +3,112 @@ package es.upv.grc.grcbox.common;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-/*
+/**
+ * The Class GrcBoxRule.
  * This class represents a GRCBox rule
  * GRCBox rules directly maps to Iptables rules
  * Currently only TCP and UDP protocols are supported.
  */
 @JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, include=JsonTypeInfo.As.PROPERTY, property="@class")
 public class GrcBoxRule {
+
+	/**
+	 * The Enum Protocol.
+	 */
 	public enum Protocol{
-		TCP, UDP;
+
+		/** The tcp. */
+		TCP, 
+		/** The udp. */
+		UDP;
 	}
-	
+
+	/**
+	 * The Enum RuleType.
+	 */
 	public enum RuleType{
-		INCOMING, OUTGOING, MULTICAST;
+
+		/** The incoming. */
+		INCOMING, 
+		/** The outgoing. */
+		OUTGOING, 
+		/** The multicast. */
+		MULTICAST;
 	}
-	
-	/*
-	 * Common parameters
+
+	/**
+	 * ATTRIBUTES of the rule
 	 */
-	protected int id; //Unique Id of this rule
-	protected Protocol proto;	//Protocol
+	/** The unique id. */
+	protected int id; 
+
+	/** The protocol UDP or TCP. */
+	protected Protocol proto;
+
+	/** The type INCOMING, OUTGOING or MULTICAST. */
 	protected RuleType type;
-	protected int appid;	//AppId of the owner app
-	protected String ifName; // Outgoing or incoming interface
+
+	/** The appid of the owner app */
+	protected int appid;	
+
+	/** The interface name which this rule is associated to. */
+	protected String ifName; 
+
+	/** The expire date. */
 	protected long expireDate;
+
+	/** The source port. */
 	protected int srcPort;
+
+	/** The destination port. */
 	protected int dstPort;
+
+	/** The source addr. */
 	protected String srcAddr;
+
+	/** The destination addr. */
 	protected String dstAddr;
+
+	/** The multicast plugin. 
+	 * 	The list of implemented plugins should be checked using the RootResource 
+	 * */
 	protected String mcastPlugin;
-	/*
-	 * Parameters needed for incomming rules
+	
+	
+	/**
+	 * TARGETS of the rule
 	 */
+	/** The destination forwarding port for incoming rules. */
 	protected int dstFwdPort;
+
+	/** The destination forwarding address for incoming rules. */
 	protected String dstFwdAddr;
 
+	/**
+	 * Instantiates a new GRCbox rule.
+	 */
 	public GrcBoxRule(){
-		
+
 	}
-	
-	/*
-	 * Common constructor used for incomming or outgoing flows.
-	 * If incomming is false dstFwdPort and dstFwdAddr must be -1 and will be ignored.
+
+	/**
+	 * Instantiates a new grc box rule.
+	 *
+	 * @param id the id, this value is ignored when registering a rules on the
+	 * server
+	 * @param proto the proto
+	 * @param type the type
+	 * @param appid the appid
+	 * @param ifName the interface name
+	 * @param expireDate the expire date
+	 * @param srcPort the source port, if -1 any port is used
+	 * @param dstPort the destination port, if -1 any port is used
+	 * @param srcAddr the source address, if null any address is used 
+	 * @param dstAddr the destination address
+	 * @param dstFwdPort the destination forwarding port, is ignored for outgoing
+	 * rules, must be defined for incoming rules
+	 * @param dstFwdAddr the destination forwarding address, is ignored for outgoing
+	 * rules, must be defined for incoming rules
 	 */
 	public GrcBoxRule(int id, Protocol proto, RuleType type, int appid,
 			String ifName, long expireDate, int srcPort, int dstPort,
@@ -65,9 +129,26 @@ public class GrcBoxRule {
 		this.mcastPlugin = null;
 	}
 
-	/*
-	 * Common constructor used for incomming or outgoing flows.
-	 * If incomming is false dstFwdPort and dstFwdAddr must be -1 and will be ignored.
+	/**
+	 * Instantiates a new grc box rule.
+	 *
+	 * @param id the id, this value is ignored when registering a rules on the
+	 * server
+	 * @param proto the proto
+	 * @param type the type
+	 * @param appid the appid
+	 * @param ifName the interface name
+	 * @param expireDate the expire date
+	 * @param srcPort the source port, if -1 any port is used
+	 * @param dstPort the destination port, if -1 any port is used
+	 * @param srcAddr the source address, if null any address is used 
+	 * @param dstAddr the destination address
+	 * @param dstFwdPort the destination forwarding port, is ignored for outgoing
+	 * rules, must be defined for incoming rules
+	 * @param dstFwdAddr the destination forwarding address, is ignored for outgoing
+	 * rules, must be defined for incoming rules
+	 * @param mcastPlugin the multicast plugin. A list of valid multicast plugins
+	 * must be obtained from the server 
 	 */
 	public GrcBoxRule(int id, Protocol proto, RuleType type, int appid,
 			String ifName, long expireDate, int srcPort, int dstPort,
@@ -87,7 +168,10 @@ public class GrcBoxRule {
 		this.dstFwdAddr = dstFwdAddr;
 		this.mcastPlugin = mcastPlugin;
 	}
+
 	/**
+	 * Gets the id.
+	 *
 	 * @return the id
 	 */
 	public int getId() {
@@ -95,6 +179,8 @@ public class GrcBoxRule {
 	}
 
 	/**
+	 * Sets the id.
+	 *
 	 * @param id the id to set
 	 */
 	public void setId(int id) {
@@ -102,6 +188,8 @@ public class GrcBoxRule {
 	}
 
 	/**
+	 * Gets the proto.
+	 *
 	 * @return the proto
 	 */
 	public Protocol getProto() {
@@ -109,6 +197,8 @@ public class GrcBoxRule {
 	}
 
 	/**
+	 * Gets the type.
+	 *
 	 * @return the type
 	 */
 	public RuleType getType() {
@@ -117,6 +207,8 @@ public class GrcBoxRule {
 
 
 	/**
+	 * Gets the appid.
+	 *
 	 * @return the appid
 	 */
 	public int getAppid() {
@@ -124,6 +216,8 @@ public class GrcBoxRule {
 	}
 
 	/**
+	 * Sets the appid.
+	 *
 	 * @param appid the appid to set
 	 */
 	public void setAppid(int appid) {
@@ -131,6 +225,8 @@ public class GrcBoxRule {
 	}
 
 	/**
+	 * Gets the if name.
+	 *
 	 * @return the ifName
 	 */
 	public String getIfName() {
@@ -138,6 +234,8 @@ public class GrcBoxRule {
 	}
 
 	/**
+	 * Gets the expire date.
+	 *
 	 * @return the expireDate
 	 */
 	public long getExpireDate() {
@@ -145,6 +243,8 @@ public class GrcBoxRule {
 	}
 
 	/**
+	 * Gets the src port.
+	 *
 	 * @return the srcPort
 	 */
 	public int getSrcPort() {
@@ -152,6 +252,8 @@ public class GrcBoxRule {
 	}
 
 	/**
+	 * Gets the dst port.
+	 *
 	 * @return the dstPort
 	 */
 	public int getDstPort() {
@@ -159,6 +261,8 @@ public class GrcBoxRule {
 	}
 
 	/**
+	 * Gets the src addr.
+	 *
 	 * @return the srcAddr
 	 */
 	public String getSrcAddr() {
@@ -166,6 +270,8 @@ public class GrcBoxRule {
 	}
 
 	/**
+	 * Sets the src addr.
+	 *
 	 * @param srcAddr the srcAddr to set
 	 */
 	public void setSrcAddr(String srcAddr) {
@@ -173,6 +279,8 @@ public class GrcBoxRule {
 	}
 
 	/**
+	 * Gets the dst addr.
+	 *
 	 * @return the dstAddr
 	 */
 	public String getDstAddr() {
@@ -180,6 +288,8 @@ public class GrcBoxRule {
 	}
 
 	/**
+	 * Gets the mcast plugin.
+	 *
 	 * @return the mcastPlugin
 	 */
 	public String getMcastPlugin() {
@@ -187,6 +297,8 @@ public class GrcBoxRule {
 	}
 
 	/**
+	 * Gets the dst fwd port.
+	 *
 	 * @return the dstFwdPort
 	 */
 	public int getDstFwdPort() {
@@ -194,6 +306,8 @@ public class GrcBoxRule {
 	}
 
 	/**
+	 * Gets the dst fwd addr.
+	 *
 	 * @return the dstFwdAddr
 	 */
 	public String getDstFwdAddr() {
@@ -201,6 +315,8 @@ public class GrcBoxRule {
 	}
 
 	/**
+	 * Sets the dst fwd addr.
+	 *
 	 * @param dstFwdAddr the dstFwdAddr to set
 	 */
 	public void setDstFwdAddr(String dstFwdAddr) {
@@ -227,6 +343,11 @@ public class GrcBoxRule {
 		return result;
 	}
 
+	/* 
+	 * The ID is not included
+	 * Only attributes are used
+	 * Target are ignored
+	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -275,13 +396,16 @@ public class GrcBoxRule {
 			return false;
 		return true;
 	};
-	
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
 	@Override
 	public String toString(){
 		String value = null;
 		if(type.equals(RuleType.INCOMING)){
 			value = "Id: "+ getId() + " Type:" +getType() + " Protocol:" + getProto()  +
-				" Port: " + getDstPort();
+					" Port: " + getDstPort();
 		}
 		else if(type.equals(RuleType.OUTGOING)){
 			value = " Id: "+ getId() + " Type:" +getType() + " Protocol:" + getProto() +
@@ -293,9 +417,11 @@ public class GrcBoxRule {
 		}
 		return value;
 	}
-	
-	/*
-	 * return the number of defined fields
+
+
+	/**
+	 * Iptables size.
+	 * @return the number of defined fields
 	 */
 	@JsonIgnore
 	public int ipTablesSize(){
@@ -314,9 +440,12 @@ public class GrcBoxRule {
 		}
 		return ipTablesLength;
 	}
-	
-	/*
-	 * return true if this rule includes the given rule
+
+	/**
+	 * Includes.
+	 *
+	 * @param other the other
+	 * @return true, if if this rule includes the given rule
 	 */
 	@JsonIgnore
 	public boolean includes(GrcBoxRule other){
@@ -348,9 +477,12 @@ public class GrcBoxRule {
 		}
 		return true;
 	}
-	
-	/*
-	 * return true if this rule includes the given rule
+
+	/**
+	 * Conflicts.
+	 *
+	 * @param other the other
+	 * @return true, if this rule conflicts with the given rule
 	 */
 	@JsonIgnore
 	public boolean conflicts(GrcBoxRule other){
@@ -380,7 +512,7 @@ public class GrcBoxRule {
 				}
 			}
 		}
-		
+
 		/*
 		 * If the rules are the same, check their targets
 		 */
@@ -401,7 +533,7 @@ public class GrcBoxRule {
 			}
 		}
 		else if(type.equals(GrcBoxRule.RuleType.MULTICAST) ){
-			
+
 		}
 		return true;
 	}

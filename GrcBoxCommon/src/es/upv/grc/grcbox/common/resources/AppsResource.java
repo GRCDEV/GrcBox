@@ -37,41 +37,88 @@ import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 
 import es.upv.grc.grcbox.common.GrcBoxAppInfoList;
-
 /**
- * Annotated box resource interface
+ * Annotated box resource interface.
  */
 public interface AppsResource {
  
+	/**
+	 * The Class IdSecret.
+	 */
 	public class IdSecret{
+		
+		/** The app id. */
 		int appId;
+		
+		/** The secret. */
 		int secret;
+		
+		/** The update period. */
 		long updatePeriod;
 		
+		/**
+		 * Instantiates a new id secret.
+		 */
 		public IdSecret(){
 			
 		}
 		
+		/**
+		 * Instantiates a new id secret.
+		 *
+		 * @param id the id
+		 * @param secret2 the secret2
+		 * @param updatePeriod the update period
+		 */
 		public IdSecret(int id, int secret2, long updatePeriod) {
 			this.appId = id;
 			this.secret = secret2;
 			this.updatePeriod = updatePeriod;
 		}
+		
+		/**
+		 * Gets the app id.
+		 *
+		 * @return the app id
+		 */
 		public int getAppId() {
 			return appId;
 		}
+		
+		/**
+		 * Gets the secret.
+		 *
+		 * @return the secret
+		 */
 		public int getSecret() {
 			return secret;
 		}
 
+		/**
+		 * Gets the update period.
+		 *
+		 * @return the update period
+		 */
 		public long getUpdatePeriod() {
 			return updatePeriod;
 		}
 	}
 	
+    /**
+     * Gets the list.
+     *
+     * @return the list
+     */
     @Get("json")
     public GrcBoxAppInfoList getList();
     
+    /**
+     * New app.
+     *
+     * @param name the name
+     * @return the id secret containing appId and the secret that must be used
+     * for later modifications
+     */
     @Post
     public IdSecret newApp(String name);
 }
