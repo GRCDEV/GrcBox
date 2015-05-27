@@ -3,6 +3,10 @@ package es.upv.grc.grcbox.common;
 
 import com.fasterxml.jackson.annotation.*;
 
+/*
+ * This class represents a network interface in the GRCBox server.
+ * Currently cost variable is not used.
+ */
 @JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, include=JsonTypeInfo.As.PROPERTY, property="@class")
 public class GrcBoxInterface {
     
