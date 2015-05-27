@@ -23,7 +23,7 @@ public class SsidServerResource extends ServerResource implements SsidResource {
 		String iface = getAttribute("ifaceName");
 		String ssid = getAttribute("ssid");
 		try {
-			RulesDB.connect(authInfo.getPassword(), authInfo.isAutoconnect(), iface, ssid);
+			RulesDB.connectAp(authInfo.getPassword(), authInfo.isAutoconnect(), iface, ssid);
 		} catch (DBusException e) {
 			throw new ResourceException(503);
 		}
@@ -31,7 +31,7 @@ public class SsidServerResource extends ServerResource implements SsidResource {
 
 	@Override
 	public void remove() {
-		// TODO Auto-generated method stub
-		
+		String ssid = getAttribute("ssid");
+		RulesDB.removeAp(ssid);
 	}
 }

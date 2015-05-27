@@ -612,10 +612,13 @@ public class RulesDB {
 		return null;
 	}
 
-	public static void connect(String password, boolean autoConnect, String iface,
+	public static void connectAp(String password, boolean autoConnect, String iface,
 			String ssid) throws DBusException {
 		nm.connectToAp(ssid, iface, autoConnect, password);
 	}
 	
+	public static void removeAp(String ssid){
+		
+	}
 	
 }

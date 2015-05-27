@@ -686,4 +686,8 @@ public class NetworkInterfaceManager {
 		DeviceInterface ifaceDbusDevice = (DeviceInterface) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, devices.get(iface).getDbusPath(),  DeviceInterface.class);
 		netMngIface.AddAndActivateConnection(newConnection, ifaceDbusDevice, grcBoxConnection.getDbusInterface());
 	}
+	
+	public void removeAp(String ssid){
+		confConnections.remove(ssid);
+	}
 }
