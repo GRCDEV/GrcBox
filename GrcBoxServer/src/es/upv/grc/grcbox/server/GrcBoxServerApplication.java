@@ -1,36 +1,3 @@
-/**
- * Copyright 2005-2014 Restlet
- * 
- * The contents of this file are subject to the terms of one of the following
- * open source licenses: Apache 2.0 or LGPL 3.0 or LGPL 2.1 or CDDL 1.0 or EPL
- * 1.0 (the "Licenses"). You can select the license that you prefer but you may
- * not use this file except in compliance with one of these Licenses.
- * 
- * You can obtain a copy of the Apache 2.0 license at
- * http://www.opensource.org/licenses/apache-2.0
- * 
- * You can obtain a copy of the LGPL 3.0 license at
- * http://www.opensource.org/licenses/lgpl-3.0
- * 
- * You can obtain a copy of the LGPL 2.1 license at
- * http://www.opensource.org/licenses/lgpl-2.1
- * 
- * You can obtain a copy of the CDDL 1.0 license at
- * http://www.opensource.org/licenses/cddl1
- * 
- * You can obtain a copy of the EPL 1.0 license at
- * http://www.opensource.org/licenses/eclipse-1.0
- * 
- * See the Licenses for the specific language governing permissions and
- * limitations under the Licenses.
- * 
- * Alternatively, you can obtain a royalty free commercial license with less
- * limitations, transferable or non-transferable, directly at
- * http://www.restlet.com/products/restlet-framework
- * 
- * Restlet is a registered trademark of Restlet
- */
-
 package es.upv.grc.grcbox.server;
 
 
@@ -74,17 +41,28 @@ import es.upv.grc.grcbox.server.resources.RuleServerResource;
 import es.upv.grc.grcbox.server.resources.RulesServerResource;
 import es.upv.grc.grcbox.server.rulesdb.RulesDB;
 
-
 /**
  * Routing to annotated server resources.
  */
 public class GrcBoxServerApplication extends Application {
+	
+	/** The Constant LOG. */
 	private static final Logger LOG = Logger.getLogger(NetworkInterfaceManager.class.getName()); 
 
+	/** The Constant configFile. */
 	private static final String configFile = "config.json";
+	
+	/** The config. */
 	private static GrcBoxConfig config;
+	
+	/** The verifier, used to store registered applications and their secrets. 
+	 * TODO: Move it to rulesDb?
+	 * */
 	private static MapVerifier verifier = new MapVerifier();
 
+	/**
+	 * Instantiates a new grc box server application.
+	 */
 	public GrcBoxServerApplication(){
 		setName("GRCBox Server");
 		setDescription("Connectivity for smartphones");
@@ -93,20 +71,29 @@ public class GrcBoxServerApplication extends Application {
 	}
 
 	
+	/**
+	 * Gets the config.
+	 *
+	 * @return the config
+	 */
 	public static GrcBoxConfig getConfig() {
 		return config;
 	}
 
+	/**
+	 * Sets the config.
+	 *
+	 * @param config the new config
+	 */
 	protected static void setConfig(GrcBoxConfig config) {
 		GrcBoxServerApplication.config = config;
 	}
 
 	/**
 	 * Launches the application with an HTTP server.
-	 * 
-	 * @param args
-	 *            The arguments.
-	 * @throws Exception
+	 *
+	 * @param args            The arguments.
+	 * @throws Exception the exception
 	 */
 	public static void main(String[] args) throws Exception {
 		//Load Config File
@@ -119,24 +106,41 @@ public class GrcBoxServerApplication extends Application {
 			System.err.print("InnerInterfaces and Outerinterfaces has elements in common. Aborting execution.");
 			System.exit(-1);
 		}
-		
+		/*
+		 * Get teh list of inner interfaces from the config file
+		 */
 		LinkedList<String> innerInterfaces = config.getInnerInterfaces();
 		RulesDB.setInnerInterfaces(innerInterfaces);
 		RulesDB.initialize();
+		/**
+		 * The server listen on all inner interfaces
+		 */
 		for (String string : innerInterfaces) {
 			startServer(string);
 		}
 	}
 
+	/**
+	 * Start a server.
+	 *
+	 * @param string the string
+	 * @throws Exception the exception
+	 */
 	private static void startServer(String string) throws Exception {
-		Component androPiComponent = new Component();
+		Component grcBoxComponent = new Component();
 		NetworkInterface iface = NetworkInterface.getByName(string);
+		
 		if(iface == null){
 			System.err.println("ERROR: No inner  interface called "+ string + " exists");
 			System.exit(-1);
 		}
+		
+		/**
+		 * Only the first address of every interface is used, this may be a problem
+		 */
 		List<InterfaceAddress> addresses =  iface.getInterfaceAddresses();
 		InterfaceAddress addr = null;
+		
 		for (InterfaceAddress interfaceAddress : addresses) {			
 			if(interfaceAddress.getAddress() instanceof Inet4Address){
 				addr = interfaceAddress;
@@ -144,10 +148,13 @@ public class GrcBoxServerApplication extends Application {
 			}
 		}
 		
+		/*
+		 * Start the server only if a valid ipv4 address exist
+		 */
 		if(addr != null){
-			Server server = androPiComponent.getServers().add(Protocol.HTTP, addr.getAddress().getHostAddress(), 8080);
-			androPiComponent.getDefaultHost().attach(new GrcBoxServerApplication());
-			androPiComponent.start();
+			Server server = grcBoxComponent.getServers().add(Protocol.HTTP, addr.getAddress().getHostAddress(), 8080);
+			grcBoxComponent.getDefaultHost().attach(new GrcBoxServerApplication());
+			grcBoxComponent.start();
 		}
 		else {
 			LOG.severe("The server could not be initialized. No Ipv4 address on innerinterface present");
@@ -155,13 +162,22 @@ public class GrcBoxServerApplication extends Application {
 		}
 	}
 
+	/**
+	 * This tracer is used to trace some calls on resources
+	 */
 	public class Tracer extends Filter {
+		
+		/**
+		 * Instantiates a new tracer.
+		 *
+		 * @param context the context
+		 */
 		public Tracer (Context context) {
 			super(context);
 		}
 
-		/* (non-Javadoc)
-		 * @see org.restlet.routing.Filter#beforeHandle(org.restlet.Request, org.restlet.Response)
+		/**
+		 * Prints information abour the request
 		 */
 		@Override
 		protected int beforeHandle(Request request, Response response) {
@@ -179,6 +195,9 @@ public class GrcBoxServerApplication extends Application {
 	}
 
 	
+	/**
+	 * Defines a server resource for every url
+	 */
 	@Override
 	public Restlet createInboundRoot(){
 		Router router = new Router(getContext());
@@ -195,6 +214,9 @@ public class GrcBoxServerApplication extends Application {
 
     /**
      * Wraps a resource with a Tracer, then wraps that with a ChallengeAuthenticator.
+     *
+     * @param targetClass the target class
+     * @return the restlet
      */
     private Restlet authenticated(Class<? extends ServerResource> targetClass) {
         Tracer tracer = new Tracer(getContext());
@@ -216,11 +238,21 @@ public class GrcBoxServerApplication extends Application {
         return authenticator;
     }
 
+	/**
+	 * Gets the verifier.
+	 *
+	 * @return the verifier
+	 */
 	public static MapVerifier getVerifier() {
 		return verifier;
 	}
 
 
+	/**
+	 * Gets the configfile.
+	 *
+	 * @return the configfile
+	 */
 	public static String getConfigfile() {
 		return configFile;
 	}
