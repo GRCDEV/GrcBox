@@ -12,19 +12,34 @@ import es.upv.grc.grcbox.common.GrcBoxRule.Protocol;
 import es.upv.grc.grcbox.common.GrcBoxRule.RuleType;
 import es.upv.grc.grcbox.server.multicastProxy.MulticastProxy;
 import es.upv.grc.grcbox.server.rulesdb.RulesDB;
-
-/*
+/**
  * This plugin will process the payload of the 
  * UDPAdvertise by natting the source IP.
  * It will also automatically creates INCOMMING and
  * OUTGOING rules according to UDPAdvertise contents.
  */
 public class ScampiProxy extends MulticastProxy {
+	
+	/** The public addr. */
 	private String publicAddr;
 	
+	/** The rules ids. */
 	private ArrayList<Integer> rulesIds = new ArrayList<>();
+	
+	/** The rules. */
 	private HashSet<GrcBoxRule> rules = new HashSet<>();
 	
+	/**
+	 * Instantiates a new scampi proxy.
+	 *
+	 * @param appId the app id
+	 * @param innerIface the inner iface
+	 * @param outerIface the outer iface
+	 * @param clientAddr the client addr
+	 * @param subscribeAddr the subscribe addr
+	 * @param listenPort the listen port
+	 * @param publicAddr the public addr
+	 */
 	public ScampiProxy(int appId, String innerIface, String outerIface,
 			String clientAddr, String subscribeAddr, int listenPort, String publicAddr) {
 		super(appId, innerIface, outerIface, clientAddr, subscribeAddr, listenPort);
@@ -32,6 +47,9 @@ public class ScampiProxy extends MulticastProxy {
 		LOG.info("Scampi Plugin initialized publicIP:" + publicAddr);
 	}
 
+	/* (non-Javadoc)
+	 * @see es.upv.grc.grcbox.server.multicastProxy.MulticastProxy#processPayloadIncomming(byte[])
+	 */
 	@Override
 	protected byte[] processPayloadIncomming(byte[] payload) {
 		ObjectMapper mapper = new ObjectMapper();
@@ -57,6 +75,9 @@ public class ScampiProxy extends MulticastProxy {
 		return super.processPayloadIncomming(payload);
 	}
 
+	/* (non-Javadoc)
+	 * @see es.upv.grc.grcbox.server.multicastProxy.MulticastProxy#processPayloadOutgoing(byte[])
+	 */
 	@Override
 	protected byte[] processPayloadOutgoing(byte[] payload) {
 		ObjectMapper mapper = new ObjectMapper();
@@ -84,6 +105,9 @@ public class ScampiProxy extends MulticastProxy {
 		return super.processPayloadOutgoing(payload);
 	}
 
+	/* (non-Javadoc)
+	 * @see es.upv.grc.grcbox.server.multicastProxy.MulticastProxy#stop()
+	 */
 	@Override
 	public void stop() {
 		super.stop();
@@ -92,6 +116,11 @@ public class ScampiProxy extends MulticastProxy {
 		}
 	}
 
+	/**
+	 * Adds the rule.
+	 *
+	 * @param rule the rule
+	 */
 	private void addRule(GrcBoxRule rule) {
 		boolean ret = rules.add(rule);
 		if(ret){
