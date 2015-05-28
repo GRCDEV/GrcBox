@@ -32,40 +32,51 @@ import es.upv.grc.grcbox.common.GrcBoxInterface;
 import es.upv.grc.grcbox.common.GrcBoxInterface.Type;
 
 
+/**
+ * This class manage the interaction between the GRCBox and the NetworkManager
+ * The communication is done using the DBus interface
+ */
 public class NetworkInterfaceManager {
+	
+	/** The Constant LOG. */
 	private static final Logger LOG = Logger.getLogger(NetworkInterfaceManager.class.getName()); 
-	/*
-	 * A map name, GrcBoxInterfaces to cache info from NetworkManager
+	/**
+	 * A map {name, GrcBoxInterfaces} to cache interfaces info from NetworkManager
 	 */
 	private static volatile Map<String, GrcBoxInterface> cachedInterfaces = new HashMap<>();
+	
+	/**
+	 * A map {name, Device} to cache interfaces info from NetworkManager
+	 */
 	private static volatile Map<String, Device> devices = new HashMap<>();
 
-	/*
-	 * List of signal listeners
+	/**
+	 * List of interface signal listeners
 	 */
 	private static Vector<NetworkManagerListener> ifaceSubscribers = new Vector<>();
 
+	/** The connection to the DBus system. */
 	private static DBusConnection conn; 
-	private static Properties nmProp;
+	
+	/** The DBus object used to connect with the NM. */
 	private static NetworkManagerIface nm;
 
+	/** The initialized. */
 	private static volatile Boolean initialized = false;
 
-
-
-	/*
-	 * Constants
-	 */
+	/** The Constant _VERSION_SUPPORTED. */
 	private static final String _VERSION_SUPPORTED= "1.0.2";
 	
 	
 
-	/*
+	
+
+	/**
+	 * The Class PropertiesChangedHandler.
 	 * Handlers for NM signals
 	 */
-
 	private class PropertiesChangedHandler implements DBusSigHandler<org.freedesktop.NetworkManagerIface.PropertiesChanged>{
-		/*
+		/**
 		 * Network Manager Properties Handler
 		 * Keeps the list of devices updated
 		 */
@@ -141,8 +152,14 @@ public class NetworkInterfaceManager {
 		}
 	}
 
+	/**
+	 * The Class StateChangedHandler.
+	 */
 	private class StateChangedHandler implements DBusSigHandler<org.freedesktop.NetworkManager.DeviceInterface.StateChanged>{
 
+		/**
+		 * Handler for Device StateChaged signal
+		 */
 		@Override
 		public void handle(StateChanged signal) {
 			LOG.entering(this.getClass().getName(), "stateChanged");
@@ -160,6 +177,11 @@ public class NetworkInterfaceManager {
 		}
 	}
 	
+	/**
+	 * Update dev status.
+	 *
+	 * @param path the path
+	 */
 	private void updateDevStatus(String path) {
 		try {
 			Device dev = readDeviceFromDbus(path);
@@ -175,13 +197,23 @@ public class NetworkInterfaceManager {
 		}
 	}
 	
-	/*
-	 * Return a list with all the managed interfaces
+	
+	/**
+	 * Gets the managed interfaces.
+	 *
+	 * @return the interfaces list
 	 */
 	public Collection<GrcBoxInterface> getInterfaces(){
 		return cachedInterfaces.values();
 	}
 
+	/**
+	 * Initialize.
+	 *
+	 * @return true, if successful
+	 * @throws DBusException the d bus exception
+	 * @throws ExecutionException the execution exception
+	 */
 	public synchronized boolean initialize() throws DBusException, ExecutionException{
 		LOG.entering(this.getClass().getName(), "initialize");
 		if(isNMAvailable()){
@@ -193,17 +225,21 @@ public class NetworkInterfaceManager {
 		return false;
 	}
 
-	/*
-	 * Subscribe to NM signals to monitor devices status.
+	/**
+	 * Subscribe to NM to monitor devices status signals.
+	 *
+	 * @throws DBusException a DBusException when there is a problem with the 
+	 * Dbus connection
 	 */
 	private void subscribeToNMSignals() throws DBusException {
 		conn.addSigHandler(org.freedesktop.NetworkManagerIface.PropertiesChanged.class, new PropertiesChangedHandler());
 		conn.addSigHandler(org.freedesktop.NetworkManager.DeviceInterface.StateChanged.class, new StateChangedHandler());
 	}
 
-	/*
+	/**
 	 * Read the information from the NetworkManager and stores it in
 	 * devices, also populate the cachedInterfaces map;
+	 * @throws DBusException the d bus exception
 	 */
 	private synchronized void readDevicesInfo() throws DBusException{
 		LOG.entering(this.getClass().getName(),"readDevicesInfo");
@@ -224,8 +260,14 @@ public class NetworkInterfaceManager {
 		LOG.exiting(this.getClass().getName(), "readdevicesInfo");;
 	}
 	
-	/*
+	/**
 	 * Convert a Device object into a GrcBoxInterface object
+	 *
+	 * @param dev the Device object
+	 * @return the grc box interface
+	 * @throws DBusException Needs to connect to DBus to get all the information,
+	 * an exception is thrown when there is a problem in the connection.
+	 * @throws ExecutionException the execution exception
 	 */
 	private GrcBoxInterface device2grcBoxIface(Device dev) throws DBusException, ExecutionException{
 		LOG.entering(this.getClass().getName(), "device2GrcBoxIface");
@@ -327,20 +369,28 @@ public class NetworkInterfaceManager {
 		}
 
 		/*
-		 * TODO Estimate the real cost in some way.
+		 * TODO Estimate the real cost
 		 */
 		iface.setCost(0);
 
 
 
 		/*
-		 * TODO Currently there is only support for Wifi or ethernet. Both  interfaces support multicast.
+		 * TODO Currently there is only support for Wifi or ethernet. 
+		 * Both  interfaces support multicast.
 		 */
 		iface.setMulticast(true);
 		LOG.exiting(this.getClass().getName(), "device2GrcBoxIface", iface);
 		return iface;
 	}
 
+	/**
+	 * Read device from DBus and create a new Device
+	 *
+	 * @param path the path
+	 * @return the device
+	 * @throws DBusException the d bus exception
+	 */
 	private Device readDeviceFromDbus(String path) throws DBusException{
 		Device device = new Device();
 		Properties props = (Properties) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, path,  Properties.class);
@@ -374,11 +424,17 @@ public class NetworkInterfaceManager {
 		return device;
 	}
 
+	/**
+	 * Checks if is NM available.
+	 *
+	 * @return true, if is NM available
+	 * @throws ExecutionException the execution exception
+	 */
 	private boolean isNMAvailable() throws ExecutionException{
 		try {
 			conn = DBusConnection.getConnection(DBusConnection.SYSTEM);
 
-			nmProp = (Properties)conn.getRemoteObject(NetworkManagerIface._NM_IFACE, 
+			Properties nmProp = (Properties)conn.getRemoteObject(NetworkManagerIface._NM_IFACE, 
 					NetworkManagerIface._NM_PATH, 
 					Properties.class);
 			nm = (NetworkManagerIface)conn.getRemoteObject(NetworkManagerIface._NM_IFACE, 
@@ -396,39 +452,73 @@ public class NetworkInterfaceManager {
 		return true;
 	}
 
+	/**
+	 * Subscribe interfaces.
+	 *
+	 * @param object the object
+	 * @return the int
+	 */
 	public synchronized int subscribeInterfaces(NetworkManagerListener object){
 		ifaceSubscribers.add(object);
 		return ifaceSubscribers.size();
 	}
 	
+	/**
+	 * Unsubscribe interfaces.
+	 *
+	 * @param index the index
+	 */
 	public synchronized void unsubscribeInterfaces(int index){
 		ifaceSubscribers.remove(index);
 	}
 	
+	/**
+	 * Inform interface added.
+	 *
+	 * @param iface the iface
+	 */
 	public synchronized void informInterfaceAdded(GrcBoxInterface iface){
 		for (NetworkManagerListener networkManagerListener : ifaceSubscribers) {
 			networkManagerListener.interfaceAdded(iface);
 		}
 	}
 
+	/**
+	 * Inform interface removed.
+	 *
+	 * @param iface the iface
+	 */
 	public synchronized void informInterfaceRemoved(GrcBoxInterface iface){
 		for (NetworkManagerListener networkManagerListener : ifaceSubscribers) {
 			networkManagerListener.interfaceRemoved(iface);
 		}
 	}
 
+	/**
+	 * Inform interface changed.
+	 *
+	 * @param iface the iface
+	 */
 	public synchronized void informInterfaceChanged(GrcBoxInterface iface){
 		for (NetworkManagerListener networkManagerListener : ifaceSubscribers) {
 			networkManagerListener.interfaceChanged(iface);
 		}
 	}
 
+	/**
+	 * Checks if is initialized.
+	 *
+	 * @return true, if is initialized
+	 */
 	public synchronized boolean isInitialized() {
 		return initialized.booleanValue();
 	}
 
-	/*
-	 * Returns the gateway associate to interface iface
+	/**
+	 * Returns the gateway associate to interface iface from DBus
+	 *
+	 * @param iface the iface
+	 * @return the gateway
 	 */
 	public String getGateway(String iface) {
 		LOG.entering(this.getClass().getName(), "getGw");
@@ -453,8 +543,11 @@ public class NetworkInterfaceManager {
 		return gwStr;
 	}
 	
-	/*
+	/**
 	 * Convert from long to ipv4 String
+	 *
+	 * @param addr the addr
+	 * @return the string
 	 */
 	private String int2Ip(long addr) {
 		LOG.info("Long " + addr + " to String" );
@@ -477,6 +570,12 @@ public class NetworkInterfaceManager {
 		return ip;
 	}
 
+	/**
+	 * Gets the ip address.
+	 *
+	 * @param iface the iface
+	 * @return the ip address
+	 */
 	public String getIpAddress(String iface) {
 		Device dev = devices.get(iface);
 		return int2Ip(dev.getIfaceIpAddress().longValue());
