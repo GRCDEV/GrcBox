@@ -12,12 +12,12 @@ import org.restlet.resource.ServerResource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import es.upv.grc.grcbox.common.GrcBoxApp;
 import es.upv.grc.grcbox.common.GrcBoxRule;
 import es.upv.grc.grcbox.common.GrcBoxRule.RuleType;
 import es.upv.grc.grcbox.common.GrcBoxRuleList;
 import es.upv.grc.grcbox.common.resources.RulesResource;
-import es.upv.grc.grcbox.server.RulesDB;
+import es.upv.grc.grcbox.server.rulesdb.GrcBoxApp;
+import es.upv.grc.grcbox.server.rulesdb.RulesDB;
 
 /**
  * @author sertinell

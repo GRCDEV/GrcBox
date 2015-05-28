@@ -1,4 +1,4 @@
-package es.upv.grc.grcbox.server;
+package es.upv.grc.grcbox.server.rulesdb;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

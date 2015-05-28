@@ -72,6 +72,7 @@ import es.upv.grc.grcbox.server.resources.IfacesServerResource;
 import es.upv.grc.grcbox.server.resources.RootServerResource;
 import es.upv.grc.grcbox.server.resources.RuleServerResource;
 import es.upv.grc.grcbox.server.resources.RulesServerResource;
+import es.upv.grc.grcbox.server.rulesdb.RulesDB;
 
 
 /**

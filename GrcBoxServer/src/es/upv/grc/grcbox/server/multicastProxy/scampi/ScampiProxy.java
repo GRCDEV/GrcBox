@@ -10,8 +10,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import es.upv.grc.grcbox.common.GrcBoxRule;
 import es.upv.grc.grcbox.common.GrcBoxRule.Protocol;
 import es.upv.grc.grcbox.common.GrcBoxRule.RuleType;
-import es.upv.grc.grcbox.server.RulesDB;
 import es.upv.grc.grcbox.server.multicastProxy.MulticastProxy;
+import es.upv.grc.grcbox.server.rulesdb.RulesDB;
 
 /*
  * This plugin will process the payload of the 

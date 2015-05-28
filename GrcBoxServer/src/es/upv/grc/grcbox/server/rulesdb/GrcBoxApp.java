@@ -1,7 +1,9 @@
-package es.upv.grc.grcbox.common;
+package es.upv.grc.grcbox.server.rulesdb;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+import es.upv.grc.grcbox.common.GrcBoxAppInfo;
 
 /**
  * This class summarises the information about a GrcBoxApp.

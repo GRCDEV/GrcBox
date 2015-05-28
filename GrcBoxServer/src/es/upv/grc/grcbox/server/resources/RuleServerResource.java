@@ -8,7 +8,7 @@ import org.restlet.resource.ServerResource;
 
 import es.upv.grc.grcbox.common.GrcBoxRule;
 import es.upv.grc.grcbox.common.resources.RuleResource;
-import es.upv.grc.grcbox.server.RulesDB;
+import es.upv.grc.grcbox.server.rulesdb.RulesDB;
 
 /**
  * @author sertinell

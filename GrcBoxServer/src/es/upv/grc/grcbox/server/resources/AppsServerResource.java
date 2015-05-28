@@ -9,7 +9,7 @@ import org.restlet.security.MapVerifier;
 import es.upv.grc.grcbox.common.GrcBoxAppInfoList;
 import es.upv.grc.grcbox.common.resources.AppsResource;
 import es.upv.grc.grcbox.server.GrcBoxServerApplication;
-import es.upv.grc.grcbox.server.RulesDB;
+import es.upv.grc.grcbox.server.rulesdb.RulesDB;
 
 /**
  * @author sertinell

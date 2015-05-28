@@ -1,4 +1,4 @@
-package es.upv.grc.grcbox.server;
+package es.upv.grc.grcbox.server.rulesdb;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -15,13 +15,13 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.restlet.resource.ResourceException;
 import org.restlet.security.MapVerifier;
 
-import es.upv.grc.grcbox.common.GrcBoxApp;
 import es.upv.grc.grcbox.common.GrcBoxAppInfo;
 import es.upv.grc.grcbox.common.GrcBoxInterface;
 import es.upv.grc.grcbox.common.GrcBoxRule;
 import es.upv.grc.grcbox.common.GrcBoxRuleList;
 import es.upv.grc.grcbox.common.GrcBoxRule.Protocol;
 import es.upv.grc.grcbox.common.GrcBoxRule.RuleType;
+import es.upv.grc.grcbox.server.GrcBoxServerApplication;
 import es.upv.grc.grcbox.server.multicastProxy.MulticastProxy;
 import es.upv.grc.grcbox.server.multicastProxy.MulticastSupportedPlugins;
 import es.upv.grc.grcbox.server.multicastProxy.scampi.ScampiProxy;
