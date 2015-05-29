@@ -1,6 +1,0 @@
-{
-  "@class" : "es.upv.grc.grcbox.server.GrcBoxConfig",
-  "innerInterfaces" : [ "wlan0" ],
-  "outerInterfaces" : [ "wlan1", "wlan2" ],
-  "keepAliveTime" : 10000.0
-}
