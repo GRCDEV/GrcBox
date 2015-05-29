@@ -4,12 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import es.upv.grc.grcbox.common.GrcBoxAppInfo;
-
 /**
  * This class summarises the information about a GrcBoxApp.
  * It should never be instantiated outside the server
- * TODO move this class to server packages
- */
+  */
 @JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, include=JsonTypeInfo.As.PROPERTY, property="@class")
 public class GrcBoxApp extends GrcBoxAppInfo {
 	

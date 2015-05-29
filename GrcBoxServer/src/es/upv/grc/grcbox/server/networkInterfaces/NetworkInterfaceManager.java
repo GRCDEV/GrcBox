@@ -32,7 +32,6 @@ import es.upv.grc.grcbox.common.GrcBoxInterface;
 import es.upv.grc.grcbox.common.GrcBoxInterface.Type;
 
 
-// TODO: Auto-generated Javadoc
 /**
  * This class manage the interaction between the GRCBox and the NetworkManager
  * The communication is done using the DBus interface.

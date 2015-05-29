@@ -9,11 +9,25 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import es.upv.grc.grcbox.common.*;
-
+/**
+ * The Class RulesSortedList.
+ */
 public class RulesSortedList {
+	
+	/** The sorted set. */
 	private SortedSet<GrcBoxRule> sortedSet = new TreeSet<GrcBoxRule>(new GrcBoxRuleComp());
 
+	/**
+	 * The Comparator
+	 * Sorts rules by priority
+	 * More restrictive rules have priority over simpler rules
+	 * If two rules have the same size, the older one has priority
+	 */
 	private class GrcBoxRuleComp implements Comparator<GrcBoxRule>{
+			
+			/* (non-Javadoc)
+			 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
+			 */
 			@Override
 			public int compare(GrcBoxRule r1, GrcBoxRule r2){
 				int l1 = r1.ipTablesSize();
@@ -31,8 +45,10 @@ public class RulesSortedList {
 	}
 	
 	/**
-	 * @param e
-	 * @return
+	 * Adds the element
+	 *
+	 * @param e the element
+	 * @return true, if successful
 	 * @see java.util.Set#add(java.lang.Object)
 	 */
 	public boolean add(GrcBoxRule e) {
@@ -40,8 +56,10 @@ public class RulesSortedList {
 	}
 	
 	/**
-	 * @param c
-	 * @return
+	 * Adds the all.
+	 *
+	 * @param c the c
+	 * @return true, if successful
 	 * @see java.util.Set#addAll(java.util.Collection)
 	 */
 	public boolean addAll(Collection<? extends GrcBoxRule> c) {
@@ -49,7 +67,8 @@ public class RulesSortedList {
 	}
 
 	/**
-	 * 
+	 * Clear the list
+	 *
 	 * @see java.util.Set#clear()
 	 */
 	public void clear() {
@@ -57,8 +76,10 @@ public class RulesSortedList {
 	}
 
 	/**
-	 * @param o
-	 * @return
+	 * Contains.
+	 *
+	 * @param o the o
+	 * @return true, if successful
 	 * @see java.util.Set#contains(java.lang.Object)
 	 */
 	public boolean contains(GrcBoxRule o) {
@@ -66,8 +87,10 @@ public class RulesSortedList {
 	}
 
 	/**
-	 * @param c
-	 * @return
+	 * Contains all.
+	 *
+	 * @param c the c
+	 * @return true, if successful
 	 * @see java.util.Set#containsAll(java.util.Collection)
 	 */
 	public boolean containsAll(Collection<?> c) {
@@ -75,7 +98,9 @@ public class RulesSortedList {
 	}
 
 	/**
-	 * @return
+	 * First.
+	 *
+	 * @return the grc box rule
 	 * @see java.util.SortedSet#first()
 	 */
 	public GrcBoxRule first() {
@@ -83,7 +108,9 @@ public class RulesSortedList {
 	}
 
 	/**
-	 * @return
+	 * Checks if is empty.
+	 *
+	 * @return true, if is empty
 	 * @see java.util.Set#isEmpty()
 	 */
 	public boolean isEmpty() {
@@ -91,7 +118,9 @@ public class RulesSortedList {
 	}
 
 	/**
-	 * @return
+	 * Last.
+	 *
+	 * @return the grc box rule
 	 * @see java.util.SortedSet#last()
 	 */
 	public GrcBoxRule last() {
@@ -99,8 +128,10 @@ public class RulesSortedList {
 	}
 
 	/**
-	 * @param o
-	 * @return
+	 * Removes the.
+	 *
+	 * @param o the o
+	 * @return true, if successful
 	 * @see java.util.Set#remove(java.lang.Object)
 	 */
 	public boolean remove(Object o) {
@@ -108,8 +139,10 @@ public class RulesSortedList {
 	}
 
 	/**
-	 * @param c
-	 * @return
+	 * Removes the all.
+	 *
+	 * @param c the c
+	 * @return true, if successful
 	 * @see java.util.Set#removeAll(java.util.Collection)
 	 */
 	public boolean removeAll(Collection<?> c) {
@@ -117,8 +150,10 @@ public class RulesSortedList {
 	}
 
 	/**
-	 * @param c
-	 * @return
+	 * Retain all.
+	 *
+	 * @param c the c
+	 * @return true, if successful
 	 * @see java.util.Set#retainAll(java.util.Collection)
 	 */
 	public boolean retainAll(Collection<?> c) {
@@ -126,7 +161,9 @@ public class RulesSortedList {
 	}
 
 	/**
-	 * @return
+	 * Size.
+	 *
+	 * @return the int
 	 * @see java.util.Set#size()
 	 */
 	public int size() {
@@ -134,9 +171,11 @@ public class RulesSortedList {
 	}
 
 	/**
-	 * @param fromElement
-	 * @param toElement
-	 * @return
+	 * Sub set.
+	 *
+	 * @param fromElement the from element
+	 * @param toElement the to element
+	 * @return the sorted set
 	 * @see java.util.SortedSet#subSet(java.lang.Object, java.lang.Object)
 	 */
 	public SortedSet<GrcBoxRule> subSet(GrcBoxRule fromElement,
@@ -145,18 +184,30 @@ public class RulesSortedList {
 	}
 
 	/**
-	 * @param fromElement
-	 * @return
+	 * Tail set.
+	 *
+	 * @param fromElement the from element
+	 * @return the sorted set
 	 * @see java.util.SortedSet#tailSet(java.lang.Object)
 	 */
 	public SortedSet<GrcBoxRule> tailSet(GrcBoxRule fromElement) {
 		return sortedSet.tailSet(fromElement);
 	}
 	
+	/**
+	 * Gets the sets the.
+	 *
+	 * @return the sets the
+	 */
 	public SortedSet<GrcBoxRule> getSet(){
 		return new TreeSet<GrcBoxRule>(sortedSet);
 	}
 	
+	/**
+	 * Gets the sorted list.
+	 *
+	 * @return the sorted list
+	 */
 	public List<GrcBoxRule> getSortedList(){
 		List<GrcBoxRule> list = new ArrayList<GrcBoxRule>(sortedSet);
 		return list;
