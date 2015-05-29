@@ -1,0 +1,15 @@
+es.upv.grc.grcbox.common
+es.upv.grc.grcbox.common.resources
+es.upv.grc.grcbox.server
+es.upv.grc.grcbox.server.multicastProxy
+es.upv.grc.grcbox.server.multicastProxy.scampi
+es.upv.grc.grcbox.server.networkInterfaces
+es.upv.grc.grcbox.server.resources
+es.upv.grc.grcbox.server.rulesdb
+org.freedesktop
+org.freedesktop.NetworkManager
+org.freedesktop.NetworkManager.Connection
+org.freedesktop.NetworkManager.Constants
+org.freedesktop.NetworkManager.Device
+org.freedesktop.NetworkManager.Settings
+org.freedesktop.dbus
