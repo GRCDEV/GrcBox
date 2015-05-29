@@ -7,11 +7,10 @@ import es.upv.grc.grcbox.common.GrcBoxInterface;
  * The class that is interested in processing a networkManager
  * event implements this interface, and the object created
  * with that class is registered with a component using the
- * component's <code>addNetworkManagerListener<code> method. When
+ * component's addNetworkManagerListener method. When
  * the networkManager event occurs, that object's appropriate
  * method is invoked.
  *
- * @see NetworkManagerEvent
  */
 public interface NetworkManagerListener {
 	
