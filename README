@@ -1,0 +1,23 @@
+GRCBox project.
+GRCBox: Extending Smartphone Connectivity in Vehicular Networks
+
+The low penetration of connectivity-enabled OBUs is delaying the
+ deployment of Vehicular Networks (VNs), and therefore the 
+development of Vehicular Delay Tolerant Network (VDTN) applications, 
+among others. We propose GRCBox, an architecture based on RaspberryPi 
+devices that allows integrating smartphones in VNs. GRCBox combines 
+several SW modules to provide ad-hoc and multi-interface connectivity 
+to smartphones. Using GRCBox each application can choose the interface 
+for its data flows, which increases flexibility and will allow developers 
+to easily implement applications based on ad-hoc connectivity, such as 
+VDTN applications.
+
+More documentation is coming.
+
+Javadoc:http://grcdev.github.io/GrcBox/doc/
+
+If you use it, please cite:
+Sergio M. Tornell, Subhadeep Patra, Carlos T. Calafate, Juan-Carlos Cano, 
+and Pietro Manzoni, “GRCBox: Extending Smartphone Connectivity in Vehicular 
+Networks,” International Journal of Distributed Sensor Networks, vol. 2015, 
+Article ID 478064, 13 pages, 2015. doi:10.1155/2015/478064
