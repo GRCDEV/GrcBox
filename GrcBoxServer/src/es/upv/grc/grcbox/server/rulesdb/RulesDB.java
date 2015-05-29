@@ -357,9 +357,6 @@ public class RulesDB {
 					includedRules.add(grcBoxRule);
 				}
 			}
-			/*
-			 * TODO migrate to updateRules
-			 */
 			if(rule.getType().equals(RuleType.MULTICAST)){
 				startMulticastProxy(rule);
 			}
@@ -611,6 +608,11 @@ public class RulesDB {
 		return list;
 	}
 	
+	public static GrcBoxInterface getIface(String ifaceName) {
+		GrcBoxInterface iface = nm.getInterface(ifaceName);
+		return iface;
+	}
+	
 	public synchronized static void setInnerInterfaces(LinkedList<String> innerInterfaces) {
 		RulesDB.innerInterfaces = innerInterfaces;
 	}
@@ -624,4 +626,6 @@ public class RulesDB {
 		}
 		return list;
 	}
+
+
 }

@@ -32,27 +32,23 @@ import es.upv.grc.grcbox.common.GrcBoxInterface;
 import es.upv.grc.grcbox.common.GrcBoxInterface.Type;
 
 
+// TODO: Auto-generated Javadoc
 /**
  * This class manage the interaction between the GRCBox and the NetworkManager
- * The communication is done using the DBus interface
+ * The communication is done using the DBus interface.
  */
 public class NetworkInterfaceManager {
 	
 	/** The Constant LOG. */
 	private static final Logger LOG = Logger.getLogger(NetworkInterfaceManager.class.getName()); 
-	/**
-	 * A map {name, GrcBoxInterfaces} to cache interfaces info from NetworkManager
-	 */
+	
+	/** A map {name, GrcBoxInterfaces} to cache interfaces info from NetworkManager. */
 	private static volatile Map<String, GrcBoxInterface> cachedInterfaces = new HashMap<>();
 	
-	/**
-	 * A map {name, Device} to cache interfaces info from NetworkManager
-	 */
+	/** A map {name, Device} to cache interfaces info from NetworkManager. */
 	private static volatile Map<String, Device> devices = new HashMap<>();
 
-	/**
-	 * List of interface signal listeners
-	 */
+	/** List of interface signal listeners. */
 	private static Vector<NetworkManagerListener> ifaceSubscribers = new Vector<>();
 
 	/** The connection to the DBus system. */
@@ -76,9 +72,12 @@ public class NetworkInterfaceManager {
 	 * Handlers for NM signals
 	 */
 	private class PropertiesChangedHandler implements DBusSigHandler<org.freedesktop.NetworkManagerIface.PropertiesChanged>{
+		
 		/**
 		 * Network Manager Properties Handler
-		 * Keeps the list of devices updated
+		 * Keeps the list of devices updated.
+		 *
+		 * @param signal the signal
 		 */
 		@Override
 		public synchronized void handle(org.freedesktop.NetworkManagerIface.PropertiesChanged signal) {
@@ -158,7 +157,9 @@ public class NetworkInterfaceManager {
 	private class StateChangedHandler implements DBusSigHandler<org.freedesktop.NetworkManager.DeviceInterface.StateChanged>{
 
 		/**
-		 * Handler for Device StateChaged signal
+		 * Handler for Device StateChaged signal.
+		 *
+		 * @param signal the signal
 		 */
 		@Override
 		public void handle(StateChanged signal) {
@@ -207,6 +208,18 @@ public class NetworkInterfaceManager {
 		return cachedInterfaces.values();
 	}
 
+	
+	/**
+	 * Gets the interface.
+	 *
+	 * @param ifaceName the interface name
+	 * @return the interface, null if it does not exist
+	 */
+	public GrcBoxInterface getInterface(String ifaceName) {
+		GrcBoxInterface iface = cachedInterfaces.get(ifaceName);
+		return iface;
+	}
+	
 	/**
 	 * Initialize.
 	 *
@@ -238,7 +251,8 @@ public class NetworkInterfaceManager {
 
 	/**
 	 * Read the information from the NetworkManager and stores it in
-	 * devices, also populate the cachedInterfaces map;
+	 * devices, also populate the cachedInterfaces map;.
+	 *
 	 * @throws DBusException the d bus exception
 	 */
 	private synchronized void readDevicesInfo() throws DBusException{
@@ -261,7 +275,7 @@ public class NetworkInterfaceManager {
 	}
 	
 	/**
-	 * Convert a Device object into a GrcBoxInterface object
+	 * Convert a Device object into a GrcBoxInterface object.
 	 *
 	 * @param dev the Device object
 	 * @return the grc box interface
@@ -385,7 +399,7 @@ public class NetworkInterfaceManager {
 	}
 
 	/**
-	 * Read device from DBus and create a new Device
+	 * Read device from DBus and create a new Device.
 	 *
 	 * @param path the path
 	 * @return the device
@@ -515,7 +529,7 @@ public class NetworkInterfaceManager {
 	}
 
 	/**
-	 * Returns the gateway associate to interface iface from DBus
+	 * Returns the gateway associate to interface iface from DBus.
 	 *
 	 * @param iface the iface
 	 * @return the gateway
@@ -544,7 +558,7 @@ public class NetworkInterfaceManager {
 	}
 	
 	/**
-	 * Convert from long to ipv4 String
+	 * Convert from long to ipv4 String.
 	 *
 	 * @param addr the addr
 	 * @return the string
@@ -580,4 +594,7 @@ public class NetworkInterfaceManager {
 		Device dev = devices.get(iface);
 		return int2Ip(dev.getIfaceIpAddress().longValue());
 	}
+
+
+
 }
