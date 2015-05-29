@@ -20,14 +20,21 @@ import es.upv.grc.grcbox.server.rulesdb.GrcBoxApp;
 import es.upv.grc.grcbox.server.rulesdb.RulesDB;
 
 /**
- * @author sertinell
+ * The Class RulesServerResource.
  *
+ * @author sertinell
  */
 public class RulesServerResource extends ServerResource implements RulesResource {
 
+	/** The app id. */
 	private int appId;
+	
+	/** The client ip. */
 	private String clientIp;
 	
+	/* (non-Javadoc)
+	 * @see es.upv.grc.grcbox.common.resources.RulesResource#getList()
+	 */
 	@Override
 	public GrcBoxRuleList getList() {
 		GrcBoxRuleList list = new GrcBoxRuleList();
@@ -37,6 +44,9 @@ public class RulesServerResource extends ServerResource implements RulesResource
 
 
 
+	/* (non-Javadoc)
+	 * @see es.upv.grc.grcbox.common.resources.RulesResource#newRule(es.upv.grc.grcbox.common.GrcBoxRule)
+	 */
 	@Override
 	public GrcBoxRuleList newRule(GrcBoxRule rule) {
 		/*
@@ -64,6 +74,9 @@ public class RulesServerResource extends ServerResource implements RulesResource
 		return  list;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.restlet.resource.Resource#doInit()
+	 */
 	@Override
 	protected void doInit() throws ResourceException {
 		appId = Integer.parseInt(getAttribute("appId"));

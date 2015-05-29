@@ -12,8 +12,9 @@ import es.upv.grc.grcbox.server.GrcBoxServerApplication;
 import es.upv.grc.grcbox.server.rulesdb.RulesDB;
 
 /**
- * @author sertinell
+ * The Class AppsServerResource.
  *
+ * @author sertinell
  */
 public class AppsServerResource extends ServerResource implements AppsResource {
 

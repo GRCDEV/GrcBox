@@ -11,12 +11,16 @@ import es.upv.grc.grcbox.common.resources.RuleResource;
 import es.upv.grc.grcbox.server.rulesdb.RulesDB;
 
 /**
- * @author sertinell
+ * The Class RuleServerResource.
  *
+ * @author sertinell
  */
 public class RuleServerResource extends ServerResource implements RuleResource {
 
+	/** The app id. */
 	private int appId;
+	
+	/** The rule id. */
 	private int ruleId;
 	/* (non-Javadoc)
 	 * @see es.upv.grc.andropi.common.RuleResource#retrieve()
@@ -35,6 +39,9 @@ public class RuleServerResource extends ServerResource implements RuleResource {
 		RulesDB.rmRule(appId, ruleId);
 	}
 
+	/* (non-Javadoc)
+	 * @see org.restlet.resource.Resource#doInit()
+	 */
 	@Override
 	protected void doInit() throws ResourceException {
 		appId = Integer.parseInt(getAttribute("appId"));
