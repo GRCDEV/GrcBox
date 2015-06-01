@@ -5,7 +5,6 @@ import java.util.Collection;
 
 import es.upv.grc.grcbox.android.activities.MainActivity;
 import es.upv.grc.grcbox.androlib.GrcBoxClientService;
-import es.upv.grc.grcbox.common.GrcBoxApp;
 import es.upv.grc.grcbox.common.GrcBoxAppInfo;
 import android.app.ListFragment;
 import android.os.AsyncTask;

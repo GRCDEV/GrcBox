@@ -40,7 +40,6 @@ import android.widget.Toast;
 import es.upv.grc.grcbox.common.resources.AppResource;
 import es.upv.grc.grcbox.common.resources.AppsResource;
 import es.upv.grc.grcbox.common.resources.AppsResource.IdSecret;
-import es.upv.grc.grcbox.common.GrcBoxApp;
 import es.upv.grc.grcbox.common.GrcBoxAppInfo;
 import es.upv.grc.grcbox.common.GrcBoxAppInfoList;
 import es.upv.grc.grcbox.common.GrcBoxInterface;
@@ -66,7 +65,7 @@ public class GrcBoxClientService extends Service {
 	
 	private static ClientResource clientResource = new ClientResource(SERVER_URL);;
 	private static AppResource appResource = null;
-	private static GrcBoxApp app = null;
+	private static GrcBoxAppInfo app = null;
 	private String appName = null;
 	private static long keepAliveTime;
 	private volatile static boolean registered;
@@ -260,7 +259,7 @@ public class GrcBoxClientService extends Service {
 		/*
 		 * Get the information stored in the server. 
 		 */
-		app = new GrcBoxApp(myIdSecret.getAppId(), appName, System.currentTimeMillis());
+		app = new GrcBoxAppInfo(myIdSecret.getAppId(), appName, System.currentTimeMillis());
 
 		keepAliveTime = myIdSecret.getUpdatePeriod();
 		/*
