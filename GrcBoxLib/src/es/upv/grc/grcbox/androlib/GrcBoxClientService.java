@@ -34,18 +34,14 @@ import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.IBinder;
-import android.text.GetChars;
 import android.util.Log;
 import android.widget.Toast;
 import es.upv.grc.grcbox.common.resources.AppResource;
 import es.upv.grc.grcbox.common.resources.AppsResource;
 import es.upv.grc.grcbox.common.resources.AppsResource.IdSecret;
 import es.upv.grc.grcbox.common.GrcBoxAppInfo;
-import es.upv.grc.grcbox.common.GrcBoxAppInfoList;
 import es.upv.grc.grcbox.common.GrcBoxInterface;
-import es.upv.grc.grcbox.common.GrcBoxInterfaceList;
 import es.upv.grc.grcbox.common.GrcBoxRule;
-import es.upv.grc.grcbox.common.GrcBoxRuleList;
 import es.upv.grc.grcbox.common.GrcBoxRule.Protocol;
 import es.upv.grc.grcbox.common.resources.IfacesResource;
 import es.upv.grc.grcbox.common.resources.RootResource;
@@ -189,8 +185,7 @@ public class GrcBoxClientService extends Service {
     /*
      * Process ResourceExceptions
      * If it is UnknowException, we are not connected to a GRCBOX network
-     * if it is FORBIDDEN, our register has expired.
-     * In any other case throw exception.
+     * if it is FORBIDDEN, our registration has expired.
      */
     synchronized private void parseResourceException(ResourceException e){
     	Log.v(TAG, "Error connecting to Server:"+e.toString());
@@ -284,15 +279,16 @@ public class GrcBoxClientService extends Service {
 	}
 	
 	synchronized public void deregister(){
-		setRegistered(false);
+		mustRegister = false;
 		try{
+			cancelKeepAlive();
 			appResource.rm();
 			clientResource.release();
+			setRegistered(false);
 		}
 		catch(ResourceException e){
 			parseResourceException(e);
 		}
-		cancelKeepAlive();
 	}
 	
 	synchronized private void setRegistered(boolean newValue){
