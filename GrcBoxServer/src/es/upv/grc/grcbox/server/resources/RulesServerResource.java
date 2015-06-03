@@ -70,6 +70,19 @@ public class RulesServerResource extends ServerResource implements RulesResource
 			rule2.setSrcAddr(clientIp);
 		}
 		GrcBoxRuleList list = new GrcBoxRuleList();
+		
+		if(rule2.getType().equals(GrcBoxRule.RuleType.INCOMING)){
+			if(rule2.getDstPort() == -1){
+				throw new ResourceException(412);
+			}
+			if(rule2.getDstFwdPort() == -1 || rule2.getDstFwdAddr() == null){
+				throw new ResourceException(412);
+			}
+		}
+		else if(rule2.getType().equals(GrcBoxRule.RuleType.OUTGOING)){
+			//TODO Check if the out iface exists
+		}
+		
 		list.setList(new ArrayList<GrcBoxRule>(RulesDB.addRule(appId, rule2)));
 		return  list;
 	}
