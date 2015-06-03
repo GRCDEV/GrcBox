@@ -217,7 +217,7 @@ public class RulesDB {
 			Process proc;
 			if(!GrcBoxServerApplication.getConfig().isDebug()){
 				natLines.add(ipnat);
-				//ipTables.commitNatRule(ipnat);
+				ipTables.commitNatRule(ipnat);
 				proc = Runtime.getRuntime().exec(iprule);
 				proc.waitFor();
 				proc = Runtime.getRuntime().exec(iproute);
@@ -566,10 +566,6 @@ public class RulesDB {
 				ruleStr =  "-A PREROUTING -i " 
 						+ rule.getIfName() + " -p " 
 						+ rule.getProto().toString().toLowerCase();
-
-				if(rule.getDstPort() == -1){
-					throw new ResourceException(412);
-				}
 				ruleStr += " --dport " + rule.getDstPort();
 
 				if(rule.getSrcPort() != -1)
@@ -578,9 +574,6 @@ public class RulesDB {
 				if(rule.getSrcAddr() != null)
 					ruleStr += " --s " + rule.getSrcAddr();
 
-				if(rule.getDstFwdPort() == -1 || rule.getDstFwdAddr() == null){
-					throw new ResourceException(412);
-				}
 				ruleStr += " -j DNAT --to-destination " 
 						+ rule.getDstFwdAddr() + ":" 
 						+ rule.getDstFwdPort();
@@ -605,25 +598,27 @@ public class RulesDB {
 					ruleStr += " -s " + rule.getSrcAddr();
 
 				Integer mark = ifaceTable.get(rule.getIfName());
-				if(mark == null){
-					throw new ResourceException(412);
+				if(mark != null){
+					ruleStr += " -j MARK --set-mark " + mark;
+					mangleRules.add(ruleStr);
 				}
-				ruleStr += " -j MARK --set-mark " + mark;
-				mangleRules.add(ruleStr);
 			}
 		}
+
 		/*
 		 * Commit
 		 */
-		mangleRules.add(IpTablesManager.COMMIT);
-		natRules.add(IpTablesManager.COMMIT);
-		ipTables.commitLines(mangleRules, true);
-		ipTables.commitLines(natRules, true);
-		/*
-		 * Commit natLines without flushing
-		 */
-		for (String line : natLines) {
-			ipTables.commitNatRule(line);
+		if(mangleRules.size()>1){
+			mangleRules.add(IpTablesManager.COMMIT);
+			ipTables.commitLines(mangleRules, true);
+		}
+		
+		if(natRules.size()>1){
+			for (String line : natLines) {
+				natRules.add(line);
+			}
+			natRules.add(IpTablesManager.COMMIT);
+			ipTables.commitLines(natRules, true);
 		}
 	}
 

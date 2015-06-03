@@ -20,7 +20,8 @@ public class IpTablesManager {
 	
 	/** The restore no flush process reference. */
 	private Process restoreNoFlushProcess;
-	
+
+	private int count = 0;
 	/** The initialised. */
 	private boolean initialised = false;
 
@@ -69,7 +70,7 @@ public class IpTablesManager {
 	 */
 	public boolean commitLines(List<String> lines, boolean flush){
 		if(initialised){
-			 
+			count++;
 			OutputStream outStream;
 			if(flush){
 				outStream =restoreProcess.getOutputStream(); 
@@ -77,14 +78,11 @@ public class IpTablesManager {
 			else{
 				outStream = restoreNoFlushProcess.getOutputStream();
 			}
-			BufferedWriter restorewriter = new BufferedWriter(new OutputStreamWriter
-					(outStream));
 			try {
 				for (String line : lines) {
-					restorewriter.write(line);
-					restorewriter.newLine();
+					outStream.write((line+"\n").getBytes());
 				}
-				restorewriter.flush();
+				outStream.flush();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
