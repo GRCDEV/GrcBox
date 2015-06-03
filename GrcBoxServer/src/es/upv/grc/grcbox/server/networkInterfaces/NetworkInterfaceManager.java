@@ -47,15 +47,19 @@ import es.upv.grc.grcbox.common.GrcBoxSsid;
 import es.upv.grc.grcbox.common.GrcBoxSsid.MODE;
 
 
+/**
+ * This class manage the interaction between the GRCBox and the NetworkManager
+ * The communication is done using the DBus interface.
+ */
 public class NetworkInterfaceManager {
+
+	/** The Constant LOG. */
 	private static final Logger LOG = Logger.getLogger(NetworkInterfaceManager.class.getName()); 
-	/*
-	 * A map name, GrcBoxInterfaces to cache info from NetworkManager
-	 */
+
+	/** A map {name, GrcBoxInterfaces} to cache interfaces info from NetworkManager. */
 	private static volatile Map<String, GrcBoxInterface> cachedInterfaces = new HashMap<>();
-	/*
-	 * Internal devices to store info directly from NetworkManager
-	 */
+
+	/** A map {name, Device} to cache interfaces info from NetworkManager. */
 	private static volatile Map<String, Device> devices = new HashMap<>();
 	/*
 	 * Map to cache available the APs DbusPath by interface name, indexed by 
@@ -67,29 +71,36 @@ public class NetworkInterfaceManager {
 	 * A map containing configured connections indexed by ssid
 	 */
 	private static volatile Map<String, GrcBoxConnection> confConnections = new HashMap<String, GrcBoxConnection>();
-	/*
-	 * List of signal listeners
-	 */
+	/** List of interface signal listeners. */
 	private static Vector<NetworkManagerListener> ifaceSubscribers = new Vector<>();
 
+	/** The connection to the DBus system. */
 	private static DBusConnection conn; 
-	private static Properties nmProp;
+
+	/** The DBus object used to connect with the NM. */
 	private static NetworkManagerIface nm;
 
+	/** The initialized. */
 	private static volatile Boolean initialized = false;
 
-
+	/** The Constant _VERSION_SUPPORTED. */
 	private static final String _VERSION_SUPPORTED= "1.0.2";
 
 
 
-	/*
+
+
+	/**
+	 * The Class PropertiesChangedHandler.
 	 * Handlers for NM signals
 	 */
 	private class PropertiesChangedHandler implements DBusSigHandler<org.freedesktop.NetworkManagerIface.PropertiesChanged>{
-		/*
+
+		/**
 		 * Network Manager Properties Handler
-		 * Keeps the list of devices updated
+		 * Keeps the list of devices updated.
+		 *
+		 * @param signal the signal
 		 */
 		@Override
 		public synchronized void handle(org.freedesktop.NetworkManagerIface.PropertiesChanged signal) {
@@ -156,8 +167,16 @@ public class NetworkInterfaceManager {
 		}
 	}
 
+	/**
+	 * The Class StateChangedHandler.
+	 */
 	private class StateChangedHandler implements DBusSigHandler<org.freedesktop.NetworkManager.DeviceInterface.StateChanged>{
 
+		/**
+		 * Handler for Device StateChaged signal.
+		 *
+		 * @param signal the signal
+		 */
 		@Override
 		public void handle(StateChanged signal) {
 			LOG.entering(this.getClass().getName(), "stateChanged");
@@ -180,6 +199,50 @@ public class NetworkInterfaceManager {
 			}
 			LOG.exiting(this.getClass().getName(), "stateChanged");
 		}
+	}
+
+	private Device addDevice(String path) throws DBusException{
+		Device device = updateDevStatus(path);
+		if(device.isManaged()){
+			GrcBoxInterface grcIface = cachedInterfaces.get(device.getIface());
+			LOG.info("New Device Added:"+device.getIface());
+			/*
+			 * If it is a wifi device, subscribe for AP updates
+			 * and request a list of the available APs
+			 */
+			if(device.getType().equals(NM_DEVICE_TYPE.WIFI) ){
+				connections.put(device.getIface(), new HashMap<String, GrcBoxConnection>());
+				Wireless wirelessObj = (Wireless) conn.getRemoteObject(
+						NetworkManagerIface._NM_IFACE, device.getDbusPath(), Wireless.class);
+				List<DBusInterface> apList = wirelessObj.GetAllAccessPoints();
+				for (DBusInterface dBusInterface : apList) {
+					addAccessPoint(dBusInterface, grcIface.getName());
+				}
+				subscribeToApSignals(device.getIface());
+			}
+			informInterfaceAdded(grcIface);
+		}
+		return device;
+	}
+
+	/**
+	 * Update dev status.
+	 *
+	 * @param path the path
+	 */
+	private Device updateDevStatus(String path) throws DBusException {
+		Device dev = readDeviceFromDbus(path);
+		devices.put(dev.getIface(), dev);
+		if(dev.isManaged()){
+			try{
+				GrcBoxInterface iface = device2grcBoxIface(dev);
+				cachedInterfaces.put(dev.getIface(), iface);
+				LOG.info("Device "+ dev.getIface() + " has been updated");
+			} catch (ExecutionException e) {
+				LOG.log(Level.WARNING,"Error processing interface "+dev.getIface(),e);
+			}
+		}
+		return dev;
 	}
 
 	/*
@@ -280,48 +343,51 @@ public class NetworkInterfaceManager {
 				strength, security, false, false));
 	}
 
-	private Device addDevice(String path) throws DBusException{
-		Device device = updateDevStatus(path);
-		if(device.isManaged()){
-			GrcBoxInterface grcIface = cachedInterfaces.get(device.getIface());
 
-			LOG.info("New Device Added:"+device.getIface());
-			/*
-			 * If it is a wifi device, subscribe for AP updates
-			 * and request a list of the available APs
-			 */
-			if(device.getType().equals(NM_DEVICE_TYPE.WIFI) ){
-				connections.put(device.getIface(), new HashMap<String, GrcBoxConnection>());
-				Wireless wirelessObj = (Wireless) conn.getRemoteObject(
-						NetworkManagerIface._NM_IFACE, device.getDbusPath(),  Wireless.class);
-				List<DBusInterface> apList = wirelessObj.GetAllAccessPoints();
-				for (DBusInterface dBusInterface : apList) {
-					addAccessPoint(dBusInterface, grcIface.getName());
-				}
-				subscribeToApSignals(device.getIface());
-			}
-			informInterfaceAdded(grcIface);
-		}
-		return device;
+	/**
+	 * Gets the managed interfaces.
+	 *
+	 * @return the interfaces list
+	 */
+	public Collection<GrcBoxInterface> getInterfaces(){
+		return cachedInterfaces.values();
 	}
 
-	private Device updateDevStatus(String path) throws DBusException {
-		Device dev = readDeviceFromDbus(path);
-		devices.put(dev.getIface(), dev);
-		if(dev.isManaged()){
-			try{
-				GrcBoxInterface iface = device2grcBoxIface(dev);
-				cachedInterfaces.put(dev.getIface(), iface);
-				LOG.info("Device "+ dev.getIface() + " has been updated");
-			} catch (ExecutionException e) {
-				LOG.log(Level.WARNING,"Error processing interface "+dev.getIface(),e);
-			}
-		}
-		return dev;
+
+	/**
+	 * Gets the interface.
+	 *
+	 * @param ifaceName the interface name
+	 * @return the interface, null if it does not exist
+	 */
+	public GrcBoxInterface getInterface(String ifaceName) {
+		GrcBoxInterface iface = cachedInterfaces.get(ifaceName);
+		return iface;
 	}
 
-	/*
-	 * Subscribe to NM signals to monitor devices status.
+	/**
+	 * Initialize.
+	 *
+	 * @return true, if successful
+	 * @throws DBusException the d bus exception
+	 * @throws ExecutionException the execution exception
+	 */
+	public synchronized boolean initialize() throws DBusException, ExecutionException{
+		LOG.entering(this.getClass().getName(), "initialize");
+		if(isNMAvailable()){
+			readDevicesInfo();
+			subscribeToNMSignals();
+			initialized = true;
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Subscribe to NM to monitor devices status signals.
+	 *
+	 * @throws DBusException a DBusException when there is a problem with the 
+	 * Dbus connection
 	 */
 	private void subscribeToNMSignals() throws DBusException {
 		conn.addSigHandler(org.freedesktop.NetworkManagerIface.PropertiesChanged.class, new PropertiesChangedHandler());
@@ -338,7 +404,9 @@ public class NetworkInterfaceManager {
 
 	/*
 	 * Read the information from the NetworkManager and stores it in
-	 * devices, also populate the cachedInterfaces map;
+	 * devices, also populate the cachedInterfaces map;.
+	 *
+	 * @throws DBusException the d bus exception
 	 */
 	private synchronized void readDevicesInfo() throws DBusException{
 		LOG.entering(this.getClass().getName(),"readDevicesInfo");
@@ -352,8 +420,14 @@ public class NetworkInterfaceManager {
 		LOG.exiting(this.getClass().getName(), "readdevicesInfo");;
 	}
 
-	/*
-	 * Convert a Device object into a GrcBoxInterface object
+	/**
+	 * Convert a Device object into a GrcBoxInterface object.
+	 *
+	 * @param dev the Device object
+	 * @return the grc box interface
+	 * @throws DBusException Needs to connect to DBus to get all the information,
+	 * an exception is thrown when there is a problem in the connection.
+	 * @throws ExecutionException the execution exception
 	 */
 	private GrcBoxInterface device2grcBoxIface(Device dev) throws DBusException, ExecutionException{
 		LOG.entering(this.getClass().getName(), "device2GrcBoxIface");
@@ -455,20 +529,28 @@ public class NetworkInterfaceManager {
 		}
 
 		/*
-		 * TODO Estimate the real cost in some way.
+		 * TODO Estimate the real cost
 		 */
 		iface.setCost(0);
 
 
 
 		/*
-		 * TODO Currently there is only support for Wifi or ethernet. Both  interfaces support multicast.
+		 * TODO Currently there is only support for Wifi or ethernet. 
+		 * Both  interfaces support multicast.
 		 */
 		iface.setMulticast(true);
 		LOG.exiting(this.getClass().getName(), "device2GrcBoxIface", iface);
 		return iface;
 	}
 
+	/**
+	 * Read device from DBus and create a new Device.
+	 *
+	 * @param path the path
+	 * @return the device
+	 * @throws DBusException the d bus exception
+	 */
 	private Device readDeviceFromDbus(String path) throws DBusException{
 		Device device = new Device();
 		Properties props = (Properties) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, path,  Properties.class);
@@ -502,11 +584,17 @@ public class NetworkInterfaceManager {
 		return device;
 	}
 
+	/**
+	 * Checks if is NM available.
+	 *
+	 * @return true, if is NM available
+	 * @throws ExecutionException the execution exception
+	 */
 	private boolean isNMAvailable() throws ExecutionException{
 		try {
 			conn = DBusConnection.getConnection(DBusConnection.SYSTEM);
 
-			nmProp = (Properties)conn.getRemoteObject(NetworkManagerIface._NM_IFACE, 
+			Properties nmProp = (Properties)conn.getRemoteObject(NetworkManagerIface._NM_IFACE, 
 					NetworkManagerIface._NM_PATH, 
 					Properties.class);
 			nm = (NetworkManagerIface)conn.getRemoteObject(NetworkManagerIface._NM_IFACE, 
@@ -524,83 +612,72 @@ public class NetworkInterfaceManager {
 		return true;
 	}
 
+	/**
+	 * Subscribe interfaces.
+	 *
+	 * @param object the object
+	 * @return the int
+	 */
+	public synchronized int subscribeInterfaces(NetworkManagerListener object){
+		ifaceSubscribers.add(object);
+		return ifaceSubscribers.size();
+	}
 
-	private synchronized void informInterfaceAdded(GrcBoxInterface iface){
+	/**
+	 * Unsubscribe interfaces.
+	 *
+	 * @param index the index
+	 */
+	public synchronized void unsubscribeInterfaces(int index){
+		ifaceSubscribers.remove(index);
+	}
+	/**
+	 * Inform interface added.
+	 *
+	 * @param iface the iface
+	 */
+	public synchronized void informInterfaceAdded(GrcBoxInterface iface){
 		for (NetworkManagerListener networkManagerListener : ifaceSubscribers) {
 			networkManagerListener.interfaceAdded(iface);
 		}
 	}
 
+	/**
+	 * Inform interface removed.
+	 *
+	 * @param iface the iface
+	 */
 	private synchronized void informInterfaceRemoved(GrcBoxInterface iface){
 		for (NetworkManagerListener networkManagerListener : ifaceSubscribers) {
 			networkManagerListener.interfaceRemoved(iface);
 		}
 	}
 
+	/**
+	 * Inform interface changed.
+	 *
+	 * @param iface the iface
+	 */
 	private synchronized void informInterfaceChanged(GrcBoxInterface iface){
 		for (NetworkManagerListener networkManagerListener : ifaceSubscribers) {
 			networkManagerListener.interfaceChanged(iface);
 		}
 	}
 
-
-	/*
-	 * Convert from long to ipv4 String
+	/**
+	 * Checks if is initialized.
+	 *
+	 * @return true, if is initialized
 	 */
-	private String int2Ip(long addr) {
-		LOG.info("Long " + addr + " to String" );
-		if(addr == 0){
-			return "0.0.0.0";
-		}
-		byte [] gwByte = new byte[4];
-		byte [] temp =  (BigInteger.valueOf(addr)).toByteArray();
-		gwByte[0] = temp[3];
-		gwByte[1] = temp[2];
-		gwByte[2] = temp[1];
-		gwByte[3] = temp[0];
-		String ip = null;
-		try {
-			ip= Inet4Address.getByAddress(gwByte).getHostAddress();
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return ip;
-	}
-
-	public synchronized boolean initialize() throws DBusException, ExecutionException{
-		LOG.entering(this.getClass().getName(), "initialize");
-		if(isNMAvailable()){
-			readDevicesInfo();
-			subscribeToNMSignals();
-			initialized = true;
-			return true;
-		}
-		return false;
-	}
-
 	public synchronized boolean isInitialized() {
 		return initialized.booleanValue();
 	}
 
-	/*
-	 * Return a list with all the managed interfaces
-	 */
-	public Collection<GrcBoxInterface> getInterfaces(){
-		return cachedInterfaces.values();
-	}
-
-	public synchronized int subscribeInterfaces(NetworkManagerListener object){
-		ifaceSubscribers.add(object);
-		return ifaceSubscribers.size();
-	}
-
-	public synchronized void unSubscribeInterfaces(int index){
-		ifaceSubscribers.remove(index);
-	}
-
-	/*
-	 * Returns the gateway associated to interface iface
+	/**
+	 * Returns the gateway associate to interface iface from DBus.
+	 *
+	 * @param iface the iface
+	 * @return the gateway
 	 */
 	public String getGateway(String iface) {
 		LOG.entering(this.getClass().getName(), "getGw");
@@ -625,6 +702,39 @@ public class NetworkInterfaceManager {
 		return gwStr;
 	}
 
+	/**
+	 * Convert from long to ipv4 String.
+	 *
+	 * @param addr the addr
+	 * @return the string
+	 */
+	private String int2Ip(long addr) {
+		LOG.info("Long " + addr + " to String" );
+		if(addr == 0){
+			return "0.0.0.0";
+		}
+		byte [] gwByte = new byte[4];
+		byte [] temp =  (BigInteger.valueOf(addr)).toByteArray();
+		gwByte[0] = temp[3];
+		gwByte[1] = temp[2];
+		gwByte[2] = temp[1];
+		gwByte[3] = temp[0];
+		String ip = null;
+		try {
+			ip= Inet4Address.getByAddress(gwByte).getHostAddress();
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return ip;
+	}
+
+	/**
+	 * Gets the ip address.
+	 *
+	 * @param iface the iface
+	 * @return the ip address
+	 */
 	public String getIpAddress(String iface) {
 		Device dev = devices.get(iface);
 		return int2Ip(dev.getIfaceIpAddress().longValue());
@@ -634,23 +744,23 @@ public class NetworkInterfaceManager {
 		ArrayList<GrcBoxSsid> list = new ArrayList<GrcBoxSsid>(connections.get(iface).values());
 		return list;
 	}
-	
+
 	public void connectToAp(String ssid, String iface, boolean autoconnect, String password) throws DBusException{
 		GrcBoxConnection grcBoxConnection = connections.get(iface).get(ssid);
-		
+
 		if(grcBoxConnection == null){
 			throw new ResourceException(404);
 		}
-		
+
 		if(autoconnect){
 			GrcBoxConnection newConnection = new GrcBoxConnection(grcBoxConnection, 
 					grcBoxConnection.getDbusInterface(), password);
 			confConnections.put(iface+ssid, newConnection);
 		}
-		
+
 		Map<String, Variant> wirelessMap = new HashMap<String, Variant>();
 		wirelessMap.put("ssid", new Variant<byte[]>(ssid.getBytes()));
-		
+
 		String mode;
 		if(grcBoxConnection.getMode().equals(GrcBoxSsid.MODE.INFRASTRUCTURE)){
 			mode = "ifrastructure";
@@ -663,7 +773,7 @@ public class NetworkInterfaceManager {
 		String connectionName = "GrcBox"+ssid+iface;
 		connectionMap.put("id", new Variant<String>(connectionName));
 		connectionMap.put("type", new Variant<String>("802-11-wireless"));
-		
+
 		/*
 		 * autoconnect is managed by the GRCBox
 		 */
@@ -675,18 +785,18 @@ public class NetworkInterfaceManager {
 		newConnection.put("connection", connectionMap);
 		newConnection.put("802-11-wireless", wirelessMap);
 		newConnection.put("ipv4", ipv4Map);
-		
+
 		if(grcBoxConnection.isSecurity()){
 			Map<String, Variant> wifiSecMap = new HashMap<String, Variant>();
 			wifiSecMap.put("psk", new Variant<String>(password));
 			newConnection.put("802-11-wireless-security", wifiSecMap);
 		}
-		
+
 		NetworkManagerIface netMngIface = (NetworkManagerIface) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, NetworkManagerIface._NM_PATH,  NetworkManagerIface.class);
 		DeviceInterface ifaceDbusDevice = (DeviceInterface) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, devices.get(iface).getDbusPath(),  DeviceInterface.class);
 		netMngIface.AddAndActivateConnection(newConnection, ifaceDbusDevice, grcBoxConnection.getDbusInterface());
 	}
-	
+
 	public void removeAp(String ssid){
 		confConnections.remove(ssid);
 	}

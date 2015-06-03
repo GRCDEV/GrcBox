@@ -44,12 +44,18 @@ import es.upv.grc.grcbox.common.GrcBoxStatus;
 import es.upv.grc.grcbox.common.StringList;
 import es.upv.grc.grcbox.common.resources.RootResource;
 import es.upv.grc.grcbox.server.GrcBoxServerApplication;
-import es.upv.grc.grcbox.server.RulesDB;
 import es.upv.grc.grcbox.server.multicastProxy.MulticastSupportedPlugins;
+import es.upv.grc.grcbox.server.rulesdb.RulesDB;
 
 
+/**
+ * The Class RootServerResource.
+ */
 public class RootServerResource extends ServerResource implements RootResource {
 
+	/* (non-Javadoc)
+	 * @see es.upv.grc.grcbox.common.resources.RootResource#getGrcBoxStatus()
+	 */
 	@Override
 	public GrcBoxStatus getGrcBoxStatus() {
 		GrcBoxStatus status;

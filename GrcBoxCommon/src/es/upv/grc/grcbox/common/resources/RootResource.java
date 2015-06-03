@@ -38,10 +38,15 @@ import org.restlet.resource.Get;
 import es.upv.grc.grcbox.common.GrcBoxStatus;
 
 /**
- * Annotated box resource interface
+ * This resource contains the information about the server
  */
 public interface RootResource {
 
+    /**
+     * Gets the grc box status.
+     *
+     * @return the grc box status
+     */
     @Get("json")
     public GrcBoxStatus getGrcBoxStatus();
 }

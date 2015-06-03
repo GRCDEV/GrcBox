@@ -5,10 +5,15 @@ import org.restlet.resource.Get;
 
 import es.upv.grc.grcbox.common.GrcBoxInterfaceList;
 
+/**
+ * The Interface IfacesResource.
+ */
 public interface IfacesResource {
-	/*
-	 * return a list of rules associated to an app
+    /**
+	 * Gets the list of interfaces in a GRCBox
+	 *
+	 * @return the list
 	 */
-    @Get("json")
+	@Get("json")
     public GrcBoxInterfaceList getList();
 }

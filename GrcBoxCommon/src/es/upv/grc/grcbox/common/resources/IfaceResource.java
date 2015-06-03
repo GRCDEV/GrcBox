@@ -4,10 +4,15 @@ import org.restlet.resource.Get;
 
 import es.upv.grc.grcbox.common.GrcBoxInterface;
 
+/**
+ * This resource return information about the status of the interface
+ */
 public interface IfaceResource {
-	/*
-	 * Return iface information
+    /**
+	 * Retrieve.
+	 *
+	 * @return The information about the interface
 	 */
-    @Get("json")
+	@Get("json")
     public GrcBoxInterface retrieve();
 }

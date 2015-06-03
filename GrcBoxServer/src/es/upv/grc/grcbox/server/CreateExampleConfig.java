@@ -11,10 +11,15 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+/**
+ * The Class CreateExampleConfig.
+ */
 public class CreateExampleConfig {
 
 	/**
-	 * @param args
+	 * This class was used only once to generate a config json file 
+	 *
+	 * @param args the arguments
 	 */
 	public static void main(String[] args) {
 		GrcBoxConfig config = new GrcBoxConfig();

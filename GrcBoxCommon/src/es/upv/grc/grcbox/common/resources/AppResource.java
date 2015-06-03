@@ -40,23 +40,26 @@ import org.restlet.resource.Post;
 import es.upv.grc.grcbox.common.GrcBoxAppInfo;
 
 /**
- * Annotated box resource interface
+ * This resource can be used to get information about an APP registered at
+ * the GRCBox
  */
 public interface AppResource {
 
-	/*
-	 * obtain information about app and its rules.
+    /**
+	 * Retrieve information about an app
+	 *
+	 * @return the info representation
 	 */
-    @Get("json")
+	@Get("json")
     public GrcBoxAppInfo retrieve();
     
-    /*
-     * Keep alive App
+    /**
+     * Keep alive application.
      */
     @Post("json")
     public void keepAlive();
     
-    /*
+    /**
      * Remove an APP and all its rules
      */
     @Delete("json")

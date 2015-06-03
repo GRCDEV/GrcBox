@@ -3,19 +3,19 @@ package es.upv.grc.grcbox.common;
 import java.util.List;
 
 /**
- * The Class GrcBoxRuleList, this class is used only for encapsulation
+ * The Class GrcBoxAppInfoList, this class is used only for encapsulation
  */
-public class GrcBoxRuleList {
+public class GrcBoxAppInfoList {
 	
 	/** The list. */
-	List<GrcBoxRule> list;
+	List<GrcBoxAppInfo> list;
 
 	/**
 	 * Gets the list.
 	 *
 	 * @return the list
 	 */
-	public List<GrcBoxRule> getList() {
+	public List<GrcBoxAppInfo> getList() {
 		return list;
 	}
 
@@ -24,7 +24,7 @@ public class GrcBoxRuleList {
 	 *
 	 * @param list the new list
 	 */
-	public void setList(List<GrcBoxRule> list) {
+	public void setList(List<GrcBoxAppInfo> list) {
 		this.list = list;
 	}
 	

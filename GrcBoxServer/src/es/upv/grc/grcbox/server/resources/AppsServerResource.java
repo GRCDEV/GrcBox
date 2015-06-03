@@ -6,14 +6,15 @@ package es.upv.grc.grcbox.server.resources;
 import org.restlet.resource.ServerResource;
 import org.restlet.security.MapVerifier;
 
-import es.upv.grc.grcbox.common.GrcBoxAppList;
+import es.upv.grc.grcbox.common.GrcBoxAppInfoList;
 import es.upv.grc.grcbox.common.resources.AppsResource;
 import es.upv.grc.grcbox.server.GrcBoxServerApplication;
-import es.upv.grc.grcbox.server.RulesDB;
+import es.upv.grc.grcbox.server.rulesdb.RulesDB;
 
 /**
- * @author sertinell
+ * The Class AppsServerResource.
  *
+ * @author sertinell
  */
 public class AppsServerResource extends ServerResource implements AppsResource {
 
@@ -21,9 +22,9 @@ public class AppsServerResource extends ServerResource implements AppsResource {
 	 * @see es.upv.grc.andropi.common.AppsResource#getList()
 	 */
 	@Override
-	public GrcBoxAppList getList() {
-		GrcBoxAppList appList =  new GrcBoxAppList();
-		appList.setList(RulesDB.getApps());
+	public GrcBoxAppInfoList getList() {
+		GrcBoxAppInfoList appList =  new GrcBoxAppInfoList();
+		appList.setList(RulesDB.getAppInfos());
 		return appList;
 	}
 

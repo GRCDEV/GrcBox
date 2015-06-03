@@ -6,17 +6,19 @@ package es.upv.grc.grcbox.server.resources;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.ServerResource;
 
-import es.upv.grc.grcbox.common.GrcBoxApp;
 import es.upv.grc.grcbox.common.GrcBoxAppInfo;
 import es.upv.grc.grcbox.common.resources.AppResource;
-import es.upv.grc.grcbox.server.RulesDB;
+import es.upv.grc.grcbox.server.rulesdb.GrcBoxApp;
+import es.upv.grc.grcbox.server.rulesdb.RulesDB;
 
 /**
- * @author sertinell
+ * The Class AppServerResource.
  *
+ * @author sertinell
  */
 public class AppServerResource  extends ServerResource implements AppResource{
 
+	/** The app id. */
 	int appId;
 	
 	/* (non-Javadoc)
@@ -44,6 +46,9 @@ public class AppServerResource  extends ServerResource implements AppResource{
 		RulesDB.rmApp(appId);
 	}
 
+	/* (non-Javadoc)
+	 * @see org.restlet.resource.Resource#doInit()
+	 */
 	@Override
 	protected void doInit() throws ResourceException {
 		appId = Integer.parseInt(getAttribute("appId"));

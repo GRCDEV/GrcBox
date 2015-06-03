@@ -36,11 +36,10 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
-
 import es.upv.grc.grcbox.common.resources.AppResource;
 import es.upv.grc.grcbox.common.resources.AppsResource;
 import es.upv.grc.grcbox.common.resources.AppsResource.IdSecret;
-import es.upv.grc.grcbox.common.GrcBoxApp;
+import es.upv.grc.grcbox.common.GrcBoxAppInfo;
 import es.upv.grc.grcbox.common.GrcBoxInterface;
 import es.upv.grc.grcbox.common.GrcBoxRule;
 import es.upv.grc.grcbox.common.GrcBoxRule.Protocol;
@@ -62,7 +61,7 @@ public class GrcBoxClientService extends Service {
 	
 	private static ClientResource clientResource = new ClientResource(SERVER_URL);;
 	private static AppResource appResource = null;
-	private static GrcBoxApp app = null;
+	private static GrcBoxAppInfo app = null;
 	private String appName = null;
 	private static long keepAliveTime;
 	private volatile static boolean registered;
@@ -186,8 +185,7 @@ public class GrcBoxClientService extends Service {
     /*
      * Process ResourceExceptions
      * If it is UnknowException, we are not connected to a GRCBOX network
-     * if it is FORBIDDEN, our register has expired.
-     * In any other case throw exception.
+     * if it is FORBIDDEN, our registration has expired.
      */
     synchronized private void parseResourceException(ResourceException e){
     	Log.v(TAG, "Error connecting to Server:"+e.toString());
@@ -256,7 +254,7 @@ public class GrcBoxClientService extends Service {
 		/*
 		 * Get the information stored in the server. 
 		 */
-		app = new GrcBoxApp(myIdSecret.getAppId(), appName, System.currentTimeMillis());
+		app = new GrcBoxAppInfo(myIdSecret.getAppId(), appName, System.currentTimeMillis());
 
 		keepAliveTime = myIdSecret.getUpdatePeriod();
 		/*
@@ -281,15 +279,16 @@ public class GrcBoxClientService extends Service {
 	}
 	
 	synchronized public void deregister(){
-		setRegistered(false);
+		mustRegister = false;
 		try{
+			cancelKeepAlive();
 			appResource.rm();
 			clientResource.release();
+			setRegistered(false);
 		}
 		catch(ResourceException e){
 			parseResourceException(e);
 		}
-		cancelKeepAlive();
 	}
 	
 	synchronized private void setRegistered(boolean newValue){
@@ -345,9 +344,9 @@ public class GrcBoxClientService extends Service {
 	/*
 	 * get a list of the available interfaces from the server
 	 */
-	public Collection<GrcBoxApp> getApps(){
+	public Collection<GrcBoxAppInfo> getApps(){
 		AppsResource apps = clientResource.getChild("/apps", AppsResource.class);
-		Collection<GrcBoxApp> list = new LinkedList<GrcBoxApp>();
+		Collection<GrcBoxAppInfo> list = new LinkedList<GrcBoxAppInfo>();
 		try{
 			list = apps.getList().getList();
 		}
@@ -381,7 +380,9 @@ public class GrcBoxClientService extends Service {
 		rulesCached.add(rule);
 		try{
 			RulesResource rulesRes = clientResource.getChild("/apps/"+app.getAppId()+"/rules", RulesResource.class);
-			rule = rulesRes.newRule(rule);
+			List<GrcBoxRule> list = rulesRes.newRule(rule).getList();
+			rule = list.get(list.size()-1);
+			return rule;
 		}
 		catch(ResourceException e ){
 			parseResourceException(e);

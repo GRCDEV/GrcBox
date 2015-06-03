@@ -7,7 +7,7 @@ import org.restlet.resource.ServerResource;
 import es.upv.grc.grcbox.common.ApAuth;
 import es.upv.grc.grcbox.common.GrcBoxSsid;
 import es.upv.grc.grcbox.common.resources.SsidResource;
-import es.upv.grc.grcbox.server.RulesDB;
+import es.upv.grc.grcbox.server.rulesdb.*;
 
 public class SsidServerResource extends ServerResource implements SsidResource {
 
