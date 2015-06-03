@@ -159,12 +159,6 @@ public class MulticastProxy implements Runnable{
 			byte[] outAddrByte = outAddr.getAddress();
 			int outAddrInt = byteArray2int(outAddrByte);
 			
-			LOG.info("Initializing Multicast proxy: Interfaces "+ innerIface + "," + outerIface+
-					", Address: " + subscribeAddr+  " Port:"+ listenPort +
-					"\n outAddrInt " + outAddrInt +
-					"\n inAddrInt " +inAddrInt
-					);
-
 			/*
 			 * Multicast packets are not processed if there is no application subscribed to the group
 			 */
@@ -240,20 +234,6 @@ public class MulticastProxy implements Runnable{
 							boolean outgoing = srcIp == clientAddrInt;
 							String type = outgoing?"outgoing":"incomming";
 							
-							LOG.info("Time " + System.currentTimeMillis());
-							LOG.info("An "+ type + " Raw UDP packet has been received " +
-									" Source " +  srcIp +
-									" Checksum " +rcvdPacket.getIPChecksum() +
-									" Destination: "  + dstIp +
-									" Protocol " + rcvdPacket.getProtocol() +
-									" Version " + rcvdPacket.getIPVersion() +
-									" IP Header Size " + rcvdPacket.getIPHeaderByteLength() +
-									" IP Length  " +rcvdPacket.getIPPacketLength() +
-									" SrcPort " + rcvdPacket.getSourcePort() +
-									" DstPort " + dstPort+
-									" Combined Header Length " + rcvdPacket.getCombinedHeaderByteLength()+
-									" Payload Length " + payload.length +
-									" Payload " + (new String(payload, 0, payload.length)) );
 							/*
 							 * Copy the old header to the new header
 							 * Some fields must modified and checksum must be recalculated
@@ -294,20 +274,7 @@ public class MulticastProxy implements Runnable{
 							 */
 							newPacket.computeUDPChecksum();
 							newPacket.computeIPChecksum();
-							LOG.info("Fordwarding packet to " + outerIface +" with address " + outAddr.getHostName() );
-							LOG.info("Contents " +
-									" Source " + newPacket.getSourceAsInetAddress().getHostAddress() +
-									" Checksum " +newPacket.getIPChecksum() +
-									" Destination: "  + newPacket.getDestinationAsInetAddress().getHostAddress()+
-									" Protocol " + newPacket.getProtocol() +
-									" Version " + newPacket.getIPVersion() +
-									" IP Header Size " + newPacket.getIPHeaderByteLength() +
-									" IP Length  " +newPacket.getIPPacketLength() +
-									" SrcPort " + newPacket.getSourcePort() +
-									" DstPort " + newPacket.getDestinationPort()+
-									" Combined Header Length " + newPacket.getCombinedHeaderByteLength()+
-									" UDP Packet Size" + newPacket.getUDPPacketLength() +
-									" Payload " + (new String(newPayload, 0, newPayload.length)) );
+
 							/*
 							 * store the packet at sent set
 							 */
