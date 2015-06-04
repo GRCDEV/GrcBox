@@ -136,4 +136,9 @@ public class GrcBoxSsid {
 		}
 		return true;
 	}
+
+	@Override
+	public String toString() {
+		return "Ssid:"+ssid+" Mode:"+mode+" Strength:"+strength+" Security:"+security;
+	}
 }

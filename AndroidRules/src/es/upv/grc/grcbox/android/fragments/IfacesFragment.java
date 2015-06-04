@@ -3,14 +3,18 @@ package es.upv.grc.grcbox.android.fragments;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import es.upv.grc.grcbox.android.activities.ApListActivity;
 import es.upv.grc.grcbox.android.activities.MainActivity;
+import es.upv.grc.grcbox.android.activities.NewRule;
 import es.upv.grc.grcbox.androlib.GrcBoxClientService;
 import es.upv.grc.grcbox.common.GrcBoxInterface;
-
 import android.app.ListFragment;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.ListView;
 
 public class IfacesFragment extends ListFragment {
 	ArrayAdapter<GrcBoxInterface> mAdapter;
@@ -53,5 +57,16 @@ public class IfacesFragment extends ListFragment {
 	
 	public void refresh(){
 		new InterfacesLoader().execute();
+	}
+
+
+
+	@Override
+	public void onListItemClick(ListView l, View v, int position, long id) {
+		GrcBoxInterface grcBoxIface = (GrcBoxInterface) mAdapter.getItem(position);
+		Intent intent = new Intent(this.getActivity(), ApListActivity.class);
+		intent.putExtra(ApListActivity.IFACE_NAME, grcBoxIface.getName());
+		startActivity(intent);
+		super.onListItemClick(l, v, position, id);
 	}
 }

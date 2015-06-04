@@ -7,22 +7,24 @@
     <uses-sdk
         android:minSdkVersion="16"
         android:targetSdkVersion="19" />
-    
-	<uses-permission android:name="android.permission.INTERNET" />
-	
-	<application
-	    android:allowBackup="true"
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
-        
-	   	<service android:name="es.upv.grc.grcbox.androlib.GrcBoxClientService"
-	   	    android:exported="false"/>
+        <service
+            android:name="es.upv.grc.grcbox.androlib.GrcBoxClientService"
+            android:exported="false" />
+
         <activity
             android:name=".activities.MainActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -34,5 +36,10 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="es.upv.grc.grcbox.android.MainActivity" />
         </activity>
+        <activity
+            android:name="es.upv.grc.grcbox.android.activities.ApListActivity"
+            android:label="@string/title_activity_ap_list">
+        </activity>
     </application>
+
 </manifest>

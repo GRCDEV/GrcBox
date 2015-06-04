@@ -11,11 +11,11 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
 
 import org.restlet.data.ChallengeResponse;
 import org.restlet.data.ChallengeScheme;
@@ -39,14 +39,18 @@ import android.widget.Toast;
 import es.upv.grc.grcbox.common.resources.AppResource;
 import es.upv.grc.grcbox.common.resources.AppsResource;
 import es.upv.grc.grcbox.common.resources.AppsResource.IdSecret;
+import es.upv.grc.grcbox.common.ApAuth;
 import es.upv.grc.grcbox.common.GrcBoxAppInfo;
 import es.upv.grc.grcbox.common.GrcBoxInterface;
 import es.upv.grc.grcbox.common.GrcBoxRule;
 import es.upv.grc.grcbox.common.GrcBoxRule.Protocol;
+import es.upv.grc.grcbox.common.GrcBoxSsid;
 import es.upv.grc.grcbox.common.resources.IfacesResource;
 import es.upv.grc.grcbox.common.resources.RootResource;
 import es.upv.grc.grcbox.common.resources.RuleResource;
 import es.upv.grc.grcbox.common.resources.RulesResource;
+import es.upv.grc.grcbox.common.resources.SsidResource;
+import es.upv.grc.grcbox.common.resources.SsidsResource;
 
 
 
@@ -342,7 +346,37 @@ public class GrcBoxClientService extends Service {
 	}
 	
 	/*
-	 * get a list of the available interfaces from the server
+	 * get a list of the Access Points available at a wifi interface
+	 * If the interface is not wifi, return an empty list.
+	 */
+	public Collection<GrcBoxSsid> getAps(String iface){
+		SsidsResource aps = clientResource.getChild("/ifaces/"+iface+"/ssids", SsidsResource.class);
+		Collection<GrcBoxSsid> list = new LinkedList<GrcBoxSsid>();
+		try{
+			list = aps.getList().getList();
+		}
+		catch(ResourceException e){
+			return list;
+		}
+		return list;
+	}
+	
+	public void connectAp(String iface, String ssid, String password, boolean auto){
+		SsidResource ap = (SsidResource) clientResource.getChild("/ifaces/"
+				+iface+"/ssids/"+ssid, SsidResource.class);
+		ApAuth authInfo = new ApAuth();
+		authInfo.setAutoconnect(auto);
+		authInfo.setPassword(password);
+		try{
+			ap.connect(authInfo);
+		}
+		catch(ResourceException e){
+			e.printStackTrace();
+		}
+	}
+	
+	/*
+	 * get a list of the applications registered in the server
 	 */
 	public Collection<GrcBoxAppInfo> getApps(){
 		AppsResource apps = clientResource.getChild("/apps", AppsResource.class);

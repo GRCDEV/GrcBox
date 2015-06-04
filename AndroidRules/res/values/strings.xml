@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <string name="app_name">GRCBoxRules</string>
     <string name="action_settings">Settings</string>
     <string name="action_close">Close and Disconnect</string>
@@ -8,12 +9,13 @@
     <string name="action_rm_rule">Remove Rule</string>
     <string name="action_load_profile">Load Profile</string>
     <string name="action_save_profile">Save As Profile</string>
+    <string name="action_forget">Forget Ssid</string>
     <string name="state_connected">Connected</string>
     <string name="state_disconnected">Disconnected</string>
     <string name="rules">My Rules</string>
     <string name="apps">Apps</string>
     <string name="interfaces">Ifaces</string>
-    <string name="title_activity_new_rule">NewRule</string>
+    <string name="title_activity_new_rule">New Rule</string>
     <string name="rule_type">Type:</string>
     <string name="rule_name">Name:</string>
     <string name="rule_name_hint">Name of this rule (locally used)</string>
@@ -26,4 +28,8 @@
     <string name="rule_proto">Proto:</string>
     <string name="button_save">Save</string>
     <string name="iface_status">Iface Status:</string>
+    <string name="title_activity_ap_list">Network List</string>
+    <string name="hello_world">Hello world!</string>
+	<string name="pass">Password</string>
+	<string name="autoconnect">Auto</string>
 </resources>
