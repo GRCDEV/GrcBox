@@ -162,14 +162,14 @@ public class GrcBoxClient {
     			 * Create a new rule
     			 */
     			GrcBoxRuleList list = rulesResource.newRule(ruleIn);
-    			ruleIn = list.getList().get(1);
+    			ruleIn = list.getList().get(0);
     			list = rulesResource.newRule(ruleOut);
-    			ruleOut = list.getList().get(1);
+    			ruleOut = list.getList().get(0);
     		}
     		catch(ResourceException re){
     			if(re.getStatus().equals(Status.CONNECTOR_ERROR_COMMUNICATION)){
     				GrcBoxRuleList list = rulesResource.newRule(ruleIn);
-    				ruleIn = list.getList().get(1);
+    				ruleIn = list.getList().get(0);
     			}
     			else{
     				throw re;
@@ -189,5 +189,6 @@ public class GrcBoxClient {
          * remove the rule
          */
         ruleResource.remove();
+        appResource.rm();
     }
 }

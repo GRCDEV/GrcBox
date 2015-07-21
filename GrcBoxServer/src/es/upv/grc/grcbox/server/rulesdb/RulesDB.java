@@ -139,13 +139,13 @@ public class RulesDB {
 		 * @see es.upv.grc.grcbox.server.networkInterfaces.NetworkManagerListener#interfaceChanged(es.upv.grc.grcbox.common.GrcBoxInterface)
 		 */
 		@Override
-		public void interfaceChanged(GrcBoxInterface iface) {
-			if(iface.isUp()){
+		public void interfaceChanged(GrcBoxInterface iface, GrcBoxInterface oldIface) {
+			if(oldIface.isUp()){
 				removeOutIface(iface);
-				initializeOutIface(iface);
 			}
-			else{
-				removeOutIface(iface);
+			
+			if(iface.isUp()){
+				initializeOutIface(iface);
 			}
 
 			LOG.info("Interface has changed " + iface.getName());

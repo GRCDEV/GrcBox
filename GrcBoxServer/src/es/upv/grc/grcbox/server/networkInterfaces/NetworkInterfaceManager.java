@@ -80,73 +80,77 @@ public class NetworkInterfaceManager {
 		 */
 		@Override
 		public synchronized void handle(org.freedesktop.NetworkManagerIface.PropertiesChanged signal) {
-			LOG.entering(this.getClass().getName(), "handleProp", signal);
-			if(signal.a.containsKey("Devices")){
-				LOG.info("Devices have changed");
+			synchronized(NetworkInterfaceManager.this){
+				LOG.entering(this.getClass().getName(), "handleProp", signal);
+				if(signal.a.containsKey("Devices")){
+					LOG.info("Devices have changed");
 
-				List<ObjectPath> devList = (List<ObjectPath>) signal.a.get("Devices").getValue();
-				if( devList.size() > devices.size() ){
-					LOG.info("There is a new device");
-					for (ObjectPath devPath : devList) {
-						try {
-							Properties props = conn.getRemoteObject(NetworkManagerIface._NM_IFACE, devPath.getPath(),  Properties.class);
-							Map<String, Variant> propsMap = props.GetAll(NetworkManagerIface._DEVICE_IFACE);
-							String iface = (String)propsMap.get("Interface").getValue();
-							if(!devices.containsKey(iface)){
-								LOG.info("New Device found "+ iface);
-								Device device = readDeviceFromDbus(devPath.getPath());
-								devices.put(iface, device);
-								GrcBoxInterface grcIface = device2grcBoxIface(device);
-								cachedInterfaces.put(iface, grcIface);
-								informInterfaceAdded(grcIface);
-							}
-						} catch (DBusException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						} catch (ExecutionException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-				}
-				else if( devList.size() < devices.size()){
-					LOG.info("A device has been removed");
-					List<String> toRemove = new LinkedList<>();
-					for (Device dev : devices.values()) {
-						String iface = dev.getIface();
-						boolean exists = false;
+					List<ObjectPath> devList = (List<ObjectPath>) signal.a.get("Devices").getValue();
+					if( devList.size() > devices.size() ){
+						LOG.info("There is a new device");
 						for (ObjectPath devPath : devList) {
-							Properties props;
 							try {
-								props = (Properties) conn.getRemoteObject("org.freedesktop.NetworkManager", devPath.getPath(),  Properties.class);
+								Properties props = conn.getRemoteObject(NetworkManagerIface._NM_IFACE, devPath.getPath(),  Properties.class);
 								Map<String, Variant> propsMap = props.GetAll(NetworkManagerIface._DEVICE_IFACE);
-								String iface2 = (String)propsMap.get("Interface").getValue();
-								if(iface2.equals(iface)){
-									exists = true;
-									break;
+								String iface = (String)propsMap.get("Interface").getValue();
+								if(!devices.containsKey(iface)){
+									LOG.info("New Device found "+ iface);
+									Device device = readDeviceFromDbus(devPath.getPath());
+									devices.put(iface, device);
+									GrcBoxInterface grcIface = device2grcBoxIface(device);
+									cachedInterfaces.put(iface, grcIface);
+									informInterfaceAdded(grcIface);
 								}
 							} catch (DBusException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
+							} catch (ExecutionException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
 							}
 						}
-						if(!exists){
-							LOG.info("Device removed "+ iface);
-							toRemove.add(iface);
+					}
+					else if( devList.size() < devices.size()){
+						LOG.info("A device has been removed");
+						List<String> toRemove = new LinkedList<>();
+						for (Device dev : devices.values()) {
+							String iface = dev.getIface();
+							boolean exists = false;
+							for (ObjectPath devPath : devList) {
+								Properties props;
+								try {
+									props = (Properties) conn.getRemoteObject("org.freedesktop.NetworkManager", devPath.getPath(),  Properties.class);
+									Map<String, Variant> propsMap = props.GetAll(NetworkManagerIface._DEVICE_IFACE);
+									String iface2 = (String)propsMap.get("Interface").getValue();
+									if(iface2.equals(iface)){
+										exists = true;
+										break;
+									}
+								} catch (DBusException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+							}
+							if(!exists){
+								LOG.info("Device removed "+ iface);
+								toRemove.add(iface);
+							}
+						}
+						for (String iface : toRemove) {
+							devices.remove(iface);
+							GrcBoxInterface grcInterface = cachedInterfaces.get(iface);
+							if(grcInterface != null){
+								cachedInterfaces.remove(iface);
+								informInterfaceRemoved(grcInterface);
+							}
 						}
 					}
-					for (String iface : toRemove) {
-						devices.remove(iface);
-						GrcBoxInterface grcInterface = cachedInterfaces.get(iface);
-						cachedInterfaces.remove(iface);
-						informInterfaceRemoved(grcInterface);
+					else{
+						LOG.warning("Devices Properties changed but no device was added or removed");
 					}
 				}
-				else{
-					LOG.warning("Devices Properties changed but no device was added or removed");
-				}
+				LOG.entering(this.getClass().getName(), "handleProp", signal);
 			}
-			LOG.entering(this.getClass().getName(), "handleProp", signal);
 		}
 	}
 
@@ -162,18 +166,20 @@ public class NetworkInterfaceManager {
 		 */
 		@Override
 		public void handle(StateChanged signal) {
-			LOG.entering(this.getClass().getName(), "stateChanged");
-			/*
-			 * Only update the device information if the old or the new states are "ACTIVATED"
-			 */
-			if( !( signal.a.equals(NM_DEVICE_STATE.UNAVAILABLE) || 
-				   signal.a.equals(NM_DEVICE_STATE.UNMANAGED) ) &&
-				  (signal.a.equals(NM_DEVICE_STATE.ACTIVATED) || 
-				   signal.b.equals(NM_DEVICE_STATE.ACTIVATED))
-					){
-				updateDevStatus(signal.getPath());
+			synchronized(NetworkInterfaceManager.this){
+				LOG.entering(this.getClass().getName(), "stateChanged");
+				/*
+				 * Only update the device information if the old or the new states are "ACTIVATED"
+				 */
+				if( !( signal.a.equals(NM_DEVICE_STATE.UNAVAILABLE) || 
+						signal.a.equals(NM_DEVICE_STATE.UNMANAGED) ) &&
+						(signal.a.equals(NM_DEVICE_STATE.ACTIVATED) || 
+								signal.b.equals(NM_DEVICE_STATE.ACTIVATED))
+						){
+					updateDevStatus(signal.getPath());
+				}
+				LOG.exiting(this.getClass().getName(), "stateChanged");
 			}
-			LOG.exiting(this.getClass().getName(), "stateChanged");
 		}
 	}
 	
@@ -182,14 +188,20 @@ public class NetworkInterfaceManager {
 	 *
 	 * @param path the path
 	 */
-	private void updateDevStatus(String path) {
+	private synchronized void updateDevStatus(String path) {
 		try {
 			Device dev = readDeviceFromDbus(path);
-			devices.put(dev.getIface(), dev);
+			Device oldDev = devices.put(dev.getIface(), dev);
 			GrcBoxInterface iface = device2grcBoxIface(dev);
-			cachedInterfaces.put(dev.getIface(), iface);
-			LOG.info("Device "+ dev.getIface() + " has been updated");
-			informInterfaceChanged(iface);
+			GrcBoxInterface oldIface = cachedInterfaces.put(dev.getIface(), iface);
+			if(oldDev != null){
+				LOG.info("Device "+ dev.getIface() + " has been updated");
+				informInterfaceChanged(iface, oldIface);
+			}
+			else{
+				LOG.info("Device "+ dev.getIface() + " has been added");
+				informInterfaceAdded(iface);
+			}
 		} catch (DBusException e) {
 			LOG.severe(e.toString());
 		} catch (ExecutionException e) {
@@ -282,7 +294,7 @@ public class NetworkInterfaceManager {
 	 * an exception is thrown when there is a problem in the connection.
 	 * @throws ExecutionException the execution exception
 	 */
-	private GrcBoxInterface device2grcBoxIface(Device dev) throws DBusException, ExecutionException{
+	private synchronized GrcBoxInterface device2grcBoxIface(Device dev) throws DBusException, ExecutionException{
 		LOG.entering(this.getClass().getName(), "device2GrcBoxIface");
 		GrcBoxInterface iface = new GrcBoxInterface();
 		Properties devProp = (Properties) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, dev.getDbusPath(),  Properties.class);
@@ -371,6 +383,9 @@ public class NetworkInterfaceManager {
 				speed = devProp.Get("org.freedesktop.NetworkManager.Device.Wireless", "Bitrate");
 				iface.setRate(speed.doubleValue()/1000);
 				break;
+			case CELLULAR:
+				iface.setRate(0.0);
+				break;
 			default:
 				throw new ExecutionException("Unsupported Device type", new Throwable());
 			}
@@ -404,15 +419,29 @@ public class NetworkInterfaceManager {
 	 * @return the device
 	 * @throws DBusException the d bus exception
 	 */
-	private Device readDeviceFromDbus(String path) throws DBusException{
+	private synchronized Device readDeviceFromDbus(String path) throws DBusException{
 		Device device = new Device();
 		Properties props = (Properties) conn.getRemoteObject(NetworkManagerIface._NM_IFACE, path,  Properties.class);
 		device.setDbusPath(path);
 		if(props instanceof Properties){
 			
 			Map<String, Variant> propsMap = props.GetAll(NetworkManagerIface._DEVICE_IFACE);
-			if(propsMap.get("Interface") != null) 
-				device.setIface((String) propsMap.get("Interface").getValue());
+			String ifname = null;
+			String ipIfName = null;
+			if(propsMap.get("Interface") != null){
+				ifname = (String)propsMap.get("Interface").getValue();
+			}
+			if(propsMap.get("IpInterface") != null){
+				ipIfName = (String) propsMap.get("IpInterface").getValue();
+			}
+			
+			if(ipIfName.isEmpty()){
+				device.setIface(ifname);
+			}
+			else if(ipIfName != null){
+				device.setIface(ipIfName);
+			}
+			
 			if(propsMap.get("Capabilities") != null) 
 				device.setCapabilities((UInt32) propsMap.get("Capabilities").getValue());
 			if(propsMap.get("State") != null) 
@@ -512,9 +541,9 @@ public class NetworkInterfaceManager {
 	 *
 	 * @param iface the iface
 	 */
-	public synchronized void informInterfaceChanged(GrcBoxInterface iface){
+	public synchronized void informInterfaceChanged(GrcBoxInterface iface, GrcBoxInterface oldIface){
 		for (NetworkManagerListener networkManagerListener : ifaceSubscribers) {
-			networkManagerListener.interfaceChanged(iface);
+			networkManagerListener.interfaceChanged(iface, oldIface);
 		}
 	}
 

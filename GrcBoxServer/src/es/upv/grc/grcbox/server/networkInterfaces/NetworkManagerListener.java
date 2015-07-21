@@ -34,5 +34,5 @@ public interface NetworkManagerListener {
 	 *
 	 * @param iface the iface
 	 */
-	public void interfaceChanged(GrcBoxInterface iface);
+	public void interfaceChanged(GrcBoxInterface iface, GrcBoxInterface oldIface);
 }
