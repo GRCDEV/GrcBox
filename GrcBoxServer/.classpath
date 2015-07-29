@@ -3,7 +3,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/GrcBoxCommon"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/NMDBusIface"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/java-7-openjdk-amd64"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="/Libs/vserv-tcpip-0.9.2.jar"/>
 	<classpathentry kind="lib" path="/Libs/restlet-jse-2.2.2/lib/org.restlet.jar"/>
 	<classpathentry kind="lib" path="/Libs/restlet-jse-2.2.2/lib/org.restlet.ext.jackson.jar"/>
