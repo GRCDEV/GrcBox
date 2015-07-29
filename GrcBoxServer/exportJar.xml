@@ -3,7 +3,7 @@
     <!--this file was created by Eclipse Runnable JAR Export Wizard-->
     <!--ANT 1.7 is required                                        -->
     <target name="create_run_jar">
-        <jar destfile="/home/sertinell/git/AndroPi/GrcBoxServer.jar">
+        <jar destfile="../GrcBoxServer.jar">
             <manifest>
                 <attribute name="Main-Class" value="org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader"/>
                 <attribute name="Rsrc-Main-Class" value="es.upv.grc.grcbox.server.GrcBoxServerApplication"/>
@@ -11,24 +11,24 @@
                 <attribute name="Rsrc-Class-Path" value="./ org.restlet.jar com.fasterxml.jackson.annotations.jar unix.jar hexdump.jar dbus.jar vserv-tcpip-0.9.2.jar org.restlet.ext.jackson.jar com.fasterxml.jackson.core.jar com.fasterxml.jackson.csv.jar com.fasterxml.jackson.databind.jar com.fasterxml.jackson.jaxb.jar com.fasterxml.jackson.smile.jar com.fasterxml.jackson.xml.jar rocksaw-1.1.0.jar com.fasterxml.jackson.yaml.jar"/>
             </manifest>
             <zipfileset src="jar-in-jar-loader.zip"/>
-            <fileset dir="/home/sertinell/git/AndroPi/GrcBoxServer/bin"/>
-            <fileset dir="/home/sertinell/git/AndroPi/GrcBoxCommon/bin"/>
-            <zipfileset dir="/home/sertinell/git/AndroPi/lib/restlet-jse-2.2.2/lib" includes="org.restlet.jar"/>
-            <zipfileset dir="/home/sertinell/git/AndroPi/lib/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2" includes="com.fasterxml.jackson.annotations.jar"/>
-            <fileset dir="/home/sertinell/git/AndroPi/NMDBusIface/bin"/>
+            <fileset dir="../GrcBoxServer/bin"/>
+            <fileset dir="../GrcBoxCommon/bin"/>
+            <zipfileset dir="../lib/restlet-jse-2.2.2/lib" includes="org.restlet.jar"/>
+            <zipfileset dir="../lib/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2" includes="com.fasterxml.jackson.annotations.jar"/>
+            <fileset dir="../NMDBusIface/bin"/>
             <zipfileset dir="/usr/share/java" includes="unix.jar"/>
             <zipfileset dir="/usr/share/java" includes="hexdump.jar"/>
             <zipfileset dir="/usr/share/java" includes="dbus.jar"/>
-            <zipfileset dir="/home/sertinell/git/AndroPi/lib" includes="vserv-tcpip-0.9.2.jar"/>
-            <zipfileset dir="/home/sertinell/git/AndroPi/lib/restlet-jse-2.2.2/lib" includes="org.restlet.ext.jackson.jar"/>
-            <zipfileset dir="/home/sertinell/git/AndroPi/lib/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2" includes="com.fasterxml.jackson.core.jar"/>
-            <zipfileset dir="/home/sertinell/git/AndroPi/lib/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2" includes="com.fasterxml.jackson.csv.jar"/>
-            <zipfileset dir="/home/sertinell/git/AndroPi/lib/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2" includes="com.fasterxml.jackson.databind.jar"/>
-            <zipfileset dir="/home/sertinell/git/AndroPi/lib/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2" includes="com.fasterxml.jackson.jaxb.jar"/>
-            <zipfileset dir="/home/sertinell/git/AndroPi/lib/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2" includes="com.fasterxml.jackson.smile.jar"/>
-            <zipfileset dir="/home/sertinell/git/AndroPi/lib/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2" includes="com.fasterxml.jackson.xml.jar"/>
-            <zipfileset dir="/home/sertinell/git/AndroPi/lib/rocksaw-1.1.0/lib" includes="rocksaw-1.1.0.jar"/>
-            <zipfileset dir="/home/sertinell/git/AndroPi/lib/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2" includes="com.fasterxml.jackson.yaml.jar"/>
+            <zipfileset dir="../lib" includes="vserv-tcpip-0.9.2.jar"/>
+            <zipfileset dir="../lib/restlet-jse-2.2.2/lib" includes="org.restlet.ext.jackson.jar"/>
+            <zipfileset dir="../lib/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2" includes="com.fasterxml.jackson.core.jar"/>
+            <zipfileset dir="../lib/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2" includes="com.fasterxml.jackson.csv.jar"/>
+            <zipfileset dir="../lib/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2" includes="com.fasterxml.jackson.databind.jar"/>
+            <zipfileset dir="../lib/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2" includes="com.fasterxml.jackson.jaxb.jar"/>
+            <zipfileset dir="../lib/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2" includes="com.fasterxml.jackson.smile.jar"/>
+            <zipfileset dir="../lib/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2" includes="com.fasterxml.jackson.xml.jar"/>
+            <zipfileset dir="../lib/rocksaw-1.1.0/lib" includes="rocksaw-1.1.0.jar"/>
+            <zipfileset dir="../lib/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2" includes="com.fasterxml.jackson.yaml.jar"/>
         </jar>
     </target>
 </project>
