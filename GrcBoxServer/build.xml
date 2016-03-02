@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- WARNING: Eclipse auto-generated file.
+              Any modifications will be overwritten.
+              To include a user specific buildfile here, simply create one in the same
+              directory with the processing instruction <?eclipse.ant.import?>
+              as the first entry and export the buildfile again. --><project basedir="." default="build" name="GrcBoxServer">
+    <property environment="env"/>
+    <property name="Libs.location" value="../lib"/>
+    <property name="GrcBoxCommon.location" value="../GrcBoxCommon"/>
+    <property name="NMDBusIface.location" value="../NMDBusIface"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.7"/>
+    <property name="source" value="1.7"/>
+    <path id="GrcBoxCommon.classpath">
+        <pathelement location="${GrcBoxCommon.location}/bin"/>
+        <pathelement location="${Libs.location}/restlet-jse-2.2.2/lib/org.restlet.jar"/>
+        <pathelement location="${Libs.location}/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.annotations.jar"/>
+    </path>
+    <path id="NMDBusIface.classpath">
+        <pathelement location="${NMDBusIface.location}/bin"/>
+        <pathelement location="${NMDBusIface.location}/../../../../../usr/share/java/dbus.jar"/>
+    </path>
+    <path id="GrcBoxServer.classpath">
+        <pathelement location="bin"/>
+        <path refid="GrcBoxCommon.classpath"/>
+        <path refid="NMDBusIface.classpath"/>
+        <pathelement location="${Libs.location}/vserv-tcpip-0.9.2.jar"/>
+        <pathelement location="${Libs.location}/restlet-jse-2.2.2/lib/org.restlet.jar"/>
+        <pathelement location="${Libs.location}/restlet-jse-2.2.2/lib/org.restlet.ext.jackson.jar"/>
+        <pathelement location="${Libs.location}/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.annotations.jar"/>
+        <pathelement location="${Libs.location}/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.core.jar"/>
+        <pathelement location="${Libs.location}/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.csv.jar"/>
+        <pathelement location="${Libs.location}/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.databind.jar"/>
+        <pathelement location="${Libs.location}/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.jaxb.jar"/>
+        <pathelement location="${Libs.location}/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.smile.jar"/>
+        <pathelement location="${Libs.location}/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.xml.jar"/>
+        <pathelement location="${Libs.location}/rocksaw-1.1.0/lib/rocksaw-1.1.0.jar"/>
+        <pathelement location="../../../../../usr/share/java/unix.jar"/>
+        <pathelement location="../../../../../usr/share/java/dbus.jar"/>
+        <pathelement location="../../../../../usr/share/java/hexdump.jar"/>
+        <pathelement location="${Libs.location}/restlet-jse-2.2.2/lib/com.fasterxml.jackson_2.2/com.fasterxml.jackson.yaml.jar"/>
+    </path>
+    <target name="init">
+        <mkdir dir="bin"/>
+        <copy includeemptydirs="false" todir="bin">
+            <fileset dir="src">
+                <exclude name="**/*.ucls"/>
+                <exclude name="**/*.useq"/>
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="clean">
+        <delete dir="bin"/>
+    </target>
+    <target depends="clean" name="cleanall">
+        <ant antfile="build.xml" dir="${GrcBoxCommon.location}" inheritAll="false" target="clean"/>
+        <ant antfile="build.xml" dir="${NMDBusIface.location}" inheritAll="false" target="clean"/>
+    </target>
+    <target depends="build-subprojects,build-project" name="build"/>
+    <target name="build-subprojects">
+        <ant antfile="build.xml" dir="${GrcBoxCommon.location}" inheritAll="false" target="build-project">
+            <propertyset>
+                <propertyref name="build.compiler"/>
+            </propertyset>
+        </ant>
+        <ant antfile="build.xml" dir="${NMDBusIface.location}" inheritAll="false" target="build-project">
+            <propertyset>
+                <propertyref name="build.compiler"/>
+            </propertyset>
+        </ant>
+    </target>
+    <target depends="init" name="build-project">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false" source="${source}" target="${target}">
+            <src path="src"/>
+            <classpath refid="GrcBoxServer.classpath"/>
+        </javac>
+    </target>
+    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
+    <target description="copy Eclipse compiler jars to ant lib directory" name="init-eclipse-compiler">
+        <copy todir="${ant.library.dir}">
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+        </copy>
+        <unzip dest="${ant.library.dir}">
+            <patternset includes="jdtCompilerAdapter.jar"/>
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+        </unzip>
+    </target>
+    <target description="compile project with Eclipse compiler" name="build-eclipse-compiler">
+        <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
+        <antcall target="build"/>
+    </target>
+    <target name="CreateExampleConfig">
+        <java classname="es.upv.grc.grcbox.server.CreateExampleConfig" failonerror="true" fork="yes">
+            <classpath refid="GrcBoxServer.classpath"/>
+        </java>
+    </target>
+    <target name="GrcBoxServerApplication">
+        <java classname="es.upv.grc.grcbox.server.GrcBoxServerApplication" failonerror="true" fork="yes">
+            <classpath refid="GrcBoxServer.classpath"/>
+        </java>
+    </target>
+</project>
