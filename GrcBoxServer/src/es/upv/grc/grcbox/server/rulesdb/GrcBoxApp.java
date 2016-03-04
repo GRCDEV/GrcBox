@@ -33,6 +33,7 @@ public class GrcBoxApp extends GrcBoxAppInfo {
 	 */
 	public GrcBoxApp(int id, String name, long lastUpdate) {
 		super(id,name,-1);
+		lastKeepAlive = lastUpdate;
 	}
 
 	/**
