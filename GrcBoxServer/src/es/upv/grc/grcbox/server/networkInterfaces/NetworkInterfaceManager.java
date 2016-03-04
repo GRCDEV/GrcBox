@@ -60,7 +60,7 @@ public class NetworkInterfaceManager {
 	private static volatile Boolean initialized = false;
 
 	/** The Constant _VERSION_SUPPORTED. */
-	private static final String _VERSION_SUPPORTED= "1.0.2";
+	private static final String[] _VERSIONS_SUPPORTED= {"1.0.2", "1.1.90"};
 	
 	
 
@@ -484,7 +484,15 @@ public class NetworkInterfaceManager {
 					NetworkManagerIface.class);
 
 			String version = nmProp.Get( NetworkManagerIface._NM_IFACE, "Version");
-			if(!version.equals(_VERSION_SUPPORTED)){
+			boolean supported = false;
+			for (String versionSupp : _VERSIONS_SUPPORTED) {
+				supported = version.equals(versionSupp);
+				if(supported)
+				{
+					break;
+				}
+			}
+			if(!supported){
 				LOG.severe("NM version not supported "+ version);
 				throw new ExecutionException("Unsupported NetworkManager version", new Throwable());
 			}
