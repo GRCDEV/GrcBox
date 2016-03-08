@@ -60,7 +60,7 @@ public class NetworkInterfaceManager {
 	private static volatile Boolean initialized = false;
 
 	/** The Constant _VERSION_SUPPORTED. */
-	private static final String[] _VERSIONS_SUPPORTED= {"1.0.2", "1.1.90"};
+	private static final String[] _VERSIONS_SUPPORTED= {"1.0.2", "1.1.90", "1.1.91"};
 	
 	
 
