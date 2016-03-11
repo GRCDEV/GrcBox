@@ -184,7 +184,7 @@ echo -e "_______________________________________________________________________
 #############################################################################
 
 It will cover the following steps:
-1) Detect your USB WiFi dongles and assign them permanent names
+1) Detect your network interfaces and assign them permanent names
 2) Give a new SSID to your GrcBox's inner network and configure the hostapd
 daemon with the default connfiguration
 3) Assign a static IP address to your inner interface and configure dnsmasq to
@@ -195,10 +195,10 @@ resolve the name grcbox to that address
 7) Check and activate IP routing"
 
 echo -e "########################################################################
-Detecting your wifi cards. Please connect them in order
-the first interface will be assigned wlan0, second wlan1 and so on.
 
-Once all your devices has been connected press ENTER to start configuring this node:"
+Your current interface naming will be made permanent
+
+ENTER to start configuring this node:"
 
 read
 
@@ -207,7 +207,6 @@ device show)
 
 IFACES=($(echo "${DEVICES_INFO}" | 
   grep GENERAL.DEVICE | sed 's/GENERAL.DEVICE://g' ))
-  
 TYPES=($(echo "${DEVICES_INFO}" | 
   grep GENERAL.TYPE | sed 's/GENERAL.TYPE://g' ))
 XIFS=${IFS} GLOBIGNORE='*';
@@ -230,6 +229,15 @@ if [[ -z ${iface_names[@]} ]]; then
         n=$[$n+1];
     done;
 fi
+
+#Write permanent rules for udev
+rm /etc/udev/rules.d/70-persistent-net.rules
+
+for iface in ${!iface_names[@]}; do
+   echo 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="'${HWADDRS[${iface_names[${iface}]}]}'", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="wlan*", NAME="'${iface}'"' >> /etc/udev/rules.d/70-persistent-net.rules;
+done
+
+read;
 
 #hostapd configuration
 skip=1;
@@ -335,9 +343,10 @@ done;
 
 if [[ ${ip_configured} != "true" ]]; then
     echo "Ip Routing has not been properly configured"
-    echo "Add the following lines to your /etc/sysctl.conf file"
+    echo "Adding the following lines to your /etc/sysctl.conf file to enable it"
     for line in ${ip_required_lines[@]}; do
         echo ${line};
+        echo ${line} >> /etc/sysctl.conf;
     done;
 fi
 
