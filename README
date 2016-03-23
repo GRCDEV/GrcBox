@@ -4,12 +4,13 @@ The GRCBox offers an architecture that extends the in-vehicle connectivity by pr
 
 Using GRCBox each application can choose the interface for its data flows, which increases flexibility and will allow developers to easily implement applications based on ad-hoc connectivity, such as VDTN applications.
 
-More documentation is available in the project [wiki](https://github.com/GRCDEV/GrcBox/wiki)
-
-Javadoc:http://grcdev.github.io/GrcBox/doc/
-
 If you use it, please cite:
-
 "Simplifying the in-vehicle connectivity for ITS applications"
 Sergio Tornell, Teemu Kärkkäinen, Jörg Ott, Carlos Calafate, Juan-Carlos Cano, and Pietro Manzoni
 EAI Endorsed Transactions on Energy Web 15(7), 2015, DOI: 10.4108/eai.22-7-2015.2260058
+
+
+More documentation is available in the project wiki: https://github.com/GRCDEV/GrcBox/wiki
+
+The Javadoc is here: http://grcdev.github.io/GrcBox/doc/
+
