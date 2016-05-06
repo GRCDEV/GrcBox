@@ -361,7 +361,7 @@ Remember this IP must be unique into the network.'
        ad_hoc_configs[${_nadhoc}]=${net_ssid}
        _nadhoc=$[${_nadhoc}+1]
        echo -e "$(get_adhoc_net_config ${net_ssid} ${host_ip} ${net_band} ${channel})" > ${ad_hoc_config_file};
-       echo -e "$(get_rc_startup ${net_ssid} ${ad_hoc_iface})" > connect${net_ssid}
+       echo -e "$(get_rc_startup ${net_ssid} ${ad_hoc_iface})" > connect_${net_ssid}
    else
        break
    fi
