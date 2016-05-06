@@ -189,8 +189,8 @@ daemon with the default connfiguration
 3) Assign a static IP address to your inner interface and configure dnsmasq to
 resolve the name grcbox to that address
 4) Configure an Ad-Hoc network with static IP addressing and channel
-?) Create a runGrcBox script and add it to the rc.local script
-?) Check and activate IP routing"
+5) Check and activate IP routing"
+6) Create a runGrcBox script and add it to the rc.local script
 
 echo -e "########################################################################
 
@@ -229,14 +229,13 @@ if [[ -z ${iface_names[@]} ]]; then
 fi
 
 #Write permanent rules for udev
-rm /etc/udev/rules.d/70-persistent-net.rules
-
+rm /etc/udev/rules.d/70-persistent-net.rules &>/dev/null
 for iface in ${!iface_names[@]}; do
    echo 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="'${HWADDRS[${iface_names[${iface}]}]}'", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="wlan*", NAME="'${iface}'"' >> /etc/udev/rules.d/70-persistent-net.rules;
 done
 
 #hostapd configuration
-printf "STEP: hostapd configuration\n"
+printf "Hostapd configuration\n"
 
 echo "Which interface should be your inner interface?"
 n=0;
@@ -300,7 +299,7 @@ if [[ ${skip} == 1 ]]; then
     echo ${net_ip_addr} grcbox >> hosts
 fi
 
-echo "Checking Ip routing configuration"
+echo "Checking IP routing configuration"
 ip_required_lines=('net.ipv4.conf.default.rp_filter=0' \
                     'net.ipv4.conf.all.rp_filter=0' \
                     'net.ipv4.ip_forward=1' \
